@@ -1,0 +1,36 @@
+name: Проверка плана
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Целостность плана
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Проверка целостности
+        run: |
+          chmod +x tools/validate.sh
+          ./tools/validate.sh
+
+  links:
+    name: Внешние ссылки
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Проверка внешних ссылок
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress
+            --exclude-all-private
+            --accept 200,206,429
+            '**/*.md'
+          fail: false
