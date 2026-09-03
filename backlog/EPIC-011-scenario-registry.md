@@ -19,9 +19,9 @@ gate: G0
 четырём целям:
 
 1. определение полноты новой системы;
-2. план сквозных тестов ([06-quality/01-test-strategy.md](../docs/06-quality/01-test-strategy.md));
+2. план сквозных тестов ([product/09-quality.md](../product/09-quality.md));
 3. план ручной приёмки пользователями;
-4. основа сценарного паритета ([04-migration/03-parity-verification.md](../docs/04-migration/03-parity-verification.md#уровень-3-сценарный-паритет)).
+4. основа сценарного паритета ([transition/06-parity-verification.md](../transition/06-parity-verification.md#уровень-3-сценарный-паритет)).
 
 ## Формат сценария
 
@@ -93,7 +93,7 @@ gate: G0
 ### TASK-1106. Определить сценарии для дымовых тестов
 
 Минимальный набор блокирующих сценариев, проверяемых в ночь переезда до
-открытия доступа ([04-migration/01-cutover-strategy.md](../docs/04-migration/01-cutover-strategy.md#ход-переезда)).
+открытия доступа ([transition/07-cutover.md](../transition/07-cutover.md#ход-переезда)).
 
 **Приёмка:** набор определён, согласован с владельцами доменов, выполним за
 ограниченное время.

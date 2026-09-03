@@ -12,8 +12,8 @@ status: actual
 
 ## Эпики Фазы 0
 
-Все эпики ниже — работы [Фазы 0](../docs/05-plan/01-phase-0-foundation.md),
-закрывающие гейт [G0](../docs/05-plan/00-roadmap.md#g0--конец-фазы-0).
+Все эпики ниже — работы [Фазы 0](../transition/plan/01-phase-0-foundation.md),
+закрывающие гейт [G0](../transition/plan/00-roadmap.md#g0--конец-фазы-0).
 Они **стек-независимы** и выполняются, пока решается
 [ADR-0003](../docs/02-decisions/ADR-0003-backend-stack.md).
 
@@ -51,6 +51,27 @@ EPIC-001 ──┬─► EPIC-002 ──┬─► EPIC-004
 Исключение — [EPIC-005](EPIC-005-data-migration.md): он описан заранее, потому
 что его подготовка (правила преобразования) начинается уже в Фазе 0, на
 результатах EPIC-003.
+
+## Что наполняют эпики
+
+Работы Фазы 0 наполняют **обе** половины плана — спецификации продукта и карты
+перехода:
+
+| Эпик | Наполняет продукт | Наполняет переход |
+|---|---|---|
+| [EPIC-002](EPIC-002-contract-inventory.md) | [product/05-api.md](../product/05-api.md) — реестр эндпойнтов | [transition/03-api-mapping.md](../transition/03-api-mapping.md) — карта эндпойнтов |
+| [EPIC-003](EPIC-003-schema-inventory.md) | [product/03-database.md](../product/03-database.md) — реестр таблиц | [transition/01-database-mapping.md](../transition/01-database-mapping.md) — карта таблиц |
+| [EPIC-007](EPIC-007-reports-inventory.md) | страницы типа R в [product/06-frontend.md](../product/06-frontend.md) | решения «не переносим» по отчётам |
+| [EPIC-011](EPIC-011-scenario-registry.md) | [product/06-frontend.md](../product/06-frontend.md) — реестр страниц | [transition/04-frontend-mapping.md](../transition/04-frontend-mapping.md) — карта страниц |
+| [EPIC-006](EPIC-006-permissions-inventory.md) | права в спецификациях доменов | соответствие старых и новых прав |
+
+Разбор классов ([transition/02-backend-mapping.md](../transition/02-backend-mapping.md))
+выполняется внутри EPIC-002 и EPIC-003: границы модулей определяются составом
+эндпойнтов и таблиц.
+
+Образец результата — домен D1:
+[спецификация](../product/spec/D1-reference.md) и
+[карта](../transition/map/D1-reference.md).
 
 ## Правила
 

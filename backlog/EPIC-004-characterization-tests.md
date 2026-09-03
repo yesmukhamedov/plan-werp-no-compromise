@@ -25,7 +25,7 @@ depends_on: [EPIC-002, EPIC-011]
 фиксируют, как она работает **сейчас** — включая ошибки, если они есть.
 
 Это эталон для сверки паритета
-([04-migration/03-parity-verification.md](../docs/04-migration/03-parity-verification.md)),
+([transition/06-parity-verification.md](../transition/06-parity-verification.md)),
 а не набор требований. Тест, зафиксировавший неправильное поведение, — это
 успех: теперь про него знают.
 
@@ -104,6 +104,6 @@ depends_on: [EPIC-002, EPIC-011]
 
 ## Как используется дальше
 
-- Обязательное условие начала доменов D5 и D6 в [Фазе 2](../docs/05-plan/03-phase-2-domains.md).
-- Эталон для сценарного паритета в [Фазе 4](../docs/05-plan/05-phase-4-parity-and-cutover.md).
+- Обязательное условие начала доменов D5 и D6 в [Фазе 2](../transition/plan/03-phase-2-domains.md).
+- Эталон для сценарного паритета в [Фазе 4](../transition/plan/05-phase-4-parity-and-cutover.md).
 - Часть реестра сценариев ([EPIC-011](EPIC-011-scenario-registry.md)).

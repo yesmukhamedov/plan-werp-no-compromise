@@ -5,11 +5,14 @@
 #   ./tools/validate.sh
 #
 # Проверяет:
-#   1. frontmatter в docs/ и backlog/
+#   1. frontmatter в docs/, product/, transition/, backlog/
 #   2. уникальность идентификаторов
 #   3. внутренние ссылки на существующие файлы
-#   4. отсутствие чувствительных данных
-#   5. статусы ADR из допустимого набора
+#   4. отсутствие чувствительных данных (репозиторий публичный)
+#   5. статусы ADR; полноту реестров ADR и эпиков
+#   5.3 разделение product/ и transition/:
+#       - product/ не упоминает легаси (описывает только целевую систему)
+#       - карты соответствий ссылаются на product/
 #   6. отсутствие незаполненных плейсхолдеров шаблонов вне templates/
 
 set -uo pipefail
@@ -24,7 +27,7 @@ warn() { printf '  \033[33mВНИМАНИЕ\033[0m %s\n' "$1"; warnings=$((warni
 ok()   { printf '  \033[32mOK\033[0m      %s\n' "$1"; }
 section() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 
-docs=$(find docs backlog -name '*.md' -type f | sort)
+docs=$(find docs product transition backlog -name '*.md' -type f | sort)
 
 # ---------------------------------------------------------------- 1. frontmatter
 section '1. Frontmatter'
@@ -159,6 +162,32 @@ for f in backlog/EPIC-*.md; do
 done
 ok "все эпики перечислены в реестре"
 
+# -------------------------------------- 5.3. разделение product / transition
+section '5.3. Разделение product / transition'
+
+# product/ описывает ТОЛЬКО целевую систему. Упоминания легаси относятся к
+# transition/ или docs/00-context/. README раздела объясняет само правило и
+# потому исключён.
+if grep -rIn -i --exclude='README.md' \
+     -e 'легаси' -e 'унаследован' \
+     -e 'werp_jsf' -e 'werp_java_back' -e 'werp_react' \
+     -e 'werp_crm' -e 'werp_call_center' \
+     -e 'текущей систем' -e 'текущая систем' -e 'Текущее состояние' \
+     product/ 2>/dev/null; then
+  err "product/ описывает целевую систему: упоминания легаси переносятся в transition/ (см. CONTRIBUTING.md)"
+else
+  ok "product/ не содержит упоминаний легаси"
+fi
+
+# transition/ обязан ссылаться на product/ — иначе он описывает цель сам,
+# вместо того чтобы связывать с ней.
+missing_ref=0
+for f in transition/01-database-mapping.md transition/02-backend-mapping.md          transition/03-api-mapping.md transition/04-frontend-mapping.md          transition/map/D*.md; do
+  [ -f "$f" ] || continue
+  grep -q 'product/' "$f" || { err "$f: нет ни одной ссылки в product/ — карта обязана связывать источник с целью"; missing_ref=1; }
+done
+[ $missing_ref -eq 0 ] && ok "карты соответствий ссылаются на product/"
+
 # --------------------------------------------------- 6. остатки шаблонов
 section '6. Незаполненные плейсхолдеры шаблонов'
 
@@ -169,7 +198,7 @@ if grep -rIn -e '^id: *\(ADR-NNNN\|EPIC-NNN\|TASK-NNNN\)' \
               -e '^title: *<' \
               -e '^date: *YYYY-MM-DD' \
               -e '<краткое имя решения>' \
-     docs backlog 2>/dev/null; then
+     docs product transition backlog 2>/dev/null; then
   err "в документах остались плейсхолдеры из шаблонов"
 else
   ok "плейсхолдеров нет"

@@ -199,7 +199,7 @@ SQL-запрос логируется и статистика собираетс
 Токены в cookie между поддоменами — расширенная поверхность атаки.
 
 **Правила:** [NC-12](../01-principles/01-no-compromise.md#nc-12) (единая модель доступа),
-см. также [03-target/06-security.md](../03-target/06-security.md).
+см. также [product/08-security.md](../../product/08-security.md).
 
 ---
 

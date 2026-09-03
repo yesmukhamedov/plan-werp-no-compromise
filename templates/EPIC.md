@@ -14,8 +14,8 @@ blocks: []
 ## Зачем
 
 Какую проблему решает. Ссылка на [точки боли](../docs/00-context/02-pain-points.md),
-[риск](../docs/08-risks/01-risk-register.md) или [открытый
-вопрос](../docs/08-risks/02-open-questions.md), если применимо.
+[риск](../transition/11-risks.md) или [открытый
+вопрос](../transition/12-open-questions.md), если применимо.
 
 Что сломается или станет дороже, если этого не сделать.
 

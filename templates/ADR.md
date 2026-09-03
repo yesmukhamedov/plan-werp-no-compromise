@@ -54,8 +54,8 @@ superseded_by: null
 - Что меняется в плане: какие фазы, эпики, документы.
 - Что становится проще.
 - Что требует отдельного внимания.
-- Какие риски усиливаются ([08-risks/01-risk-register.md](../docs/08-risks/01-risk-register.md)).
+- Какие риски усиливаются ([transition/11-risks.md](../transition/11-risks.md)).
 
 ## Открытые вопросы
 
-Что осталось нерешённым, с ссылкой на [08-risks/02-open-questions.md](../docs/08-risks/02-open-questions.md).
+Что осталось нерешённым, с ссылкой на [transition/12-open-questions.md](../transition/12-open-questions.md).
