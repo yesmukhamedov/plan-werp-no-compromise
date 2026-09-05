@@ -1,113 +1,118 @@
 ---
 id: TRANS-PLAN-05
-title: Фаза 4 — Паритет и переезд
+title: Phase 4 — Parity and cutover
 status: draft
 gate: G2, G3
 ---
 
-# Фаза 4 — Паритет и переезд
+# Phase 4 — Parity and cutover
 
-**Цель:** доказать, что новая система эквивалентна старой, и перевести на неё
-пользователей.
+**Goal:** prove that the new system is equivalent to the old one and move the
+users onto it.
 
-**Это отдельная фаза сравнимой с разработкой стоимости**, а не «финальные
-две недели». Так решено в [ADR-0001](../../docs/02-decisions/ADR-0001-strategy-big-bang.md#последствия):
-при big bang проверка и переезд — самостоятельная работа, а не хвост разработки.
+**This is a separate phase whose cost is comparable to development**, not "the
+final two weeks". That was decided in
+[ADR-0001](../../docs/02-decisions/ADR-0001-strategy-big-bang.md#consequences):
+under a big bang, verification and the cutover are work in their own right, not
+the tail end of development.
 
-## Ключевое свойство: фазу нельзя ускорить
+## The key property: the phase cannot be sped up
 
-Два элемента — календарные, и ни деньги, ни люди их не сокращают:
+Two elements are calendar time, and neither money nor people shorten them:
 
-- **30 дней теневого прогона** без неразобранных расхождений;
-- **четыре репетиции миграции**, из них две успешные подряд.
+- **30 days of the shadow run** with no unresolved divergences;
+- **four migration rehearsals**, two of them successful consecutively.
 
-Это должно быть в плане с самого начала. Обнаружить это в конце — значит либо
-сорвать срок, либо переехать без проверки.
+That must be in the plan from the very beginning. Discovering it at the end means
+either missing the deadline or cutting over without verification.
 
-## Работы
+## The work
 
-### 1. Теневой прогон в полном объёме
+### 1. The shadow run at full scale
 
-Механизм запущен в Фазе 1, домены подключались по мере готовности в Фазе 2.
-Здесь он работает на всей системе.
+The mechanism was started in Phase 1, and domains were connected as they became
+ready in Phase 2. Here it runs across the whole system.
 
-Ежедневный разбор расхождений; каждое проходит классификацию из
-[03-parity-verification.md](../06-parity-verification.md#что-делать-с-расхождением).
-Еженедельный отчёт — главный индикатор готовности.
+Daily analysis of divergences; each goes through the classification from
+[03-parity-verification.md](../06-parity-verification.md#what-to-do-with-a-divergence).
+The weekly report is the main readiness indicator.
 
-### 2. Сценарный паритет
+### 2. Scenario parity
 
-Прогон реестра сценариев в обеих системах со сверкой результата.
+Running the scenario registry in both systems with the results reconciled.
 
-Финансовые расчёты, расчёт вознаграждений и отчёты — **с нулевым допуском**.
-Здесь всплывает основной объём неожиданной работы: за 12 лет накопились частные
-случаи, о которых никто не помнит, и обнаруживаются они только сравнением.
+Financial calculations, compensation calculation and reports — **with zero
+tolerance**. This is where the bulk of the unexpected work surfaces: over 12
+years special cases have accumulated that nobody remembers, and they are found
+only by comparison.
 
-### 3. Нагрузочные испытания
+### 3. Load trials
 
-На предпродуктивном контуре, на объёме промышленных данных, при ×3 от
-измеренного пика ([product/07-nfr.md](../../product/07-nfr.md)).
+On the pre-production environment, at production data volume, at ×3 the measured
+peak ([product/07-nfr.md](../../product/07-nfr.md)).
 
-Отдельно проверяется пиковый сценарий ERP: закрытие периода, массовое начисление,
-инвентаризация. Обычная нагрузка не показывает того, что показывает конец месяца.
+The ERP peak scenario is verified separately: the period close, mass accrual,
+stocktaking. Ordinary load does not show what the end of the month shows.
 
-### 4. Репетиции миграции
+### 4. Migration rehearsals
 
-Четыре полных прогона по [02-data-migration.md](../05-data-migration.md#э5-репетиции).
-Каждая — с отчётом. Р3 включает репетицию отката.
+Four full runs per
+[02-data-migration.md](../05-data-migration.md#s5-rehearsals). Each with a
+report. R3 includes a rollback rehearsal.
 
-Первая репетиция почти наверняка вскроет проблемы качества данных, накопленные
-за 12 лет. **Это ожидаемый результат, а не авария** — но время на их разбор и
-на решения бизнеса должно быть в плане.
+The first rehearsal will almost certainly expose data-quality problems
+accumulated over 12 years. **That is an expected result, not an emergency** — but
+the time to resolve them and for the business's decisions has to be in the plan.
 
-### 5. Обучение и подготовка
+### 5. Training and preparation
 
-- Обучение пользователей на предпродуктивном контуре.
-- Инструкции и справка в интерфейсе.
-- Ранбуки для дежурной смены ([product/14-runbooks.md](../../product/14-runbooks.md)).
-- Формирование дежурной смены на период переезда и стабилизации.
+- Training users on the pre-production environment.
+- Instructions and in-app help.
+- Runbooks for the on-call shift
+  ([product/14-runbooks.md](../../product/14-runbooks.md)).
+- Forming the on-call shift for the cutover and stabilization period.
 
-Обучение начинается **до** окончания разработки: людей нужно учить на системе,
-которую они увидят, но и времени на это нужно больше, чем кажется.
+Training begins **before** development ends: people have to be trained on the
+system they will actually see, but it also takes more time than one expects.
 
-### 6. Закрытие delta backlog
+### 6. Closing the delta backlog
 
-Все изменения, допущенные в легаси при заморозке
-([05-freeze-policy.md](../09-freeze-policy.md)), должны быть
-реализованы. Пустой delta backlog — условие допуска.
+All the changes allowed in the legacy during the freeze
+([05-freeze-policy.md](../09-freeze-policy.md)) must be implemented. An empty
+delta backlog is an admission condition.
 
-### 7. Переезд
+### 7. The cutover
 
-По [01-cutover-strategy.md](../07-cutover.md).
+Per [01-cutover-strategy.md](../07-cutover.md).
 
-### 8. Стабилизация
+### 8. Stabilization
 
-Срок стабилизации (предварительно 30 дней), усиленное дежурство, ежедневная
-сверка показателей, легаси в резерве.
+The stabilization period (provisionally 30 days), reinforced on-call duty, a
+daily comparison of the figures, the legacy held in reserve.
 
-## Порядок
+## Order
 
 ```
-теневой прогон (непрерывно) ─────────────────────────────────┐
-                                                             │
-сценарный паритет ───┐                                       │
-нагрузочные испытания ├─► G2 ─► переезд ─► стабилизация ─► G3
-репетиции Р1–Р4 ─────┤
-обучение ────────────┤
+the shadow run (continuous) ─────────────────────────────────────┐
+                                                                 │
+scenario parity ─────┐                                           │
+load trials ─────────┤                                           │
+rehearsals R1–R4 ────┼─► G2 ─► cutover ─► stabilization ─► G3 ───┘
+training ────────────┤
 delta backlog = 0 ───┘
 ```
 
-## Риски фазы
+## Risks of the phase
 
-| Риск | Проявление | Что делать |
+| Risk | How it shows | What to do |
 |---|---|---|
-| Расхождений больше, чем ожидалось | теневой прогон не выходит на 30 чистых дней | перенести переезд; это ровно то, для чего нужен теневой прогон |
-| Миграция не укладывается в окно | измеряется на Р1–Р2 | менять стратегию переезда через ADR — предварительная загрузка истории, поэтапный перенос |
-| Качество данных хуже ожидаемого | Р1 даёт большой журнал отбраковки | закладывать время; очистку выполнять в легаси до переезда |
-| Давление сроков на планку допуска | «давайте переедем, доделаем потом» | чек-лист допуска формален и подписывается поимённо; это его единственное назначение |
-| Пользователи не готовы | обучение отложено на конец | начинать обучение до окончания разработки |
+| More divergences than expected | the shadow run does not reach 30 clean days | postpone the cutover; that is exactly what the shadow run is for |
+| The migration does not fit inside the window | measured at R1–R2 | change the cutover strategy through an ADR — preloading history, a staged transfer |
+| Data quality worse than expected | R1 produces a large rejection log | budget time; perform the cleansing in the legacy before the cutover |
+| Schedule pressure on the admission bar | "let us cut over and finish the rest later" | the admission checklist is formal and signed off by name; that is its only purpose |
+| The users are not ready | training deferred to the end | begin training before development ends |
 
-## Критерии завершения
+## Completion criteria
 
-Гейты [G2](00-roadmap.md#g2--готовность-к-переезду) и
-[G3](00-roadmap.md#g3--переезд-выполнен).
+Gates [G2](00-roadmap.md#g2--readiness-for-the-cutover) and
+[G3](00-roadmap.md#g3--cutover-done).

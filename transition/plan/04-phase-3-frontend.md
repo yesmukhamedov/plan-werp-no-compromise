@@ -1,123 +1,133 @@
 ---
 id: TRANS-PLAN-04
-title: Фаза 3 — Фронтенд
+title: Phase 3 — Frontend
 status: draft
 ---
 
-# Фаза 3 — Фронтенд
+# Phase 3 — Frontend
 
-**Цель:** реализовать все экраны новой системы.
+**Goal:** implement all the screens of the new system.
 
-Идёт **параллельно с [Фазой 2](03-phase-2-domains.md)**. Параллельность возможна
-только благодаря contract-first: фронтенд работает против заглушки,
-сгенерированной из спецификации, и встречается с реальным бэкендом уже
-работающим ([ADR-0005](../../docs/02-decisions/ADR-0005-contract-first-api.md)).
+Runs **in parallel with [Phase 2](03-phase-2-domains.md)**. The parallelism is
+possible only thanks to contract-first: the frontend works against a stub
+generated from the specification and meets the real backend when it is already
+working
+([ADR-0005](../../docs/02-decisions/ADR-0005-contract-first-api.md)).
 
-## Объём
+## Volume
 
-369 214 строк текущего фронтенда — **не оценка объёма новой работы**. В них
-входят: дублирование разделов (`crm` и `crm2021`, два колл-центра), шаблонный
-код классовых компонентов, ручные обёртки над HTTP (которые теперь генерируются),
-и логика, которая переезжает на сервер (формирование отчётов —
+The 369,214 lines of the current frontend are **not an estimate of the new
+work's volume**. They include: duplicated sections (`crm` and `crm2021`, two call
+centres), class-component boilerplate, hand-written HTTP wrappers (which are now
+generated), and logic that moves to the server (report generation —
 [ADR-0009](../../docs/02-decisions/ADR-0009-reporting-and-exports.md)).
 
-Реальная единица оценки — **экран**, а не строка. Число экранов определяется в
-Фазе 0 вместе с реестром сценариев и инвентаризацией отчётов.
+The real unit of estimation is a **screen**, not a line. The number of screens is
+determined in Phase 0, together with the scenario registry and the report
+inventory.
 
-## Порядок
+## Order
 
 ```
-дизайн-система (завершение)
+the design system (completion)
         │
-        ├─► каркас приложения: навигация, вход, права, ошибки, локализация
+        ├─► the application skeleton: navigation, login, permissions, errors, localization
         │
-        ├─► типовые формы: список, карточка, форма, выбор из справочника,
-        │   загрузка файла, запуск отчёта
+        ├─► the standard forms: list, card, form, selection from a reference list,
+        │   file upload, running a report
         │
-        └─► экраны по доменам — в том же порядке, что и Фаза 2
+        └─► screens by domain — in the same order as Phase 2
 ```
 
-### Дизайн-система — первая и блокирующая
+### The design system — first and blocking
 
-Начата в Фазе 1, завершается здесь. До неё массовая разработка экранов не
-начинается.
+Started in Phase 1, finished here. Mass screen development does not begin before
+it.
 
-Состав: палитра, типографика, сетка, компоненты ввода, **одна** таблица данных,
-**одна** форма, диалоги, уведомления, состояния загрузки и ошибки, навигация,
-работа с клавиатуры, доступность.
+Contents: the palette, the typography, the grid, the input components, **one**
+data table, **one** form, dialogs, notifications, loading and error states,
+navigation, keyboard operation, accessibility.
 
-Требование к таблице: серверная пагинация, сортировка, фильтрация, закрепление
-колонок, виртуализация, выгрузка через сервер. Это единственная таблица в
-системе ([NC-14](../../docs/01-principles/01-no-compromise.md#nc-14)).
+The requirement on the table: server-side pagination, sorting, filtering, pinned
+columns, virtualization, export through the server. It is the only table in the
+system ([NC-14](../../docs/01-principles/01-no-compromise.md#nc-14)).
 
-### Типовые формы — второе и определяющее
+### The standard forms — second and decisive
 
-В ERP экраны однотипны. Если пять базовых форм сделаны хорошо, остальные
-собираются из них быстро; если плохо — каждый экран пишется заново, как сейчас.
+In an ERP the screens are of the same few kinds. If the five basic forms are done
+well, the rest are assembled from them quickly; if badly, every screen is written
+from scratch, as it is today.
 
-| Форма | Что решает |
+| Form | What it settles |
 |---|---|
-| Список | пагинация, фильтры, сортировка, массовые действия, выгрузка |
-| Карточка | просмотр, вкладки, связанные сущности, история изменений |
-| Форма ввода | валидация по схеме из контракта, сохранение, ошибки сервера |
-| Выбор из справочника | поиск, ленивая загрузка, создание на лету |
-| Запуск отчёта | параметры, синхронный и асинхронный режимы, доставка результата |
+| List | pagination, filters, sorting, bulk actions, export |
+| Card | viewing, tabs, related entities, change history |
+| Input form | validation against the schema from the contract, saving, server errors |
+| Selection from a reference list | search, lazy loading, creation on the fly |
+| Running a report | parameters, synchronous and asynchronous modes, delivery of the result |
 
-Эти пять форм — фактический бюджет качества всего фронтенда. На них не экономят.
+These five forms are in effect the quality budget of the whole frontend. One does
+not cut corners on them.
 
-### Работа с клавиатуры — требование, а не улучшение
+### Keyboard operation — a requirement, not an improvement
 
-Операторы ERP работают с клавиатуры: ввод, переход между полями, сохранение,
-поиск. Скорость их работы напрямую зависит от того, нужно ли тянуться к мыши.
-Требование закладывается в дизайн-систему, а не добавляется в конце.
+ERP operators work from the keyboard: entering data, moving between fields,
+saving, searching. Their speed depends directly on whether they have to reach for
+the mouse. The requirement is built into the design system rather than added at
+the end.
 
-## Правила фазы
+## Rules of the phase
 
-- **TypeScript в строгом режиме**, функциональные компоненты. Автоматический
-  перенос старого JS не производится ([ADR-0004](../../docs/02-decisions/ADR-0004-frontend-stack.md)).
-- **Клиент API генерируется** из спецификации; рукописных обёрток над HTTP нет.
-- **Серверное состояние отделено от клиентского**; глобального хранилища под
-  ответы API не существует.
-- **Никакой конфигурации в бандле** — адреса приходят в рантайме
+- **TypeScript in strict mode**, functional components. No automated conversion
+  of the old JS is performed
+  ([ADR-0004](../../docs/02-decisions/ADR-0004-frontend-stack.md)).
+- **The API client is generated** from the specification; there are no
+  hand-written HTTP wrappers.
+- **Server state is separated from client state**; there is no global store for
+  API responses.
+- **No configuration in the bundle** — the addresses arrive at runtime
   ([NC-11](../../docs/01-principles/01-no-compromise.md#nc-11)).
-- **Ноль формирования отчётов в браузере** ([ADR-0009](../../docs/02-decisions/ADR-0009-reporting-and-exports.md)).
-- **Ноль ссылок в легаси** — легаси не будет.
-- Реестр разрешённых библиотек, проверка в CI.
-- Локализация всех трёх языков с первого экрана; отсутствующий перевод ломает CI
+- **Zero report generation in the browser**
+  ([ADR-0009](../../docs/02-decisions/ADR-0009-reporting-and-exports.md)).
+- **Zero links into the legacy** — there will be no legacy.
+- The registry of allowed libraries, with a check in CI.
+- Localization in all three languages from the very first screen; a missing
+  translation breaks CI
   ([ADR-0010](../../docs/02-decisions/ADR-0010-i18n.md)).
 
-## Тестирование
+## Testing
 
-| Уровень | Что проверяет |
+| Level | What it verifies |
 |---|---|
-| Компонентные тесты | поведение компонентов дизайн-системы |
-| Тесты экранов | сценарий на экране против заглушки API |
-| Сквозные тесты | сценарии из реестра, целиком через реальный бэкенд |
-| Визуальная регрессия | дизайн-система не ломается незаметно |
-| Доступность | автоматическая проверка на каждом экране |
+| Component tests | the behaviour of the design-system components |
+| Screen tests | a scenario on a screen against the API stub |
+| End-to-end tests | scenarios from the registry, end to end through the real backend |
+| Visual regression | the design system does not break unnoticed |
+| Accessibility | an automated check on every screen |
 
-## Приёмка пользователями
+## User acceptance
 
-Раз в две недели — демонстрация на предпродуктивном контуре
-([00-roadmap.md](00-roadmap.md#ритм)). При big bang это единственный канал
-обратной связи от пользователей за весь проект.
+Every two weeks — a demonstration on the pre-production environment
+([00-roadmap.md](00-roadmap.md#cadence)). Under a big bang this is the only
+channel of user feedback for the whole project.
 
-Замечания пользователей по интерфейсу — самая дешёвая обратная связь, которую
-можно получить, и самая дорогая, если получить её после переезда.
+Users' comments on the interface are the cheapest feedback one can get, and the
+most expensive if obtained after the cutover.
 
-## Риски фазы
+## Risks of the phase
 
-| Риск | Что делать |
+| Risk | What to do |
 |---|---|
-| Дизайн-система запаздывает и блокирует всё | начать в Фазе 1; выделенный ответственный |
-| Число экранов недооценено | считать экраны в Фазе 0, а не оценивать по строкам |
-| Заглушка расходится с реальным бэкендом | заглушка генерируется из той же спецификации; расхождение невозможно по построению — но контрактные тесты обязательны |
-| Пользователи отвергают новый интерфейс после переезда | демонстрации раз в две недели с первого экрана |
-| Экраны копируют старый интерфейс со всеми его проблемами | старый интерфейс — источник требований, не образец; то же правило, что в Фазе 2 |
+| The design system falls behind and blocks everything | start it in Phase 1; a dedicated owner |
+| The number of screens is underestimated | count the screens in Phase 0 rather than estimating from lines |
+| The stub diverges from the real backend | the stub is generated from the same specification; a divergence is impossible by construction — but contract tests are mandatory |
+| Users reject the new interface after the cutover | demonstrations every two weeks from the very first screen |
+| The screens copy the old interface with all its problems | the old interface is a source of requirements, not a model to copy; the same rule as in Phase 2 |
 
-## Критерии завершения
+## Completion criteria
 
-- Все экраны из реестра реализованы или явно исключены.
-- Сквозные тесты покрывают реестр сценариев.
-- Приёмка пользователями пройдена по всем доменам.
-- Показатели фронтенда соответствуют НФТ ([product/07-nfr.md](../../product/07-nfr.md)).
+- All the screens from the registry are implemented or explicitly excluded.
+- The end-to-end tests cover the scenario registry.
+- User acceptance has passed for all the domains.
+- The frontend's figures meet the NFRs
+  ([product/07-nfr.md](../../product/07-nfr.md)).

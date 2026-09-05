@@ -1,267 +1,274 @@
 ---
 id: PRN-01
-title: Что значит «без компромиссов»
+title: What "no compromise" means
 status: draft
 ---
 
-# Что значит «без компромиссов»
+# What "no compromise" means
 
-«Без компромиссов» — это не «сделаем красиво» и не «возьмём модный стек».
-Это **пятнадцать правил, каждое из которых запрещает конкретный компромисс,
-уже допущенный в текущей системе** и измеренный в
+"No compromise" does not mean "we will make it pretty" or "we will pick a
+fashionable stack". It means **fifteen rules, each of which forbids one specific
+compromise already made in the current system** and measured in
 [00-context/02-pain-points.md](../00-context/02-pain-points.md).
 
-Правило пригодно к использованию, только если по нему можно вынести
-однозначный вердикт. Поэтому у каждого есть колонка «как проверяется» — команда
-или запрос, который даёт да/нет без обсуждения. Проверки собраны в
-[product/09-quality.md](../../product/09-quality.md) и включаются
-в CI нового проекта.
+A rule is fit for use only if it can produce an unambiguous verdict. That is why
+each one has a "how it is checked" clause — a command or a query that gives
+yes/no without discussion. The checks are collected in
+[product/09-quality.md](../../product/09-quality.md) and wired into the new
+project's CI.
 
-**Нарушение любого правила блокирует слияние PR.** Отступление возможно только
-через ADR со статусом «Принято» — то есть компромисс допускается, но становится
-письменным, обоснованным и видимым, а не молчаливым.
+**Violating any rule blocks the merge of a PR.** A departure is possible only
+through an ADR with the status "Accepted" — that is, a compromise is allowed, but
+it becomes written down, justified and visible instead of silent.
 
 ---
 
 ## NC-01
 
-> **Функциональность без теста не существует.**
+> **Functionality without a test does not exist.**
 
-Код без автоматического теста не сливается. CI не имеет права собирать релиз с
-отключёнными тестами.
+Code without an automated test is not merged. CI has no right to build a release
+with tests disabled.
 
-- Минимальное покрытие ветвлений доменного слоя: **80 %**, порог проверяется в CI.
-- Каждый исправленный дефект сопровождается тестом, воспроизводящим его.
-- Каждый эндпойнт имеет как минимум один контрактный тест.
-- Финансовые расчёты покрываются табличными тестами с эталонными значениями.
+- Minimum branch coverage of the domain layer: **80%**, the threshold is checked
+  in CI.
+- Every fixed defect comes with a test that reproduces it.
+- Every endpoint has at least one contract test.
+- Financial calculations are covered by table-driven tests with reference values.
 
-**Как проверяется:** порог покрытия в CI; grep по конфигурации сборки на
-отключение тестов (`-x test`, `skipTests`, `--passWithNoTests`) даёт пусто.
+**How it is checked:** the coverage threshold in CI; a grep over the build
+configuration for test-disabling flags (`-x test`, `skipTests`,
+`--passWithNoTests`) returns nothing.
 
-**Отменяет:** [P-01](../00-context/02-pain-points.md#p-01-тестов-практически-нет).
+**Cancels:** [P-01](../00-context/02-pain-points.md#p-01-practically-no-tests).
 
 ---
 
 ## NC-02
 
-> **Домен не обращается к внутренностям другого домена.**
+> **A domain does not reach into another domain's internals.**
 
-Междоменное взаимодействие — только через публичный интерфейс домена или
-событие. Прямое внедрение репозитория/DAO чужого домена запрещено.
+Cross-domain interaction happens only through a domain's public interface or an
+event. Directly injecting another domain's repository/DAO is forbidden.
 
-**Как проверяется:** тест архитектурных правил (ArchUnit или аналог для
-выбранного стека), падающий на запрещённой зависимости. Правило описано один
-раз в [product/02-domains.md](../../product/02-domains.md) и исполняется
-машиной.
+**How it is checked:** an architecture-rule test (ArchUnit or an equivalent for
+the chosen stack) that fails on a forbidden dependency. The rule is described
+once in [product/02-domains.md](../../product/02-domains.md) and enforced by
+machine.
 
-**Отменяет:** [P-02](../00-context/02-pain-points.md#p-02-god-классы-и-полевая-инъекция) в части
-`ContractController`, внедряющего семь чужих доменов.
+**Cancels:** [P-02](../00-context/02-pain-points.md#p-02-god-classes-and-field-injection)
+in the part concerning `ContractController`, which injects seven foreign domains.
 
 ---
 
 ## NC-03
 
-> **Зависимости объявляются в конструкторе.**
+> **Dependencies are declared in the constructor.**
 
-Полевая инъекция запрещена. Зависимости неизменяемы. Объект должен собираться
-в тесте без контейнера внедрения зависимостей.
+Field injection is forbidden. Dependencies are immutable. An object must be
+constructible in a test without a dependency-injection container.
 
-**Как проверяется:** статический анализ — ноль полевых инъекций.
+**How it is checked:** static analysis — zero field injections.
 
-**Отменяет:** [P-02](../00-context/02-pain-points.md#p-02-god-классы-и-полевая-инъекция).
+**Cancels:** [P-02](../00-context/02-pain-points.md#p-02-god-classes-and-field-injection).
 
 ---
 
 ## NC-04
 
-> **Класс — до 400 строк, метод — до 50, зависимостей у класса — до 7.**
+> **A class — up to 400 lines, a method — up to 50, a class's dependencies — up
+> to 7.**
 
-Пороги подобраны так, чтобы отсечь текущие god-классы (7 598 строк, 51
-зависимость), но не мешать нормальной работе. Пороги — предмет калибровки на
-Фазе 1, не догма; но они существуют и проверяются машиной.
+The thresholds are chosen to cut off the current god classes (7,598 lines, 51
+dependencies) without getting in the way of normal work. The thresholds are
+subject to calibration in Phase 1, not dogma; but they exist and are checked by
+machine.
 
-**Как проверяется:** линтер, порог в CI.
+**How it is checked:** the linter, a threshold in CI.
 
-**Отменяет:** [P-02](../00-context/02-pain-points.md#p-02-god-классы-и-полевая-инъекция).
+**Cancels:** [P-02](../00-context/02-pain-points.md#p-02-god-classes-and-field-injection).
 
 ---
 
 ## NC-05
 
-> **Один способ доступа к данным на всю систему.**
+> **One way of accessing data across the whole system.**
 
-Выбирается один механизм (`[STACK]` — см. [ADR-0003](../02-decisions/ADR-0003-backend-stack.md)),
-и другого нет. Сырой SQL допускается только в явно выделенном слое запросов,
-только параметризованный, никогда — конкатенацией строк.
+One mechanism is chosen (`[STACK]` — see
+[ADR-0003](../02-decisions/ADR-0003-backend-stack.md)), and there is no other.
+Raw SQL is allowed only in an explicitly separated query layer, only
+parameterized, never through string concatenation.
 
-**Как проверяется:** grep по запрещённым конструкциям в CI; ревью новых
-зависимостей доступа к данным.
+**How it is checked:** a grep for the forbidden constructs in CI; review of new
+data-access dependencies.
 
-**Отменяет:** [P-03](../00-context/02-pain-points.md#p-03-четыре-способа-ходить-в-базу-одновременно).
+**Cancels:** [P-03](../00-context/02-pain-points.md#p-03-four-ways-to-reach-the-database-at-once).
 
 ---
 
 ## NC-06
 
-> **Один домен — одна реализация.**
+> **One domain — one implementation.**
 
-Вторую реализацию домена нельзя создать в принципе: домен существует в одном
-модуле, в одном месте, с одним владельцем. Новая функциональность добавляется
-внутрь существующего домена.
+A second implementation of a domain cannot be created in principle: a domain
+exists in one module, in one place, with one owner. New functionality is added
+inside the existing domain.
 
-**Как проверяется:** карта доменов в [product/02-domains.md](../../product/02-domains.md)
-— единственный источник истины; новый модуль появляется только через ADR.
+**How it is checked:** the domain map in
+[product/02-domains.md](../../product/02-domains.md) is the single source of
+truth; a new module appears only through an ADR.
 
-**Отменяет:** [P-04](../00-context/02-pain-points.md#p-04-домены-реализованы-дважды).
+**Cancels:** [P-04](../00-context/02-pain-points.md#p-04-domains-implemented-twice).
 
 ---
 
 ## NC-07
 
-> **В проде одно поколение системы.**
+> **One generation of the system in production.**
 
-После переезда легаси-контур выключается по расписанию, а не «когда-нибудь».
-Дата вывода из эксплуатации фиксируется до начала переезда
+After the cutover the legacy environment is switched off on a schedule, not
+"some day". The decommissioning date is fixed before the cutover starts
 ([transition/07-cutover.md](../../transition/07-cutover.md)).
 
-**Как проверяется:** [Фаза 5](../../transition/plan/06-phase-5-decommission.md) имеет
-критерий завершения «легаси-контур остановлен и удалён», и проект не считается
-завершённым раньше.
+**How it is checked:** [Phase 5](../../transition/plan/06-phase-5-decommission.md)
+has the completion criterion "the legacy environment is stopped and deleted", and
+the project does not count as finished before that.
 
-**Отменяет:** [P-05](../00-context/02-pain-points.md#p-05-три-поколения-бэкенда-в-проде-одновременно).
+**Cancels:** [P-05](../00-context/02-pain-points.md#p-05-three-backend-generations-in-production-at-once).
 
 ---
 
 ## NC-08
 
-> **Сборка воспроизводима на чистой машине.**
+> **The build is reproducible on a clean machine.**
 
-`git clone` + одна команда = собранный артефакт. Никаких файлов из локальных
-папок, никаких ручных шагов, никаких «сначала поставь драйвер в локальный
-репозиторий». Версии всех зависимостей зафиксированы (lock-файл).
+`git clone` + one command = a built artefact. No files from local folders, no
+manual steps, no "first install the driver into your local repository". The
+versions of all dependencies are pinned (a lock file).
 
-**Как проверяется:** CI собирает проект в чистом контейнере без кэша; это и есть
-проверка.
+**How it is checked:** CI builds the project in a clean container with no cache;
+that is the check.
 
-**Отменяет:** [P-06](../00-context/02-pain-points.md#p-06-зависимости-вне-поддержки-сборка-невоспроизводима).
+**Cancels:** [P-06](../00-context/02-pain-points.md#p-06-dependencies-out-of-support-the-build-is-not-reproducible).
 
 ---
 
 ## NC-09
 
-> **Все зависимости — в поддержке.**
+> **All dependencies are in support.**
 
-Ни одной зависимости вне поддержки, ни одной предрелизной версии в проде.
-Обновление зависимостей — регулярная плановая работа, а не разовая.
+Not a single dependency out of support, not a single pre-release version in
+production. Updating dependencies is regular planned work, not a one-off.
 
-- Автоматическое сканирование уязвимостей на каждом PR, блокирующее при
-  критических находках.
-- Автообновления зависимостей с прогоном тестов.
-- Одна библиотека на задачу — см. NC-14.
+- Automated vulnerability scanning on every PR, blocking on critical findings.
+- Automated dependency updates with a test run.
+- One library per job — see NC-14.
 
-**Как проверяется:** сканер зависимостей в CI; отчёт об устаревании собирается
-еженедельно.
+**How it is checked:** a dependency scanner in CI; a staleness report is
+collected weekly.
 
-**Отменяет:** [P-06](../00-context/02-pain-points.md#p-06-зависимости-вне-поддержки-сборка-невоспроизводима).
+**Cancels:** [P-06](../00-context/02-pain-points.md#p-06-dependencies-out-of-support-the-build-is-not-reproducible).
 
 ---
 
 ## NC-10
 
-> **Диагностика — структурированные журналы, метрики и трассировка.**
+> **Diagnostics means structured logs, metrics and tracing.**
 
-`System.out`, `printStackTrace` и печать SQL в проде запрещены. Каждый журнальный
-запись — событие с идентификатором запроса, идентификатором пользователя и
-контекстом. Персональные данные и секреты в журналы не попадают.
+`System.out`, `printStackTrace` and printing SQL in production are forbidden.
+Every log record is an event with a request identifier, a user identifier and
+context. Personal data and secrets never reach the logs.
 
-**Как проверяется:** grep в CI на `System.out` / `printStackTrace` / `console.log`;
-проверка конфигурации на `show-sql` в производственном профиле.
+**How it is checked:** a grep in CI for `System.out` / `printStackTrace` /
+`console.log`; a configuration check for `show-sql` in the production profile.
 
-**Отменяет:** [P-07](../00-context/02-pain-points.md#p-07-диагностика-через-systemout).
+**Cancels:** [P-07](../00-context/02-pain-points.md#p-07-diagnostics-through-systemout).
 
 ---
 
 ## NC-11
 
-> **Один артефакт для всех контуров, конфигурация — снаружи.**
+> **One artefact for all environments, configuration from outside.**
 
-Тот же образ, который прошёл stage, уезжает в prod. Ни одного адреса, порта,
-имени хоста или ключа в исходниках и в собранном бандле. Фронтенд получает
-конфигурацию в рантайме, а не на сборке.
+The same image that passed stage goes to prod. Not a single address, port, host
+name or key in the sources or in the built bundle. The frontend receives its
+configuration at runtime, not at build time.
 
-**Как проверяется:** grep в CI на IP-адреса и известные имена хостов в
-исходниках и в собранном бандле; сравнение дайджеста образа между контурами.
+**How it is checked:** a grep in CI for IP addresses and known host names in the
+sources and in the built bundle; comparison of the image digest between
+environments.
 
-**Отменяет:** [P-08](../00-context/02-pain-points.md#p-08-конфигурация-окружений-зашита-в-код).
+**Cancels:** [P-08](../00-context/02-pain-points.md#p-08-environment-configuration-is-baked-into-the-code).
 
 ---
 
 ## NC-12
 
-> **Одна модель аутентификации и авторизации на всю систему.**
+> **One authentication and authorization model across the whole system.**
 
-Одна библиотека токенов, одна точка принятия решения о доступе, декларативные
-права. Проверка прав не пишется руками в контроллере.
+One token library, one access-decision point, declarative permissions. A
+permission check is not written by hand in a controller.
 
-**Как проверяется:** тест, обходящий все эндпойнты и проверяющий, что каждый
-объявляет требуемое право; ноль эндпойнтов без объявленного права.
+**How it is checked:** a test that walks all endpoints and verifies that each
+declares the permission it requires; zero endpoints without a declared
+permission.
 
-**Отменяет:** [P-09](../00-context/02-pain-points.md#p-09-авторизация-склеена-из-трёх-схем).
+**Cancels:** [P-09](../00-context/02-pain-points.md#p-09-authorization-is-glued-together-from-three-schemes).
 
 ---
 
 ## NC-13
 
-> **В прод попадает только то, что прошло пайплайн.**
+> **Only what has passed the pipeline reaches production.**
 
-Ручной деплой невозможен технически, а не запрещён на словах. Пайплайн собирает
-и выкатывает **все** компоненты, а не один.
+Manual deployment is technically impossible, not merely forbidden in words. The
+pipeline builds and ships **all** components, not one.
 
-**Как проверяется:** права на изменение окружения есть только у сервисной
-учётной записи CI; аудит развёртываний.
+**How it is checked:** only the CI service account holds permissions to change an
+environment; a deployment audit.
 
-**Отменяет:** [P-10](../00-context/02-pain-points.md#p-10-cicd-собирает-и-деплоит-одну-седьмую-системы).
+**Cancels:** [P-10](../00-context/02-pain-points.md#p-10-cicd-builds-and-deploys-one-seventh-of-the-system).
 
 ---
 
 ## NC-14
 
-> **Одна задача — одна библиотека.**
+> **One job — one library.**
 
-Таблицы, формы, даты, графики, выгрузка в Excel, работа с деньгами — по одной
-реализации на систему, выбранной осознанно и зафиксированной. Вторая библиотека
-той же категории добавляется только через ADR.
+Tables, forms, dates, charts, Excel export, money handling — one implementation
+each per system, chosen deliberately and recorded. A second library in the same
+category is added only through an ADR.
 
-**Как проверяется:** реестр разрешённых библиотек; CI падает при появлении
-зависимости вне реестра.
+**How it is checked:** a registry of allowed libraries; CI fails when a
+dependency outside the registry appears.
 
-**Отменяет:** [P-11](../00-context/02-pain-points.md#p-11-фронтенд--три-библиотеки-на-каждую-задачу).
+**Cancels:** [P-11](../00-context/02-pain-points.md#p-11-the-frontend--three-libraries-for-every-job).
 
 ---
 
 ## NC-15
 
-> **В репозитории только исходники.**
+> **Only sources in the repository.**
 
-Журналы, дампы, сборочные артефакты, локальные jar-файлы, скрипты запуска
-конкретной машины — вне репозитория.
+Logs, dumps, build artefacts, local jar files, start-up scripts for one specific
+machine — all outside the repository.
 
-**Как проверяется:** `.gitignore` + проверка в CI на запрещённые расширения и
-размер файлов.
+**How it is checked:** `.gitignore` + a CI check for forbidden extensions and
+file sizes.
 
-**Отменяет:** [P-12](../00-context/02-pain-points.md#p-12-мусор-в-репозиториях).
+**Cancels:** [P-12](../00-context/02-pain-points.md#p-12-junk-in-the-repositories).
 
 ---
 
-## Правило о правилах
+## The rule about the rules
 
-Пятнадцать правил выше — это цена, которую проект платит за слово
-«переписывание». Если по ходу работы окажется, что правило мешает, есть ровно
-два допустимых действия:
+The fifteen rules above are the price the project pays for the word "rewrite". If
+it turns out during the work that a rule gets in the way, there are exactly two
+permissible actions:
 
-1. изменить правило через PR к этому документу с обоснованием;
-2. записать точечное отступление в ADR со статусом «Принято», указав срок и
-   условия возврата.
+1. change the rule through a PR to this document, with a rationale;
+2. record a specific departure in an ADR with the status "Accepted", stating the
+   deadline and the conditions for returning to the rule.
 
-Недопустимо: молча нарушить и не заметить. Именно так текущая система пришла к
-своему состоянию.
+What is not permissible: silently violating it and not noticing. That is exactly
+how the current system arrived at its present state.

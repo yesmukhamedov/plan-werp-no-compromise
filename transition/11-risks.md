@@ -1,223 +1,240 @@
 ---
 id: TRANS-11
-title: Реестр рисков
+title: Risk register
 status: draft
 reviewed: 2026-09-03
 ---
 
-# Реестр рисков
+# Risk register
 
-Пересматривается ежемесячно ([transition/plan/00-roadmap.md](plan/00-roadmap.md#ритм)).
-У каждого риска есть владелец, признак срабатывания и заранее определённое
-действие.
+Reviewed monthly
+([transition/plan/00-roadmap.md](plan/00-roadmap.md#cadence)). Every risk has an
+owner, a trigger sign and a predefined action.
 
-**Риск без признака срабатывания — не риск, а тревога.** Признак должен быть
-наблюдаемым, чтобы риск обнаружили, а не почувствовали.
+**A risk without a trigger sign is not a risk but an anxiety.** The sign must be
+observable, so that the risk gets detected rather than sensed.
 
-Шкала: вероятность и влияние — низкая / средняя / высокая.
+The scale: probability and impact — low / medium / high.
 
-## Сводка
+## Summary
 
-| # | Риск | Вер. | Влияние | Статус |
+| # | Risk | Prob. | Impact | Status |
 |---|---|---|---|---|
-| [R-01](#r-01) | Проект растягивается и теряет поддержку | высокая | критическое | открыт |
-| [R-02](#r-02) | Движущаяся цель: легаси развивается быстрее | высокая | критическое | открыт |
-| [R-03](#r-03) | Неудачный переезд, откат невозможен | средняя | критическое | открыт |
-| [R-04](#r-04) | Качество данных хуже ожидаемого | высокая | высокое | открыт |
-| [R-05](#r-05) | Скрытая бизнес-логика в БД | средняя | высокое | открыт |
-| [R-06](#r-06) | Объём `werp_jsf` недооценён | средняя | высокое | открыт |
-| [R-07](#r-07) | Решение по стеку не принято к G1 | средняя | высокое | открыт |
-| [R-08](#r-08) | Потеря носителей знания | средняя | высокое | открыт |
-| [R-09](#r-09) | Пользователи отвергают новую систему | средняя | высокое | открыт |
-| [R-10](#r-10) | Расхождение дублирующихся доменов | высокая | среднее | открыт |
-| [R-11](#r-11) | Правила «без компромиссов» ослабляются под давлением | высокая | высокое | открыт |
-| [R-12](#r-12) | Финансовые расчёты не сходятся | средняя | критическое | открыт |
-| [R-13](#r-13) | Миграция не укладывается в окно | средняя | высокое | открыт |
-| [R-14](#r-14) | Отчёты недооценены | высокая | среднее | открыт |
+| [R-01](#r-01) | The project stretches out and loses support | high | critical | open |
+| [R-02](#r-02) | A moving target: the legacy develops faster | high | critical | open |
+| [R-03](#r-03) | A failed cutover with rollback impossible | medium | critical | open |
+| [R-04](#r-04) | Data quality worse than expected | high | high | open |
+| [R-05](#r-05) | Hidden business logic in the database | — | — | **closed** |
+| [R-06](#r-06) | The volume of `werp_jsf` is underestimated | medium | high | open |
+| [R-07](#r-07) | The stack decision is not taken by G1 | medium | high | open |
+| [R-08](#r-08) | Loss of the people who hold the knowledge | medium | high | open |
+| [R-09](#r-09) | Users reject the new system | medium | high | open |
+| [R-10](#r-10) | Divergence between duplicated domains | high | medium | open |
+| [R-11](#r-11) | The "no compromise" rules are weakened under pressure | high | high | open |
+| [R-12](#r-12) | The financial calculations do not reconcile | medium | critical | open |
+| [R-13](#r-13) | The migration does not fit inside the window | medium | high | open |
+| [R-14](#r-14) | Reports are underestimated | high | medium | open |
 
 ---
 
 ## R-01
 
-**Проект растягивается и теряет поддержку бизнеса.**
+**The project stretches out and loses the business's support.**
 
-Оценка 135–239 ЧМ; при big bang бизнес не видит результата до самого конца.
-Через год без видимого результата поддержка проекта становится хрупкой.
+The estimate is 135–239 PM; under a big bang the business sees no result until
+the very end. After a year with no visible result, support for the project
+becomes fragile.
 
-- **Признак:** отклонение факта от оценки более 30 % по итогам фазы;
-  сокращение выделенных ресурсов; отмена демонстраций.
-- **Действие:** демонстрации раз в две недели с первого экрана — единственный
-  видимый результат; пересчёт оценок на каждом гейте; еженедельный публичный
-  отчёт по паритету как объективный индикатор прогресса.
-- **Если сработал:** пересмотр объёма — какие домены можно не переносить.
-  Пересмотр стратегии на strangler fig ([ADR-0001](../docs/02-decisions/ADR-0001-strategy-big-bang.md))
-  на этом этапе уже дороже, чем довести начатое.
+- **Sign:** the actuals deviate from the estimate by more than 30% at the end of
+  a phase; a reduction in the allocated resources; demonstrations being
+  cancelled.
+- **Action:** demonstrations every two weeks from the very first screen — the
+  only visible result; recalculating the estimates at every gate; a weekly public
+  parity report as an objective indicator of progress.
+- **If it triggers:** revise the scope — which domains can be left behind.
+  Switching the strategy to a strangler fig
+  ([ADR-0001](../docs/02-decisions/ADR-0001-strategy-big-bang.md)) at that stage
+  is already more expensive than finishing what was started.
 
 ## R-02
 
-**Движущаяся цель: легаси развивается быстрее, чем новая система его догоняет.**
+**A moving target: the legacy develops faster than the new system catches up.**
 
-Главная причина провала больших переписываний.
+The main cause of failure in large rewrites.
 
-- **Признак:** delta backlog растёт месяц к месяцу и не сокращается.
-- **Действие:** [политика заморозки](09-freeze-policy.md);
-  правило «изменение в легаси = задача в delta backlog»; ежемесячная
-  ретроспектива по дельте.
-- **Если сработал:** ужесточение уровня заморозки; пересмотр срока проекта.
-  Множество исключений — сигнал, что заморозка введена рано или проект идёт
-  слишком долго, а не что нужны новые запреты.
+- **Sign:** the delta backlog grows month over month and does not shrink.
+- **Action:** the [freeze policy](09-freeze-policy.md); the rule "a change in the
+  legacy = a work item in the delta backlog"; a monthly delta retrospective.
+- **If it triggers:** tighten the freeze level; revise the project's timeline. A
+  multitude of exceptions is a signal that the freeze came too early or that the
+  project is running too long, not that new prohibitions are needed.
 
 ## R-03
 
-**Неудачный переезд, откат невозможен или недопустимо дорог.**
+**A failed cutover, with rollback impossible or unacceptably expensive.**
 
-Сценарий О3 ([transition/08-rollback.md](08-rollback.md#о3-откат-в-период-стабилизации))
-не имеет полного технического решения.
+Scenario O3
+([transition/08-rollback.md](08-rollback.md#o3-rollback-during-stabilization))
+has no complete technical solution.
 
-- **Признак:** проваленные репетиции; расхождения в теневом прогоне перед G2;
-  давление на планку допуска.
-- **Действие:** формальный чек-лист допуска, подписываемый поимённо;
-  четыре репетиции; точка принятия решения с дешёвым откатом; легаси в резерве
-  весь срок стабилизации.
-- **Принят как остаточный риск** — это плата за [ADR-0001](../docs/02-decisions/ADR-0001-strategy-big-bang.md).
+- **Sign:** failed rehearsals; divergences in the shadow run before G2; pressure
+  on the admission bar.
+- **Action:** a formal admission checklist signed off by name; four rehearsals; a
+  decision point with a cheap rollback; the legacy held in reserve for the whole
+  stabilization period.
+- **Accepted as a residual risk** — that is the price of
+  [ADR-0001](../docs/02-decisions/ADR-0001-strategy-big-bang.md).
 
 ## R-04
 
-**Качество промышленных данных хуже ожидаемого.**
+**The quality of the production data is worse than expected.**
 
-12 лет накопления: нарушенная целостность, дубликаты, некорректные значения.
+12 years of accumulation: broken integrity, duplicates, invalid values.
 
-- **Признак:** большой журнал отбраковки на репетиции Р1.
-- **Действие:** ожидать этого как нормального результата; заложить время;
-  решения по каждому классу проблем принимает бизнес письменно; очистка
-  выполняется **в легаси до переезда**.
-- **Если сработал:** очистка становится отдельным треком с собственным
-  владельцем; возможен перенос переезда.
+- **Sign:** a large rejection log at rehearsal R1.
+- **Action:** expect this as a normal result; budget time for it; decisions on
+  each class of problem are taken by the business in writing; cleansing is
+  performed **in the legacy before the cutover**.
+- **If it triggers:** cleansing becomes a separate track with an owner of its
+  own; the cutover may be postponed.
 
 ## R-05
 
-**Бизнес-логика в БД, не видимая из кода приложения.**
+**Business logic in the database, invisible from the application code.**
 
-Пакеты PL/SQL, триггеры, задания планировщика БД. Не оценена
-([OQ-007](12-open-questions.md)).
+**Closed on 2026-09-03 by measurement.** The schema was read object by object
+([map/00-source-inventory.md](map/00-source-inventory.md#4-objects-other-than-tables)):
+0 packages, 2 functions, 6 procedures, 3 views, 43 triggers — and 41 of the
+triggers do little but assign a primary key from a sequence. One procedure holds a rule
+worth moving into a domain scenario; two are unidentified.
 
-- **Признак:** обнаружение при инвентаризации схемы ([EPIC-003](../backlog/EPIC-003-schema-inventory.md)).
-- **Действие:** инвентаризация объектов БД — обязательная часть Фазы 0, до
-  оценок.
-- **Если сработал:** пересчёт оценки Фазы 2; логика переносится в прикладной
-  слой, а не в PostgreSQL.
+The Phase 2 estimate does not need recalculating for this reason. What replaced
+the risk is a smaller and much more specific one: **two procedures whose caller
+is unknown** ([INV-R3](map/00-source-inventory.md#6-risks-that-follow-from-the-inventory)).
+
+A different database risk did materialize and is tracked separately: the source
+schema has 73 secondary indexes for 148 million rows, so the target index set
+has to be designed from scratch rather than carried over
+([INV-R5](map/00-source-inventory.md#6-risks-that-follow-from-the-inventory)).
 
 ## R-06
 
-**Объём функциональности, живущей только в `werp_jsf`, недооценён.**
+**The volume of functionality living only in `werp_jsf` is underestimated.**
 
-233 913 строк легаси в проде; 33 ссылки из React. Сколько там уникального —
-неизвестно ([OQ-012](12-open-questions.md)).
+233,913 lines of legacy in production; 33 links from React. How much of it is
+unique is unknown ([OQ-012](12-open-questions.md)).
 
-- **Признак:** результат инвентаризации в Фазе 0.
-- **Действие:** закрыть OQ-012 до G0 — это условие гейта.
-- **Если сработал:** пересчёт оценки; возможно, отдельная волна в Фазе 2.
+- **Sign:** the result of the Phase 0 inventory.
+- **Action:** close OQ-012 before G0 — that is a condition of the gate.
+- **If it triggers:** recalculate the estimate; possibly a separate wave in
+  Phase 2.
 
 ## R-07
 
-**Решение по стеку не принято к гейту G1.**
+**The stack decision is not taken by gate G1.**
 
-- **Признак:** приближение G1 без заполненной матрицы и прототипов.
-- **Действие:** прототипы на двух кандидатах — работа Фазы 0 с назначенным
-  владельцем и сроком.
-- **Если сработал:** **проект встаёт.** Это осознанный механизм
-  ([ADR-0003](../docs/02-decisions/ADR-0003-backend-stack.md#последствия-откладывания)):
-  он не даёт начать разработку при нерешённом фундаментальном вопросе.
+- **Sign:** G1 approaching with the matrix unfilled and no prototypes.
+- **Action:** prototypes on two candidates — Phase 0 work with an assigned owner
+  and a deadline.
+- **If it triggers:** **the project stops.** That is a deliberate mechanism
+  ([ADR-0003](../docs/02-decisions/ADR-0003-backend-stack.md#consequences-of-deferring)):
+  it prevents development from starting while a fundamental question is
+  unresolved.
 
 ## R-08
 
-**Потеря носителей знания о текущей системе.**
+**Loss of the people who hold the knowledge about the current system.**
 
-Часть поведения не выводится из кода.
+Some behaviour cannot be derived from the code.
 
-- **Признак:** уход ключевого сотрудника; вопросы к системе остаются без ответа
-  дольше недели.
-- **Действие:** приоритет Фазы 0 — извлечь знание в характеризационные тесты и
-  реестр сценариев, пока носители доступны; забронировать их время заранее.
-- **Если сработал:** восстановление поведения по коду и данным — дорого и не
-  всегда возможно.
+- **Sign:** a key employee leaves; questions about the system stay unanswered for
+  more than a week.
+- **Action:** the Phase 0 priority is to extract the knowledge into
+  characterization tests and the scenario registry while its holders are
+  available; book their time in advance.
+- **If it triggers:** reconstructing behaviour from the code and the data is
+  expensive and not always possible.
 
 ## R-09
 
-**Пользователи отвергают новую систему после переезда.**
+**Users reject the new system after the cutover.**
 
-Новый интерфейс, изменённые сценарии, потеря привычных обходных путей.
+A new interface, changed scenarios, the loss of familiar workarounds.
 
-- **Признак:** негативная реакция на демонстрациях; низкая посещаемость
-  демонстраций; жалобы при обучении.
-- **Действие:** демонстрации раз в две недели с первого экрана; ранняя приёмка;
-  обучение до окончания разработки; сохранение привычных сценариев там, где нет
-  причин их менять.
-- **Если сработал:** после переезда исправлять дорого — именно поэтому обратная
-  связь собирается всё время проекта.
+- **Sign:** a negative reaction at the demonstrations; low attendance at the
+  demonstrations; complaints during training.
+- **Action:** demonstrations every two weeks from the very first screen; early
+  acceptance; training before development ends; preserving the familiar scenarios
+  wherever there is no reason to change them.
+- **If it triggers:** fixing this after the cutover is expensive — which is
+  exactly why feedback is collected throughout the project.
 
 ## R-10
 
-**Расхождение дублирующихся реализаций доменов.**
+**Divergence between duplicated implementations of a domain.**
 
-CRM реализован дважды на разных СУБД; справочники — дважды; сервис — дважды.
-Расхождения обнаруживаются только при сведении.
+CRM is implemented twice on different DBMSs; reference data twice; service twice.
+The divergences are discovered only when they are consolidated.
 
-- **Признак:** при сведении домена данные или логика двух реализаций не
-  совпадают.
-- **Действие:** выбор источника истины — решение владельца домена, принятое в
-  Фазе 0 ([OQ-002](12-open-questions.md)); закладывать время на разбор в Фазе 2.
+- **Sign:** when consolidating a domain, the data or the logic of the two
+  implementations do not match.
+- **Action:** choosing the source of truth is the domain owner's decision, taken
+  in Phase 0 ([OQ-002](12-open-questions.md)); budget time for resolving it in
+  Phase 2.
 
 ## R-11
 
-**Правила «без компромиссов» ослабляются под давлением сроков.**
+**The "no compromise" rules are weakened under schedule pressure.**
 
-Самый вероятный и самый недооценённый риск: именно так текущая система пришла к
-своему состоянию.
+The most likely and most underestimated risk: that is exactly how the current
+system arrived at its present state.
 
-- **Признак:** просьбы «временно» снизить порог покрытия, отключить проверку,
-  слить без ревью; рост числа ADR-исключений; отключение проверок в CI.
-- **Действие:** правила исполняются машиной, а не людьми
-  ([product/09-quality.md](../product/09-quality.md#что-проверяется-автоматически));
-  отступление возможно только через ADR — то есть письменно и видимо.
-- **Если сработал:** проект теряет смысл. Система без правил через 12 лет
-  придёт туда же, откуда мы уходим.
+- **Sign:** requests to "temporarily" lower the coverage threshold, switch a
+  check off, merge without review; a growing number of ADR exceptions; checks
+  being disabled in CI.
+- **Action:** the rules are enforced by machine, not by people
+  ([product/09-quality.md](../product/09-quality.md#what-is-checked-automatically));
+  a departure is possible only through an ADR — that is, in writing and visibly.
+- **If it triggers:** the project loses its point. A system without rules will,
+  in 12 years, arrive at exactly the place we are leaving.
 
 ## R-12
 
-**Финансовые расчёты новой системы не сходятся со старой.**
+**The new system's financial calculations do not reconcile with the old one's.**
 
-Домен D5 — 62 776 строк; расчёт вознаграждений — 7 598 строк в одном классе,
-почти наверняка с накопленными частными случаями.
+Domain D5 is 62,776 lines; compensation calculation is 7,598 lines in a single
+class, almost certainly with accumulated special cases.
 
-- **Признак:** ненулевые расхождения в сценарном паритете.
-- **Действие:** характеризационные тесты в Фазе 0 — обязательное условие начала
-  D5 и D6; нулевой допуск; сверка до копейки.
-- **Если сработал:** переезд не состоится — это блокирующее условие допуска.
+- **Sign:** non-zero divergences in the scenario parity.
+- **Action:** characterization tests in Phase 0 are a mandatory condition for
+  starting D5 and D6; zero tolerance; reconciliation to the cent.
+- **If it triggers:** the cutover does not happen — it is a blocking admission
+  condition.
 
 ## R-13
 
-**Миграция данных не укладывается в окно переезда.**
+**The data migration does not fit inside the cutover window.**
 
-- **Признак:** измерение времени на репетициях Р1–Р2.
-- **Действие:** измерять с первой репетиции, а не с последней; запас ×2.
-- **Если сработал:** смена стратегии переезда через ADR — предварительная
-  загрузка исторических данных, поэтапный перенос. Требует времени, поэтому
-  обнаружить нужно рано.
+- **Sign:** the timing measured at rehearsals R1–R2.
+- **Action:** measure from the first rehearsal, not the last; ×2 headroom.
+- **If it triggers:** a change of cutover strategy through an ADR — preloading
+  historical data, a staged transfer. That takes time, so it has to be detected
+  early.
 
 ## R-14
 
-**Трудоёмкость отчётов недооценена.**
+**The effort for reports is underestimated.**
 
-Отчёты рассеяны по god-классам (5 366 строк в одном отчётном контроллере), их
-число и живость неизвестны.
+The reports are scattered across god classes (5,366 lines in a single reporting
+controller), and their number and liveness are unknown.
 
-- **Признак:** фактическая трудоёмкость первых пяти отчётов выше оценки.
-- **Действие:** инвентаризация с отсевом мёртвых ([EPIC-007](../backlog/EPIC-007-reports-inventory.md));
-  оценка по первым пяти с экстраполяцией и пересчётом плана.
+- **Sign:** the actual effort for the first five reports exceeds the estimate.
+- **Action:** an inventory with the dead ones weeded out
+  ([EPIC-007](../backlog/EPIC-007-reports-inventory.md)); an estimate from the
+  first five, extrapolated, with the plan recalculated.
 
 ---
 
-## Закрытые риски
+## Closed risks
 
-Пока нет.
+None yet.

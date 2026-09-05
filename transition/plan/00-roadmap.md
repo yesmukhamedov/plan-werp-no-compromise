@@ -1,149 +1,162 @@
 ---
 id: TRANS-PLAN-00
-title: Дорожная карта
+title: Roadmap
 status: draft
 ---
 
-# Дорожная карта
+# Roadmap
 
-Шесть фаз и пять гейтов. Календарные даты не проставлены сознательно: они
-появятся после подтверждения состава команды ([OQ-001](../12-open-questions.md))
-и выбора стека ([ADR-0003](../../docs/02-decisions/ADR-0003-backend-stack.md)). До этого
-момента оценки даны в человеко-месяцах — [07-estimates.md](../10-estimates.md).
+Six phases and five gates. Calendar dates are deliberately left out: they will
+appear once the team composition is confirmed
+([OQ-001](../12-open-questions.md)) and the stack is chosen
+([ADR-0003](../../docs/02-decisions/ADR-0003-backend-stack.md)). Until then the
+estimates are given in person-months —
+[07-estimates.md](../10-estimates.md).
 
-## Обзор
+## Overview
 
 ```
-Фаза 0          Фаза 1        Фаза 2              Фаза 3          Фаза 4        Фаза 5
-Основание   →   Платформа  →  Домены          →   Фронтенд    →   Паритет   →   Вывод
-                                                                   и переезд     легаси
+Phase 0         Phase 1       Phase 2             Phase 3         Phase 4       Phase 5
+Foundation  →   Platform   →  Domains         →   Frontend    →   Parity    →   Legacy
+                                                                  and cutover   retirement
    │              │             │                   │               │             │
    G0             G1            │                   │              G2            G3            G4
-контракты      стек и        ─────── параллельно ──────           готовность   переезд   легаси
-и данные      платформа                                           к переезду   выполнен  остановлен
-              готовы
+contracts      stack and    ─────── in parallel ──────            readiness    cutover   legacy
+and data       platform                                           for cutover   done      stopped
+               ready
 ```
 
-Фазы 2 и 3 идут **параллельно** — это возможно только благодаря contract-first
-([ADR-0005](../../docs/02-decisions/ADR-0005-contract-first-api.md)): фронтенд работает
-против сгенерированной заглушки, не дожидаясь бэкенда.
+Phases 2 and 3 run **in parallel** — which is possible only thanks to
+contract-first
+([ADR-0005](../../docs/02-decisions/ADR-0005-contract-first-api.md)): the
+frontend works against a generated stub without waiting for the backend.
 
-## Фазы
+## Phases
 
-| Фаза | Название | Результат | Документ |
+| Phase | Name | Result | Document |
 |---|---|---|---|
-| 0 | Основание | известно, что именно мы обязаны воспроизвести | [01-phase-0-foundation.md](01-phase-0-foundation.md) |
-| 1 | Платформа | есть каркас, на котором можно писать домены | [02-phase-1-platform.md](02-phase-1-platform.md) |
-| 2 | Домены | вся бизнес-логика перенесена | [03-phase-2-domains.md](03-phase-2-domains.md) |
-| 3 | Фронтенд | все экраны реализованы | [04-phase-3-frontend.md](04-phase-3-frontend.md) |
-| 4 | Паритет и переезд | система работает в проде | [05-phase-4-parity-and-cutover.md](05-phase-4-parity-and-cutover.md) |
-| 5 | Вывод легаси | старых систем не существует | [06-phase-5-decommission.md](06-phase-5-decommission.md) |
+| 0 | Foundation | we know exactly what we are obliged to reproduce | [01-phase-0-foundation.md](01-phase-0-foundation.md) |
+| 1 | Platform | there is a skeleton on which domains can be written | [02-phase-1-platform.md](02-phase-1-platform.md) |
+| 2 | Domains | all the business logic has been carried over | [03-phase-2-domains.md](03-phase-2-domains.md) |
+| 3 | Frontend | all the screens are implemented | [04-phase-3-frontend.md](04-phase-3-frontend.md) |
+| 4 | Parity and cutover | the system runs in production | [05-phase-4-parity-and-cutover.md](05-phase-4-parity-and-cutover.md) |
+| 5 | Legacy retirement | the old systems do not exist | [06-phase-5-decommission.md](06-phase-5-decommission.md) |
 
-## Гейты
+## Gates
 
-Гейт — точка, которую нельзя пройти, не выполнив условия. Условия проверяются
-формально; ответственный ставит подпись. Гейт, который «в целом пройден», не
-пройден.
+A gate is a point that cannot be passed without satisfying its conditions. The
+conditions are checked formally; the person responsible signs off. A gate that is
+"broadly passed" is not passed.
 
-### G0 — конец Фазы 0
+### G0 — end of Phase 0
 
-Нельзя начинать строить, не зная, что именно строим.
+You cannot start building without knowing exactly what you are building.
 
-- [ ] Контракт текущего API описан формально ([EPIC-002](../../backlog/EPIC-002-contract-inventory.md))
-- [ ] Схема БД инвентаризована, по каждой таблице принято решение ([EPIC-003](../../backlog/EPIC-003-schema-inventory.md))
-- [ ] Реестр сценариев составлен ([EPIC-011](../../backlog/EPIC-011-scenario-registry.md))
-- [ ] Права и роли инвентаризованы ([EPIC-006](../../backlog/EPIC-006-permissions-inventory.md))
-- [ ] Отчёты инвентаризованы, мёртвые отсеяны ([EPIC-007](../../backlog/EPIC-007-reports-inventory.md))
-- [ ] Базовые показатели текущей системы измерены ([EPIC-009](../../backlog/EPIC-009-baseline-measurement.md))
-- [ ] Карта доменов подтверждена бизнесом ([product/02-domains.md](../../product/02-domains.md#что-нужно-подтвердить-с-бизнесом-до-g1))
-- [ ] ADR-0005 и ADR-0007 приняты
-- [ ] Закрыты OQ-001, OQ-002, OQ-004, OQ-012
-- [ ] Состав команды подтверждён
+- [ ] The current API contract is described formally
+      ([EPIC-002](../../backlog/EPIC-002-contract-inventory.md))
+- [ ] The database schema is inventoried and a decision is taken on every table
+      ([EPIC-003](../../backlog/EPIC-003-schema-inventory.md))
+- [ ] The scenario registry is assembled
+      ([EPIC-011](../../backlog/EPIC-011-scenario-registry.md))
+- [ ] Permissions and roles are inventoried
+      ([EPIC-006](../../backlog/EPIC-006-permissions-inventory.md))
+- [ ] Reports are inventoried and the dead ones weeded out
+      ([EPIC-007](../../backlog/EPIC-007-reports-inventory.md))
+- [ ] The current system's baseline figures are measured
+      ([EPIC-009](../../backlog/EPIC-009-baseline-measurement.md))
+- [ ] The domain map is confirmed by the business
+      ([product/02-domains.md](../../product/02-domains.md#what-must-be-confirmed-with-the-business-before-g1))
+- [ ] ADR-0005 and ADR-0007 are accepted
+- [ ] OQ-001, OQ-002, OQ-004, OQ-012 are closed
+- [ ] The team composition is confirmed
 
-### G1 — конец Фазы 1
+### G1 — end of Phase 1
 
-Нельзя писать 13 доменов на невыбранном стеке и несуществующей платформе.
+You cannot write 13 domains on an unchosen stack and a non-existent platform.
 
-- [ ] **ADR-0003 принят** — стек выбран
-- [ ] ADR-0004, 0006, 0008, 0010 приняты
-- [ ] Платформа готова: доступ, аудит, отчёты, файлы, уведомления, фоновые
-      задачи, наблюдаемость
-- [ ] CI/CD работает: сборка, тесты, качество, безопасность, развёртывание
-- [ ] Тест архитектурных правил написан и падает на нарушении границ
-- [ ] Один эталонный домен реализован от базы до экрана — как образец для
-      остальных
-- [ ] Предпродуктивный контур с копией промышленных данных работает
-- [ ] Теневой прогон технически запущен
+- [ ] **ADR-0003 is accepted** — the stack is chosen
+- [ ] ADR-0004, 0006, 0008, 0010 are accepted
+- [ ] The platform is ready: access, audit, reports, files, notifications,
+      background jobs, observability
+- [ ] CI/CD works: build, tests, quality, security, deployment
+- [ ] The architecture-rule test is written and fails on a boundary violation
+- [ ] One reference domain is implemented from the database to the screen — as
+      the model for the rest
+- [ ] The pre-production environment with a copy of production data is running
+- [ ] The shadow run is technically up
 
-### G2 — готовность к переезду
+### G2 — readiness for the cutover
 
-- [ ] DoD всех доменов выполнен
-- [ ] Все экраны реализованы, приёмка пользователями пройдена
-- [ ] Теневой прогон: 30 дней без неразобранных расхождений
-- [ ] Расхождение финансовых расчётов — ноль
-- [ ] Репетиции Р3 и Р4 пройдены подряд
-- [ ] Нагрузочные испытания при ×3 от пика пройдены
-- [ ] Delta backlog пуст
-- [ ] Полный чек-лист допуска ([transition/07-cutover.md](../07-cutover.md#условия-допуска-к-переезду))
+- [ ] The Domain DoD is satisfied for all domains
+- [ ] All screens are implemented and user acceptance has passed
+- [ ] The shadow run: 30 days with no unresolved divergences
+- [ ] The divergence in financial calculations is zero
+- [ ] Rehearsals R3 and R4 have passed consecutively
+- [ ] The load trials at ×3 the peak have passed
+- [ ] The delta backlog is empty
+- [ ] The full admission checklist
+      ([transition/07-cutover.md](../07-cutover.md#conditions-for-admission-to-the-cutover))
 
-### G3 — переезд выполнен
+### G3 — cutover done
 
-- [ ] Все пользователи работают в новой системе
-- [ ] Период стабилизации завершён без обращения к откату
-- [ ] Показатели не хуже, чем до переезда
+- [ ] All users work in the new system
+- [ ] The stabilization period finished without resorting to a rollback
+- [ ] The figures are no worse than before the cutover
 
-### G4 — проект завершён
+### G4 — project finished
 
-- [ ] Легаси остановлен и удалён, репозитории архивированы
-- [ ] Oracle и MySQL выведены из эксплуатации
-- [ ] Ни один пункт [P-01…P-12](../../docs/00-context/02-pain-points.md) не воспроизводится
-- [ ] Эксплуатация ведётся дежурной командой по ранбукам
-- [ ] Ретроспектива проведена, план переведён в статус `completed`
+- [ ] The legacy is stopped and deleted, the repositories archived
+- [ ] Oracle and MySQL are decommissioned
+- [ ] Not one item of
+      [P-01…P-12](../../docs/00-context/02-pain-points.md) is reproduced
+- [ ] Operations are run by the on-call team from the runbooks
+- [ ] The retrospective is held and the plan is moved to the `completed` status
 
-## Критический путь
+## The critical path
 
 ```
-Инвентаризация контрактов (Ф0)
+Contract inventory (P0)
         ↓
-Выбор стека (G1) ─────────────────► блокирует всё
+Choosing the stack (G1) ──────────► blocks everything
         ↓
-Платформа (Ф1) ───────────────────► блокирует все домены
+The platform (P1) ────────────────► blocks all domains
         ↓
-D0 → D1 → D2 → D3/D4 → D5 → D6/D7 → D8/D9   (Ф2, по графу зависимостей)
+D0 → D1 → D2 → D3/D4 → D5 → D6/D7 → D8/D9   (P2, per the dependency graph)
         ↓
-Теневой прогон: 30 дней без расхождений (Ф4) ──► нельзя сократить
+Shadow run: 30 days with no divergences (P4) ──► cannot be shortened
         ↓
-Репетиции Р1–Р4 (Ф4)
+Rehearsals R1–R4 (P4)
         ↓
-Переезд (G3)
+Cutover (G3)
 ```
 
-Два элемента критического пути **нельзя ускорить деньгами или людьми**:
-30 дней теневого прогона и четыре репетиции миграции. Это календарное время, и
-оно должно быть в плане с самого начала, а не обнаружено в конце.
+Two elements of the critical path **cannot be sped up with money or people**: the
+30 days of the shadow run and the four migration rehearsals. That is calendar
+time, and it must be in the plan from the very beginning rather than discovered
+at the end.
 
-## Что определяет темп
+## What sets the pace
 
-| Фаза | Ограничивающий фактор |
+| Phase | Limiting factor |
 |---|---|
-| 0 | доступность носителей знания о текущей системе |
-| 1 | принятие решения по стеку; квалификация в платформенной разработке |
-| 2 | число разработчиков доменов; граф зависимостей доменов |
-| 3 | дизайн-система; скорость приёмки пользователями |
-| 4 | календарь: теневой прогон и репетиции |
-| 5 | согласование с эксплуатацией |
+| 0 | availability of the people who hold the knowledge about the current system |
+| 1 | taking the stack decision; skills in platform development |
+| 2 | the number of domain developers; the domain dependency graph |
+| 3 | the design system; the speed of user acceptance |
+| 4 | the calendar: the shadow run and the rehearsals |
+| 5 | approvals with operations |
 
-## Ритм
+## Cadence
 
-Независимо от длительности фаз:
+Regardless of how long the phases take:
 
-| Периодичность | Что |
+| Frequency | What |
 |---|---|
-| Еженедельно | отчёт по паритету ([transition/06-parity-verification.md](../06-parity-verification.md#отчётность)) |
-| Раз в две недели | демонстрация пользователям на предпродуктивном контуре |
-| Ежемесячно | ретроспектива по delta backlog ([transition/09-freeze-policy.md](../09-freeze-policy.md#ретроспектива-по-дельте)) |
-| Ежемесячно | пересмотр реестра рисков |
-| По завершении фазы | ретроспектива фазы, пересчёт оценок |
+| Weekly | the parity report ([transition/06-parity-verification.md](../06-parity-verification.md#reporting)) |
+| Every two weeks | a demonstration to users on the pre-production environment |
+| Monthly | the delta backlog retrospective ([transition/09-freeze-policy.md](../09-freeze-policy.md#the-delta-retrospective)) |
+| Monthly | a review of the risk register |
+| At the end of a phase | the phase retrospective, recalculation of the estimates |
 
-Демонстрации раз в две недели — не формальность. При big bang это **единственный
-канал обратной связи от пользователей** на протяжении всего проекта.
+The demonstrations every two weeks are not a formality. Under a big bang they are
+**the only channel of user feedback** for the whole duration of the project.

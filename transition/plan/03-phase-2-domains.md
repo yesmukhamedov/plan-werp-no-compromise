@@ -1,123 +1,128 @@
 ---
 id: TRANS-PLAN-03
-title: Фаза 2 — Домены
+title: Phase 2 — Domains
 status: draft
 ---
 
-# Фаза 2 — Домены
+# Phase 2 — Domains
 
-**Цель:** перенести всю бизнес-логику. Самая длинная и самая дорогая фаза
-проекта.
+**Goal:** carry over all the business logic. The project's longest and most
+expensive phase.
 
-Идёт **параллельно с [Фазой 3](04-phase-3-frontend.md)**.
+Runs **in parallel with [Phase 3](04-phase-3-frontend.md)**.
 
-## Порядок
+## Order
 
-Определяется графом зависимостей из
-[карты доменов](../../product/02-domains.md#граф-зависимостей), а не
-бизнес-приоритетом: при big bang промежуточных релизов нет, поэтому «сначала
-самое ценное» не даёт ничего, а нарушение порядка зависимостей — даёт
-заглушки, которые потом переписывают.
+Determined by the dependency graph from the
+[domain map](../../product/02-domains.md#dependency-graph) rather than by
+business priority: under a big bang there are no intermediate releases, so "the
+most valuable thing first" buys nothing, while breaking the dependency order
+buys stubs that later get rewritten.
 
-| Волна | Домены | Можно параллельно | Почему сейчас |
+| Wave | Domains | Can run in parallel | Why now |
 |---|---|---|---|
-| В1 | D1 Справочники | — (эталонный, сделан в Фазе 1) | от него зависят все |
-| В2 | D2 Контрагенты, D12 Задачи и коммуникации, D10 Документооборот | да | зависят только от D0/D1 |
-| В3 | D3 Персонал, D4 Договоры и продажи | да | ядро операционной деятельности |
-| В4 | D5 Учёт и финансы | — | самый крупный (62 776 строк); ему нужны D4 и D2 |
-| В5 | D6 Расчёт вознаграждений, D7 Склад и логистика, D11 Юридический | да | зависят от D5 |
-| В6 | D8 Сервисное обслуживание, D9 CRM и колл-центр | да | самые верхние по графу |
+| W1 | D1 Reference data | — (the reference domain, done in Phase 1) | everything depends on it |
+| W2 | D2 Counterparties, D12 Tasks and communications, D10 Document workflow | yes | they depend only on D0/D1 |
+| W3 | D3 Personnel, D4 Contracts and sales | yes | the core of day-to-day operations |
+| W4 | D5 Accounting and finance | — | the largest (62,776 lines); it needs D4 and D2 |
+| W5 | D6 Compensation calculation, D7 Warehouse and logistics, D11 Legal | yes | they depend on D5 |
+| W6 | D8 Field service, D9 CRM and call centre | yes | the topmost in the graph |
 
-## Что происходит с каждым доменом
+## What happens to each domain
 
-Единый маршрут для всех 13. Отклонение от него — исключение, требующее
-обоснования.
+A single route for all 13. A deviation from it is an exception requiring a
+rationale.
 
 ```
-1. Разбор        изучение текущей реализации, интервью с владельцем,
-                 сверка с реестром сценариев и характеризационными тестами
-2. Проектирование модель домена, схема БД, публичный интерфейс, события
-3. Контракт      раздел спецификации API; фронтенд получает заглушку и
-                 начинает работу (Фаза 3)
-4. Схема         миграция схемы, эталонные данные
-5. Домен         доменный слой: сущности, правила, инварианты — с тестами
-6. Сценарии      прикладной слой: транзакции, права, оркестрация — с тестами
-7. Адаптеры      HTTP, хранилище, интеграции
-8. Отчёты        отчёты домена из реестра (мёртвые не переносятся)
-9. Миграция      правила переноса данных домена → инструмент миграции
-10. Паритет      домен подключается к теневому прогону; расхождения разбираются
-11. Приёмка      владелец домена проверяет сценарии и подписывает
+1. Analysis       studying the current implementation, interviewing the owner,
+                  cross-checking against the scenario registry and the characterization tests
+2. Design         the domain model, the DB schema, the public interface, events
+3. Contract       the API specification section; the frontend gets a stub and
+                  starts work (Phase 3)
+4. Schema         the schema migration, the seed data
+5. Domain         the domain layer: entities, rules, invariants — with tests
+6. Scenarios      the application layer: transactions, permissions, orchestration — with tests
+7. Adapters       HTTP, storage, integrations
+8. Reports        the domain's reports from the registry (dead ones are not carried over)
+9. Migration      the domain's data transfer rules → the migration tool
+10. Parity        the domain is connected to the shadow run; divergences are resolved
+11. Acceptance    the domain owner checks the scenarios and signs off
 ```
 
-Шаги 1–3 — самые важные и чаще всего сокращаемые. Домен, начатый с шага 5, —
-это перенос старого кода в новый синтаксис.
+Steps 1–3 are the most important and the most frequently cut short. A domain
+started at step 5 is a transfer of old code into new syntax.
 
-## Правила фазы
+## Rules of the phase
 
-### Переносим поведение, а не код
+### We carry over behaviour, not code
 
-Текущая реализация — **источник требований**, а не образец. Читаем, чтобы
-понять, что система делает; пишем заново, зная, зачем.
+The current implementation is a **source of requirements**, not a model to copy.
+We read it to understand what the system does; we write it anew knowing why.
 
-Открытие копипастой god-класса на 7 598 строк в новый проект противоречит
-самому смыслу проекта.
+Opening a 7,598-line god class and pasting it into the new project contradicts
+the very point of the project.
 
-### Дублирование схлопывается здесь
+### The duplication collapses here
 
-Восемь текущих реализаций сводятся в четыре домена
-([карта доменов](../../product/02-domains.md#как-получена)). Выбор «какая из
-двух реализаций правильная» — не техническое решение, его принимает владелец
-домена и записывает.
+Eight current implementations are consolidated into four domains
+([the domain map](../../product/02-domains.md#how-it-was-derived)). Choosing
+"which of the two implementations is the right one" is not a technical decision;
+the domain owner takes it and writes it down.
 
-Это самый большой источник неожиданной работы в фазе: расхождения между
-дублирующимися реализациями обнаруживаются только при попытке их свести.
+This is the phase's biggest source of unexpected work: divergences between
+duplicated implementations are discovered only when one tries to consolidate
+them.
 
-### Домен закрыт только по DoD домена
+### A domain is closed only by the Domain DoD
 
-[01-principles/02-definition-of-done.md](../../docs/01-principles/02-definition-of-done.md#dod-домена).
-Домен «в основном готов» не считается готовым. При big bang «почти готовые»
-домены накапливаются и все вместе всплывают перед переездом.
+[01-principles/02-definition-of-done.md](../../docs/01-principles/02-definition-of-done.md#domain-dod).
+A domain that is "mostly ready" does not count as ready. Under a big bang the
+"almost ready" domains pile up and all surface together right before the
+cutover.
 
-### Владелец домена — человек
+### The domain owner is a person
 
-Один человек со стороны бизнеса на домен: отвечает на вопросы, принимает
-решения о расхождениях, подписывает приёмку. Домен без владельца не начинается.
+One person on the business side per domain: they answer questions, take decisions
+about divergences and sign off acceptance. A domain without an owner does not
+start.
 
-### Мёртвое не переносится
+### Dead matter is not carried over
 
-Решения об отсечении приняты в Фазе 0
+The removal decisions were taken in Phase 0
 ([EPIC-003](../../backlog/EPIC-003-schema-inventory.md),
-[EPIC-007](../../backlog/EPIC-007-reports-inventory.md)). В Фазе 2 они
-исполняются, а не пересматриваются. Возврат к переносу отсечённого — через
-задачу с обоснованием.
+[EPIC-007](../../backlog/EPIC-007-reports-inventory.md)). In Phase 2 they are
+executed, not revisited. Returning something removed to the transfer scope goes
+through a work item with a rationale.
 
-## Индикаторы прогресса
+## Progress indicators
 
-Процент готовности, названный разработчиком, индикатором не является. Реальные:
+A readiness percentage quoted by a developer is not an indicator. The real ones
+are:
 
-| Индикатор | Где смотреть |
+| Indicator | Where to look |
 |---|---|
-| Доля запросов домена с расхождением в теневом прогоне | [паритет](../06-parity-verification.md#отчётность) |
-| Доля сценариев домена из реестра, проходящих сквозной тест | реестр сценариев |
-| Доля эндпойнтов домена из спецификации, реализованных | спецификация API |
-| Подпись владельца домена | приёмка |
+| The share of the domain's requests with a divergence in the shadow run | [parity](../06-parity-verification.md#reporting) |
+| The share of the domain's scenarios from the registry that pass an end-to-end test | the scenario registry |
+| The share of the domain's endpoints from the specification that are implemented | the API specification |
+| The domain owner's signature | acceptance |
 
-Первые три считаются автоматически. Это принципиально: при big bang отчёт о
-прогрессе не должен зависеть от того, кто его составляет.
+The first three are computed automatically. That is essential: under a big bang a
+progress report must not depend on who compiles it.
 
-## Риски фазы
+## Risks of the phase
 
-| Риск | Проявление | Что делать |
+| Risk | How it shows | What to do |
 |---|---|---|
-| D5 больше, чем кажется | 62 776 строк учёта — треть всего `core`; оценка может быть занижена вдвое | разбить на подобласти на этапе разбора; пересмотреть оценку после первой подобласти |
-| Сведение дублей вскрывает расхождения в данных | две реализации CRM ведут себя по-разному на одних данных | закладывать время на разбор; решения принимает бизнес |
-| Расчёт вознаграждений | 7 598 строк в одном классе, скорее всего с накопленными частными случаями | характеризационные тесты из Фазы 0 — обязательное условие начала D6 |
-| Отчёты недооценены | отчётов сотни, они в реестре, но трудоёмкость каждого неизвестна | оценить на первых пяти отчётах, экстраполировать, пересчитать план |
-| Владельцы доменов недоступны | вопросы копятся, домены встают | забронировать время заранее; недоступность владельца — основание остановить домен, а не гадать |
+| D5 is bigger than it looks | 62,776 lines of accounting are a third of all of `core`; the estimate may be understated twofold | break it into sub-areas at the analysis step; revise the estimate after the first sub-area |
+| Consolidating duplicates exposes divergences in the data | the two CRM implementations behave differently on the same data | budget time for resolving it; the business takes the decisions |
+| Compensation calculation | 7,598 lines in a single class, most likely with accumulated special cases | the characterization tests from Phase 0 are a mandatory condition for starting D6 |
+| Reports are underestimated | there are hundreds of reports; they are in the registry, but the effort for each is unknown | estimate from the first five reports, extrapolate, recalculate the plan |
+| The domain owners are unavailable | questions pile up and domains stall | book their time in advance; an owner's unavailability is grounds for stopping the domain, not for guessing |
 
-## Критерии завершения
+## Completion criteria
 
-- DoD домена выполнен для всех 13 доменов.
-- Все эндпойнты из спецификации реализованы или явно исключены.
-- Все домены подключены к теневому прогону.
-- Правила миграции данных написаны для всех доменов.
+- The Domain DoD is satisfied for all 13 domains.
+- All the endpoints from the specification are implemented or explicitly
+  excluded.
+- All the domains are connected to the shadow run.
+- The data migration rules are written for all the domains.

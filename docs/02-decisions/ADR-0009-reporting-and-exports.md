@@ -1,69 +1,74 @@
 ---
 id: ADR-0009
-title: Отчёты и выгрузки
-status: Предложено
+title: Reports and exports
+status: Proposed
 date: 2026-09-03
-deadline: гейт G2
+deadline: gate G2
 ---
 
-# ADR-0009. Отчёты и выгрузки
+# ADR-0009. Reports and exports
 
-## Контекст
+## Context
 
-Отчётность — недооценённая часть объёма. В текущей системе:
+Reporting is an underestimated part of the volume. In the current system:
 
-- на бэкенде — Apache POI трёх разных версий в разных модулях, генерация PDF
-  через OpenHTMLToPDF + Thymeleaf, отдельный набор шрифтов в ресурсах;
-- на фронтенде — **три** библиотеки выгрузки в Excel (`xlsx`,
-  `react-export-excel`, `react-data-export`), то есть часть отчётов формируется
-  в браузере из уже загруженных данных;
-- отчётные контроллеры входят в число крупнейших классов системы:
-  `FinanceReportRestController` — 5 366 строк, `ReportController` — 1 900+ строк,
-  плюс отчётные методы внутри доменных сервисов;
-- 708 GET-эндпойнтов, значительная часть которых — отчёты и выборки.
+- on the backend — Apache POI in three different versions in different modules,
+  PDF generation through OpenHTMLToPDF + Thymeleaf, a separate set of fonts in
+  the resources;
+- on the frontend — **three** Excel export libraries (`xlsx`,
+  `react-export-excel`, `react-data-export`), meaning some reports are produced
+  in the browser from data already loaded;
+- the reporting controllers are among the largest classes in the system:
+  `FinanceReportRestController` — 5,366 lines, `ReportController` — 1,900+ lines,
+  plus reporting methods inside domain services;
+- 708 GET endpoints, a significant share of which are reports and extracts.
 
-Формирование отчёта в браузере означает, что весь набор данных сначала
-передаётся клиенту. Для ERP-отчётов это одновременно проблема
-производительности и проблема безопасности (клиент получает больше, чем видит).
+Producing a report in the browser means the entire data set is first transferred
+to the client. For ERP reports that is both a performance problem and a security
+problem (the client receives more than it displays).
 
-## Решение (предлагается)
+## Decision (proposed)
 
-1. **Отчёт формируется на сервере.** В браузере — никогда. Выгрузка в Excel и
-   PDF делается одной серверной подсистемой; на фронтенде библиотек выгрузки нет.
-2. **Одна библиотека на формат:** одна для электронных таблиц, одна для PDF —
-   и один способ описания шаблона.
-3. **Отчёт — не эндпойнт домена, а подсистема.** Домен предоставляет данные;
-   отчётная подсистема отвечает за форму, шаблон, локализацию и доставку. Это
-   разрывает связь «отчёт растёт → доменный сервис распухает», давшую классы на
-   5 тыс. строк.
-4. **Тяжёлые отчёты — асинхронные.** Отчёт дольше установленного порога
-   ставится в очередь, выполняется фоновым обработчиком, результат
-   доставляется ссылкой. Синхронный отчёт с неограниченным временем выполнения —
-   основная причина неотзывчивости ERP под нагрузкой.
-5. **Отчётные запросы изолированы от операционных.** Тяжёлое чтение уходит на
-   реплику, чтобы отчёт не влиял на работу операторов. Топология реплик —
-   [OQ-006](../../transition/12-open-questions.md).
-6. **Шаблон отчёта — данные, а не код.** Изменение формы отчёта не должно
-   требовать релиза приложения там, где это возможно.
-7. **Числа в отчёте считает сервер.** Тот же результат, что в интерфейсе, с той
-   же арифметикой и тем же округлением ([C-09](../00-context/03-constraints.md#c-09-финансовые-расчёты-требуют-точной-арифметики)).
+1. **A report is produced on the server.** Never in the browser. Export to Excel
+   and PDF is done by a single server-side subsystem; there are no export
+   libraries on the frontend.
+2. **One library per format:** one for spreadsheets, one for PDF — and one way of
+   describing a template.
+3. **A report is not a domain endpoint but a subsystem.** The domain supplies the
+   data; the reporting subsystem is responsible for the shape, the template, the
+   localization and the delivery. That breaks the chain "the report grows → the
+   domain service swells" which produced the 5,000-line classes.
+4. **Heavy reports are asynchronous.** A report taking longer than the set
+   threshold is queued, executed by a background worker and delivered as a link.
+   A synchronous report with unbounded execution time is the main cause of an
+   unresponsive ERP under load.
+5. **Reporting queries are isolated from operational ones.** Heavy reads go to a
+   replica so that a report does not affect the operators' work. The replica
+   topology — [OQ-006](../../transition/12-open-questions.md).
+6. **A report template is data, not code.** Changing a report's shape must not
+   require an application release wherever that is possible.
+7. **The server computes the numbers in a report.** The same result as in the
+   interface, with the same arithmetic and the same rounding
+   ([C-09](../00-context/03-constraints.md#c-09-financial-calculations-require-exact-arithmetic)).
 
-## Отдельно: сверка отчётов при переезде
+## Separately: reconciling reports at the cutover
 
-Отчёты — самая наглядная для пользователя часть системы и самая чувствительная
-к расхождениям. При проверке паритета ([transition/06-parity-verification.md](../../transition/06-parity-verification.md))
-финансовые и учётные отчёты сверяются **построчно и до копейки, с нулевым
-допуском**. Это отдельный, заранее заложенный объём работы, а не «проверим,
-когда дойдём».
+Reports are the part of the system most visible to the user and the most
+sensitive to divergences. During parity verification
+([transition/06-parity-verification.md](../../transition/06-parity-verification.md))
+the financial and accounting reports are reconciled **row by row and to the
+cent, with zero tolerance**. That is a separate, pre-budgeted amount of work, not
+"we will check when we get there".
 
-## Последствия
+## Consequences
 
-- Появляется отчётная подсистема как часть платформы (Фаза 1), до разработки
-  доменов, — иначе каждый домен изобретёт свою.
-- Требуется инвентаризация отчётов: сколько их, кто ими пользуется, какие живые.
-  Часть отчётов за 12 лет почти наверняка мертва — их не нужно переносить.
+- A reporting subsystem appears as part of the platform (Phase 1), before domain
+  development — otherwise every domain will invent its own.
+- An inventory of the reports is required: how many there are, who uses them,
+  which are alive. Over 12 years some reports are almost certainly dead — those
+  need not be carried over.
   → [EPIC-007](../../backlog/EPIC-007-reports-inventory.md)
-- Асинхронные отчёты требуют очереди задач и механизма уведомления пользователя —
-  это часть платформы, а не отдельного домена.
-- Хранение сформированных файлов, срок их жизни и права доступа к ним —
-  требования к подсистеме хранения файлов.
+- Asynchronous reports require a job queue and a mechanism for notifying the
+  user — that is part of the platform, not of an individual domain.
+- Storing the produced files, their lifetime and the access permissions to them
+  are requirements on the file-storage subsystem.

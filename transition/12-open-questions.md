@@ -1,183 +1,220 @@
 ---
 id: TRANS-12
-title: Открытые вопросы
+title: Open questions
 status: draft
 ---
 
-# Открытые вопросы
+# Open questions
 
-Вопросы, ответы на которые меняют план. У каждого — владелец и гейт, до
-которого он должен быть закрыт.
+Questions whose answers change the plan. Each has an owner and the gate by which
+it must be closed.
 
-**Вопрос, отложенный в Фазе 0, всплывает в Фазе 4 и стоит в десять раз
-дороже.**
+**A question deferred in Phase 0 surfaces in Phase 4 and costs ten times as
+much.**
 
-## Сводка
+## Summary
 
-| # | Вопрос | Блокирует | Кто отвечает |
+| # | Question | Blocks | Who answers |
 |---|---|---|---|
-| [OQ-001](#oq-001) | Состав и численность команды | G0 | руководство |
-| [OQ-002](#oq-002) | Какая реализация дублирующихся доменов — источник истины | G0 | владельцы доменов |
-| [OQ-003](#oq-003) | Требования регуляторов к данным | G1 | юридический, ИБ |
-| [OQ-004](#oq-004) | Назначение модулей `aes` и `newdev` | G0 | носители знания |
-| [OQ-005](#oq-005) | Полный перечень внешних интеграций | G0 | эксплуатация, бизнес |
-| [OQ-006](#oq-006) | Топология PostgreSQL, RPO/RTO | G1 | эксплуатация |
-| [OQ-007](#oq-007) | Бизнес-логика в Oracle | G0 | администратор БД |
-| [OQ-008](#oq-008) | Требования к клиенту: офлайн, планшеты, браузеры | G1 | бизнес |
-| [OQ-009](#oq-009) | Единый вход с корпоративным каталогом | G1 | ИТ |
-| [OQ-010](#oq-010) | Кто ведёт переводы после запуска | G1 | бизнес |
-| [OQ-011](#oq-011) | Окно переезда и срок стабилизации | G2 | бизнес, эксплуатация |
-| [OQ-012](#oq-012) | Что живёт только в `werp_jsf` | **G0** | носители знания |
-| [OQ-013](#oq-013) | Нужны ли домены D10 и D11 в новой системе | G0 | бизнес |
-| [OQ-014](#oq-014) | Есть ли данные об использовании эндпойнтов и отчётов | G0 | эксплуатация |
+| [OQ-001](#oq-001) | The team's composition and size | G0 | management |
+| [OQ-002](#oq-002) | Which implementation of the duplicated domains is the source of truth | G0 | the domain owners |
+| [OQ-003](#oq-003) | Regulators' requirements on data | G1 | legal, information security |
+| [OQ-004](#oq-004) | The purpose of the `aes` and `newdev` modules | G0 | the people who hold the knowledge |
+| [OQ-005](#oq-005) | The full list of external integrations | G0 | operations, the business |
+| [OQ-006](#oq-006) | The PostgreSQL topology, RPO/RTO | G1 | operations |
+| [OQ-007](#oq-007) | Business logic in Oracle | G0 | **answered** |
+| [OQ-008](#oq-008) | Client requirements: offline, tablets, browsers | G1 | the business |
+| [OQ-009](#oq-009) | Single sign-on with the corporate directory | G1 | IT |
+| [OQ-010](#oq-010) | Who maintains the translations after launch | G1 | the business |
+| [OQ-011](#oq-011) | The cutover window and the stabilization period | G2 | the business, operations |
+| [OQ-012](#oq-012) | What lives only in `werp_jsf` | **G0** | the people who hold the knowledge |
+| [OQ-013](#oq-013) | Whether domains D10 and D11 are needed in the new system | G0 | the business |
+| [OQ-014](#oq-014) | Whether usage data for endpoints and reports exists | G0 | operations |
+| [OQ-015](#oq-015) | What maintains the 22 budget tables | **G0** | the business, finance |
 
 ---
 
 ## OQ-001
 
-**Состав и численность команды на период проекта.**
+**The team's composition and size for the duration of the project.**
 
-Без ответа оценки в человеко-месяцах не переводятся в календарь, а планирование
-фаз невозможно. Дополнительно: есть ли выделенные роли — архитектор,
-ответственный за данные, ответственный за инфраструктуру, владельцы доменов со
-стороны бизнеса.
+Without an answer, the estimates in person-months cannot be converted into a
+calendar, and planning the phases is impossible. Additionally: are there
+dedicated roles — an architect, a data owner, an infrastructure owner, domain
+owners on the business side.
 
-→ [transition/10-estimates.md](10-estimates.md), [C-11](../docs/00-context/03-constraints.md#c-11-команда-и-бюджет-)
+→ [transition/10-estimates.md](10-estimates.md),
+[C-11](../docs/00-context/03-constraints.md#c-11-team-and-budget-)
 
 ## OQ-002
 
-**Какая из дублирующихся реализаций — источник истины?**
+**Which of the duplicated implementations is the source of truth?**
 
-CRM реализован дважды (модуль `crm` на Oracle и репозиторий `werp_crm` на
-PostgreSQL), справочники дважды (`reference` и `mreference`), сервисное
-обслуживание дважды, на фронтенде — `crm` и `crm2021`, два колл-центра.
+CRM is implemented twice (the `crm` module on Oracle and the `werp_crm`
+repository on PostgreSQL), reference data twice (`reference` and `mreference`),
+field service twice, and on the frontend there are `crm` and `crm2021` plus two
+call centres.
 
-Нужно по каждой паре: какая используется, для каких сценариев, чем отличается
-поведение.
+For each pair we need: which one is in use, for which scenarios, and how the
+behaviour differs.
 
-→ [R-10](11-risks.md#r-10), [product/02-domains.md](../product/02-domains.md)
+→ [R-10](11-risks.md#r-10),
+[product/02-domains.md](../product/02-domains.md)
 
 ## OQ-003
 
-**Требования регуляторов к персональным данным и хранению.**
+**Regulators' requirements on personal data and retention.**
 
-Сроки хранения первичных документов; требования к локализации персональных
-данных; требования к неизменяемости журналов финансовых операций; требования к
-журналированию доступа к персональным данным.
+Retention periods for primary documents; requirements for localizing personal
+data; requirements for the immutability of financial operation logs; requirements
+for logging access to personal data.
 
-Ответ может добавить существенный объём работы.
+The answer may add a substantial amount of work.
 
-→ [product/08-security.md](../product/08-security.md), [C-12](../docs/00-context/03-constraints.md#c-12-требования-регуляторов-к-хранению-данных-)
+→ [product/08-security.md](../product/08-security.md),
+[C-12](../docs/00-context/03-constraints.md#c-12-regulators-data-retention-requirements-)
 
 ## OQ-004
 
-**Что такое `aes` и `newdev`?**
+**What are `aes` and `newdev`?**
 
-5 778 строк в двух модулях с неочевидным назначением. `aes` содержит сущности,
-похожие на учёт основных средств; `newdev` — «заявки». Нужны: назначение,
-пользователи, живой ли модуль, целевой домен.
+5,778 lines in two modules with a non-obvious purpose. `aes` contains entities
+that look like fixed-asset accounting; `newdev` deals with "requests". We need:
+the purpose, the users, whether the module is alive, and the target domain.
 
 → [product/02-domains.md](../product/02-domains.md)
 
 ## OQ-005
 
-**Полный перечень внешних интеграций.**
+**The full list of external integrations.**
 
-Известные перечислены в [CTX-04](../docs/00-context/04-current-integrations.md). Нужно
-подтвердить, что список полон, включая: cron-выгрузки, файловый обмен, прямой
-доступ внешних систем к БД, интеграции, о которых знает только эксплуатация.
+The known ones are listed in
+[CTX-04](../docs/00-context/04-current-integrations.md). We need confirmation
+that the list is complete, including: cron exports, file exchange, direct
+database access by external systems, integrations known only to operations.
 
-Пропущенная интеграция обнаружится в ночь переезда.
+A missed integration will be discovered on the night of the cutover.
 
 ## OQ-006
 
-**Топология PostgreSQL и целевые показатели восстановления.**
+**The PostgreSQL topology and the target recovery figures.**
 
-Версия, реплики, отказоустойчивость, резервное копирование, RPO, RTO.
+The version, replicas, failover, backups, RPO, RTO.
 
-→ [product/07-nfr.md](../product/07-nfr.md#доступность), [ADR-0002](../docs/02-decisions/ADR-0002-database-postgresql.md)
+→ [product/07-nfr.md](../product/07-nfr.md#availability),
+[ADR-0002](../docs/02-decisions/ADR-0002-database-postgresql.md)
 
 ## OQ-007
 
-**Есть ли в Oracle бизнес-логика, не видимая из кода приложения?**
+**Does Oracle hold business logic invisible from the application code?**
 
-Пакеты PL/SQL, триггеры, представления с логикой, задания планировщика БД.
-Потенциально крупный неоценённый объём.
+**Answered, 2026-09-03: almost none.** The schema was read object by object
+([map/00-source-inventory.md](map/00-source-inventory.md#4-objects-other-than-tables)):
+0 packages, 2 functions, 6 procedures, 3 views, 43 triggers of which 41 do
+little but assign a primary key from a sequence. One procedure carries a
+business rule worth moving (`UPDATE_INSTALLMENT_DATE`); two are unidentified and
+need their caller found.
 
-→ [R-05](11-risks.md#r-05), [EPIC-003](../backlog/EPIC-003-schema-inventory.md)
+The feared unestimated volume is not there. [R-05](11-risks.md#r-05) drops from
+a scope risk to two decisions.
+
+→ [R-05](11-risks.md#r-05),
+[EPIC-003](../backlog/EPIC-003-schema-inventory.md)
 
 ## OQ-008
 
-**Требования к клиентскому приложению.**
+**Requirements on the client application.**
 
-Нужна ли работа в отключённом режиме (склад, выездной сервис)? Планшеты?
-Минимально поддерживаемые браузеры? Ответ влияет на архитектуру фронтенда.
+Is offline operation needed (warehouse, field service)? Tablets? The minimum
+supported browsers? The answer affects the frontend architecture.
 
 → [ADR-0004](../docs/02-decisions/ADR-0004-frontend-stack.md)
 
 ## OQ-009
 
-**Требуется ли единый вход с корпоративным каталогом (LDAP / AD)?**
+**Is single sign-on with the corporate directory (LDAP / AD) required?**
 
-Влияет на выбор провайдера идентичности и на миграцию учётных записей.
+It affects the choice of identity provider and the migration of accounts.
 
 → [ADR-0006](../docs/02-decisions/ADR-0006-auth-model.md)
 
 ## OQ-010
 
-**Кто ведёт переводы после запуска?**
+**Who maintains the translations after launch?**
 
-Разработчик в коде или ответственный за контент через инструмент перевода.
-Влияет на выбор хранилища сообщений.
+A developer in the code, or a content owner through a translation tool. It
+affects the choice of message store.
 
 → [ADR-0010](../docs/02-decisions/ADR-0010-i18n.md)
 
 ## OQ-011
 
-**Допустимое окно простоя при переезде и срок стабилизации.**
+**The acceptable downtime window for the cutover and the stabilization period.**
 
-Предварительно: окно ≤ 8 ч, стабилизация 30 дней. Требует подтверждения бизнесом
-и эксплуатацией — от окна зависит вся стратегия миграции данных.
+Provisionally: a window of ≤ 8 h, stabilization of 30 days. Requires confirmation
+by the business and by operations — the entire data migration strategy depends on
+the window.
 
 → [transition/07-cutover.md](07-cutover.md), [R-13](11-risks.md#r-13)
 
 ## OQ-012
 
-**Какая функциональность живёт только в `werp_jsf`?**
+**Which functionality lives only in `werp_jsf`?**
 
-**Самый важный открытый вопрос плана.** 233 913 строк легаси в проде, 33 ссылки
-из React. Если существенная часть функциональности есть только там — объём
-проекта заметно больше оценённого. Дополнительно: пересекаются ли данные MySQL
-легаси с Oracle.
+**The plan's most important open question.** 233,913 lines of legacy in
+production, 33 links from React. If a substantial part of the functionality
+exists only there, the project's volume is noticeably larger than estimated.
+Additionally: does the legacy MySQL data overlap with Oracle.
 
-Закрыть **до G0** — от ответа зависят и оценки, и карта доменов, и объём
-миграции данных.
+To be closed **before G0** — the estimates, the domain map and the data migration
+volume all depend on the answer.
 
-→ [R-06](11-risks.md#r-06), [transition/10-estimates.md](10-estimates.md)
+→ [R-06](11-risks.md#r-06),
+[transition/10-estimates.md](10-estimates.md)
 
 ## OQ-013
 
-**Нужны ли домены D10 (документооборот) и D11 (юридический) в новой системе?**
+**Are domains D10 (document workflow) and D11 (legal) needed in the new
+system?**
 
-3 573 строки суммарно. Возможно, дешевле готовое решение или отказ. Решение
-продуктовое.
+3,573 lines in total. An off-the-shelf solution or dropping them may be cheaper.
+The decision is a product one.
 
 → [product/02-domains.md](../product/02-domains.md)
 
 ## OQ-014
 
-**Есть ли данные об использовании эндпойнтов, отчётов и таблиц?**
+**Is there usage data for endpoints, reports and tables?**
 
-Без них решения «переносим / не переносим» принимаются по памяти. Если данных
-нет — сбор нужно включить в легаси в первую неделю Фазы 0.
+Without it, "migrate / do not migrate" decisions are taken from memory. If the
+data does not exist, collecting it has to be switched on in the legacy in the
+first week of Phase 0.
 
-→ [transition/plan/01-phase-0-foundation.md](plan/01-phase-0-foundation.md#инвентаризация--не-документирование)
+→ [transition/plan/01-phase-0-foundation.md](plan/01-phase-0-foundation.md#inventory-is-not-documentation)
+
+## OQ-015
+
+**What writes and reads the 22 budget tables, and is budgeting in scope?**
+
+`BUDGET_*` holds about 83,000 rows — overheads, salaries, sales allocations,
+historical exchange rates — and the word `budget` appears in **none** of the five
+repositories, backend or frontend
+([map/01-schema-in-code.md](map/01-schema-in-code.md#the-22-budget-tables-have-no-application-at-all)).
+Something outside the application maintains them; the Power BI integration is the
+likely candidate but is not confirmed.
+
+Two answers are possible and they differ by a lot of work: budgeting is a live
+business process the new system must absorb, or it is a spreadsheet-and-Power-BI
+practice that stays outside. Until it is answered, the scope of D5 is unknown.
+
+→ [map/01-schema-in-code.md](map/01-schema-in-code.md),
+[product/02-domains.md](../product/02-domains.md)
 
 ---
 
-## Закрытые вопросы
+## Closed questions
 
-| # | Вопрос | Ответ | Дата |
+| # | Question | Answer | Date |
 |---|---|---|---|
-| — | Стратегия перехода | big bang, [ADR-0001](../docs/02-decisions/ADR-0001-strategy-big-bang.md) | 2026-09-03 |
-| — | СУБД | PostgreSQL, [ADR-0002](../docs/02-decisions/ADR-0002-database-postgresql.md) | 2026-09-03 |
+| — | The transition strategy | big bang, [ADR-0001](../docs/02-decisions/ADR-0001-strategy-big-bang.md) | 2026-09-03 |
+| — | The DBMS | PostgreSQL, [ADR-0002](../docs/02-decisions/ADR-0002-database-postgresql.md) | 2026-09-03 |

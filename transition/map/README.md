@@ -1,64 +1,79 @@
 ---
 id: TRANS-MAP
-title: Карты соответствий по доменам
+title: Domain mappings
 status: draft
 ---
 
-# Карты соответствий по доменам
+# Domain mappings
 
-По файлу на домен, парно к [product/spec/](../../product/spec/README.md).
+One file per domain, paired with
+[product/spec/](../../product/spec/README.md).
 
-| Файл | Отвечает на вопрос |
+| File | Answers the question |
 |---|---|
-| `product/spec/D<N>-*.md` | **что будет** — таблицы, классы, эндпойнты, страницы |
-| `transition/map/D<N>-*.md` | **откуда это** — что во что переходит и как |
+| `product/spec/D<N>-*.md` | **what will be** — tables, classes, endpoints, pages |
+| `transition/map/D<N>-*.md` | **where it comes from** — what turns into what, and how |
 
-Пара ведётся синхронно: проектируя целевую таблицу, сразу описывают правило
-преобразования исходной. Разнесённые во времени, спецификация и карта
-расходятся, и расхождение обнаруживается на репетиции миграции — то есть
-поздно.
+The pair is maintained in sync: while designing a target table, the
+transformation rule for the source one is described right away. Done at different
+times, the specification and the map drift apart, and the drift is discovered at
+the migration rehearsal — that is, too late.
 
-## Состояние
+## State
 
-| Домен | Карта | Спецификация | Статус |
+Two files are common to every domain rather than specific to one:
+
+- [00-source-inventory.md](00-source-inventory.md) — every object of the source
+  schema with its decision and its target table;
+- [01-schema-in-code.md](01-schema-in-code.md) — what the code does with those
+  tables and columns: what it maps, what it never touches, and where the meaning
+  of a column actually lives.
+
+They answer *which table becomes what*; the per-domain files answer *which column
+becomes what, and how it is verified*.
+
+| Domain | Map | Specification | Status |
 |---|---|---|---|
-| D0 Платформа | — | — | не начата |
-| D1 Справочники | [D1-reference.md](D1-reference.md) | [spec](../../product/spec/D1-reference.md) | **образец** |
-| D2…D12 | — | — | не начаты |
+| all | [00-source-inventory.md](00-source-inventory.md) | [product/03-database/](../../product/03-database/schemas/README.md) | **452 objects, 433 decisions** |
+| all | [01-schema-in-code.md](01-schema-in-code.md) | — | **5,355 files parsed** |
+| D0 Platform | — | — | tables named, columns not started |
+| D1 Reference data | [D1-reference.md](D1-reference.md) | [spec](../../product/spec/D1-reference.md) | **the sample** |
+| D2…D12 | — | — | tables named, columns not started |
 
-## Обязательные разделы
+## Mandatory sections
 
 ```markdown
-# D<N>. <Домен> — карта соответствий
+# D<N>. <Domain> — mapping
 
-## Источники                какие модули и репозитории входят в домен
-## Решения по сведению      какая из дублирующихся реализаций правильная
-## Таблицы                  таблица → таблица, колонка → колонка, правило, проверка
-## Данные                   объём, качество, известные проблемы
-## Классы                   класс → модуль/класс, решение
-## Эндпойнты                эндпойнт → эндпойнт, решение
-## Страницы                 экран → сценарий → страница
-## Изменения поведения      что пользователь заметит
-## Риски домена             что может пойти не так именно здесь
+## Sources                  which modules and repositories belong to the domain
+## Consolidation decisions  which of the duplicated implementations is the right one
+## Tables                   table → table, column → column, rule, verification
+## Data                     volume, quality, known problems
+## Classes                  class → module/class, decision
+## Endpoints                endpoint → endpoint, decision
+## Pages                    screen → scenario → page
+## Behaviour changes        what the user will notice
+## Domain risks             what can go wrong specifically here
 ```
 
-Раздел **«Изменения поведения»** обязателен и чаще всего пропускается. Любое
-расхождение, которое заметит пользователь, должно быть решением, принятым
-заранее и письменно, а не сюрпризом после переезда
-([06-parity-verification.md](../06-parity-verification.md#что-делать-с-расхождением)).
+The **"Behaviour changes"** section is mandatory and is the one most often
+skipped. Any divergence a user will notice must be a decision taken in advance
+and in writing, not a surprise after the cutover
+([06-parity-verification.md](../06-parity-verification.md#what-to-do-with-a-divergence)).
 
-## Формат строки
+## Row format
 
 ```
-источник  →  цель  |  способ преобразования  |  решение  |  проверка
+source  →  target  |  transformation method  |  decision  |  verification
 ```
 
-Строка без способа преобразования или без проверки не заполнена. Именно эти два
-поля отличают карту от списка: список говорит, что переносится, карта — как и
-как убедиться, что перенеслось верно.
+A row without a transformation method or without a verification is not filled in.
+It is precisely those two fields that distinguish a map from a list: a list says
+what is being carried over, a map says how and how to make sure it was carried
+over correctly.
 
-## Кто заполняет
+## Who fills it in
 
-Проектировщик домена совместно с владельцем домена. Решения «не переносим» и
-«сводим» принимает **владелец**, а не разработчик: это решения о том, какая
-функциональность останется у пользователей.
+The domain's designer together with the domain owner. The "do not migrate" and
+"consolidate" decisions are taken by the **owner**, not by a developer: these are
+decisions about which functionality the users will keep.

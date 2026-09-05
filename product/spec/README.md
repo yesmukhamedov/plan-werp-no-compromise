@@ -1,90 +1,115 @@
 ---
 id: PROD-SPEC
-title: Полные спецификации доменов
+title: Full domain specifications
 status: draft
 ---
 
-# Полные спецификации доменов
+# Full domain specifications
 
-По файлу на домен. В каждом — все четыре среза сразу, доведённые до уровня
-«можно писать код»:
+One file per domain. Each contains all four slices at once, taken to the level of
+"code can be written":
 
-1. **Таблицы** — колонки, типы, ограничения, индексы;
-2. **Классы** — состав модуля по слоям, публичный интерфейс, события;
-3. **Эндпойнты** — путь, метод, параметры, право, коды ошибок;
-4. **Страницы** — маршрут, тип, компоненты, сценарии.
+1. **Tables** — columns, types, constraints, indexes;
+2. **Classes** — the module's composition by layer, the public interface, events;
+3. **Endpoints** — path, method, parameters, permission, error codes;
+4. **Pages** — route, type, components, scenarios.
 
-Срезы собраны в одном файле сознательно: проектируя таблицу, нужно видеть
-эндпойнт, который её отдаёт, и страницу, которая его вызывает. Разнесённые по
-четырём документам, они расходятся.
+The slices are gathered in one file deliberately: while designing a table you
+need to see the endpoint that serves it and the page that calls that endpoint.
+Spread across four documents, they drift apart.
 
-## Состояние
+## State
 
-| Домен | Спецификация | Статус |
+| Domain | Specification | Status |
 |---|---|---|
-| D0 Платформа | — | набросок в [04-backend.md](../04-backend.md#платформа) |
-| D1 Справочники | [D1-reference.md](D1-reference.md) | **спроектирован** |
-| D2 Контрагенты | — | объявлен |
-| D3 Персонал | — | объявлен |
-| D4 Договоры и продажи | — | объявлен |
-| D5 Учёт и финансы | — | объявлен |
-| D6 Расчёт вознаграждений | — | объявлен |
-| D7 Склад и логистика | — | объявлен |
-| D8 Сервисное обслуживание | — | объявлен |
-| D9 CRM и колл-центр | — | объявлен |
-| D10 Документооборот | — | объявлен |
-| D11 Юридический | — | объявлен |
-| D12 Задачи и коммуникации | — | объявлен |
+| D0 Platform | — | schema **drafted**: every column in [03-database/schemas/platform.md](../03-database/schemas/platform.md) |
+| D1 Reference data | [D1-reference.md](D1-reference.md) | **designed** |
+| D2 Counterparties | — | schema **drafted**: every column in [03-database/schemas/party.md](../03-database/schemas/party.md) |
+| D3 Personnel | [D3-hr.md](D3-hr.md) | **designed** |
+| D4 Contracts and sales | — | schema **drafted**: every column in [03-database/schemas/contract.md](../03-database/schemas/contract.md) |
+| D5 Accounting and finance | [D5-accounting.md](D5-accounting.md) | **designed** |
+| D6 Compensation calculation | — | schema **drafted**: every column in [03-database/schemas/payroll.md](../03-database/schemas/payroll.md) |
+| D7 Warehouse and logistics | — | schema **drafted**: every column in [03-database/schemas/inventory.md](../03-database/schemas/inventory.md) |
+| D8 Field service | — | schema **drafted**: every column in [03-database/schemas/service.md](../03-database/schemas/service.md) |
+| D9 CRM and call centre | — | schema **drafted**: every column in [03-database/schemas/crm.md](../03-database/schemas/crm.md) |
+| D10 Document workflow | — | schema **drafted**: every column in [03-database/schemas/docflow.md](../03-database/schemas/docflow.md) |
+| D11 Legal | — | schema `declared`: [03-database/schemas/legal.md](../03-database/schemas/legal.md) |
+| D12 Tasks and communications | — | schema **drafted**: every column in [03-database/schemas/tasks.md](../03-database/schemas/tasks.md) |
 
-## D1 — эталон
+D3 and D5 were written next, out of dependency order, because they are the two
+domains whose data model the business judges the system by: an accounting
+department and a personnel department both have a well-established body of
+practice, and a schema that departs from it is wrong in a way no test detects.
+Both are written to the canonical model rather than to the shape of any existing
+implementation, and both are annotated with the structural pattern each table
+follows ([rule 14](../03-database/rules/14-patterns.md)).
 
-[D1-reference.md](D1-reference.md) написана целиком и задаёт **обязательную
-глубину** для остальных двенадцати. Спецификация домена, менее подробная чем
-D1, не считается завершённой.
+## D1 — the reference sample
 
-D1 выбрана первой не потому, что она простая, а потому что от неё зависят все
-остальные домены ([02-domains.md](../02-domains.md#граф-зависимостей)) и потому
-что она реализуется как эталонный домен Фазы 1
-([transition/plan/02-phase-1-platform.md](../../transition/plan/02-phase-1-platform.md#7-эталонный-домен)).
+[D1-reference.md](D1-reference.md) is written in full and sets the **mandatory
+depth** for the other twelve. A domain specification less detailed than D1 does
+not count as finished.
 
-## Когда пишется спецификация
+D1 was chosen first not because it is simple but because all the other domains
+depend on it ([02-domains.md](../02-domains.md#dependency-graph)) and because it
+is implemented as the reference domain of Phase 1
+([transition/plan/02-phase-1-platform.md](../../transition/plan/02-phase-1-platform.md#7-the-reference-domain)).
 
-| Момент | Что | Кто |
+## When a specification is written
+
+| Moment | What | Who |
 |---|---|---|
-| Фаза 0 | таблицы и эндпойнты — на основе инвентаризации | проектировщик + владелец домена |
-| Фаза 1 | D1 целиком — как эталон | команда платформы |
-| Фаза 2, шаг «Проектирование» | остальные домены, перед написанием кода | команда домена |
+| Phase 0 | tables and endpoints — based on the inventory | the designer + the domain owner |
+| Phase 1 | all of D1 — as the reference sample | the platform team |
+| Phase 2, the "Design" step | the other domains, before any code is written | the domain team |
 
-Код домена не пишется, пока его спецификация не переведена в статус
-`спроектирован`. Это условие шага 2 маршрута домена
-([transition/plan/03-phase-2-domains.md](../../transition/plan/03-phase-2-domains.md#что-происходит-с-каждым-доменом)).
+A domain's code is not written until its specification is moved to the `designed`
+status. That is the condition of step 2 of the domain route
+([transition/plan/03-phase-2-domains.md](../../transition/plan/03-phase-2-domains.md#what-happens-to-each-domain)).
 
-## Обязательные разделы
+## Mandatory sections
 
-Спецификация домена содержит **все** перечисленные разделы. Отсутствующий
-раздел означает незавершённое проектирование, а не «здесь нечего писать»:
+A domain specification contains **all** of the sections listed. A missing section
+means unfinished design, not "there is nothing to write here":
 
 ```markdown
-# D<N>. <Домен>
+# D<N>. <Domain>
 
-## Назначение и границы        что входит, что НЕ входит, владелец
-## Модель                      сущности, агрегаты, инварианты
-## Таблицы                     по таблице: колонки, типы, ограничения, индексы
-## Справочные данные           что загружается миграцией схемы
-## Классы                      по слоям; публичный интерфейс; события
-## Эндпойнты                   путь, метод, параметры, право, ошибки
-## Права                       перечень прав домена
-## Страницы                    маршрут, тип, компоненты, сценарии
-## Аудит                       что аудируется и почему
-## Открытые вопросы            что не решено
+## Purpose and boundaries      what is in scope, what is NOT, the owner
+## Model                       entities, aggregates, invariants
+## Tables                      a link to 03-database/schemas/<schema>.md — not a copy
+## Reference data              what is loaded by the schema migration
+## Classes                     by layer; the public interface; events
+## Endpoints                   path, method, parameters, permission, errors
+## Permissions                 the list of the domain's permissions
+## Pages                       route, type, components, scenarios
+## Audit                       what is audited and why
+## Open questions              what is unresolved
 ```
 
-## Связь с переходом
+### Where the columns live
 
-Спецификация отвечает на вопрос **что будет**. На вопрос **откуда это взялось и
-что с чем сопоставлено** отвечает карта соответствий того же домена:
+The **Tables** section of a specification is a link, never a column list. The
+physical model — every table, every column, every type, every index — is
+[03-database/schemas/](../03-database/schemas/README.md), one file per schema,
+and it is the only place that detail exists.
+
+That was not the original arrangement. The four slices were gathered in one file
+so that a table could be designed with the endpoint that serves it in view, and
+that argument still holds for the *model*: the aggregates and their invariants
+stay here. What moved out is the column list, for a reason that outweighs it —
+two copies of a column list agree on the day they are written and never again,
+and the one in the specification is the copy nobody updates.
+
+The specification and the schema file are one link apart, and only one of them
+can be wrong about a type.
+
+## The link to the transition
+
+The specification answers the question **what will be**. The question **where it
+came from and what maps to what** is answered by the same domain's mapping:
 [transition/map/](../../transition/map/README.md).
 
-Пара документов на домен — спецификация в `product/spec/` и карта в
-`transition/map/` — ведётся синхронно. После переезда карты архивируются,
-спецификации остаются.
+The pair of documents per domain — the specification in `product/spec/` and the
+map in `transition/map/` — is maintained in sync. After the cutover the maps are
+archived and the specifications remain.

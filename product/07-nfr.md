@@ -1,110 +1,156 @@
 ---
 id: PROD-07
-title: Нефункциональные требования
+title: Non-functional requirements
 status: draft
 ---
 
-# Нефункциональные требования
+# Non-functional requirements
 
-Числа в этом документе — **плейсхолдеры до снятия базовой линии**. Задавать
-целевые показатели, не зная нынешних, бессмысленно: можно поставить недостижимую
-планку или, наоборот, узаконить деградацию.
+The numbers in this document are **placeholders until the baseline is measured**.
+Setting target figures without knowing the present ones is pointless: one either
+sets an unreachable bar or, conversely, legitimizes a degradation.
 
-Базовая линия снимается в Фазе 0
-([EPIC-009](../backlog/EPIC-009-baseline-measurement.md)). После неё каждый
-показатель получает три значения: **база**, **не хуже чем** (обязательный
-минимум) и **цель**.
+The baseline is measured in Phase 0
+([EPIC-009](../backlog/EPIC-009-baseline-measurement.md)). After that every
+figure gets three values: the **baseline**, **no worse than** (the mandatory
+minimum) and the **target**.
 
-Жёсткое требование: **ни один сценарий не медленнее базовой линии**. Система, в
-которой пользователь работает медленнее прежнего, не принимается независимо от
-качества кода.
+> **NFR-00. No scenario is slower than the baseline.**
+> A system in which the user works more slowly than before is not accepted,
+> regardless of the quality of the code. This requirement outranks every other
+> figure in the document, and it is the one users will judge the project by.
 
-## Производительность
+Each requirement below carries an identifier so that a test, a runbook or a
+release decision can cite it. How they are achieved is
+[10-performance.md](10-performance.md); how they are watched is
+[11-observability.md](11-observability.md).
 
-| Показатель | База | Не хуже | Цель |
-|---|---|---|---|
-| Время ответа API, 95-й процентиль (операционные экраны) | измерить | = текущему | ≤ 300 мс |
-| Время ответа API, 99-й процентиль | измерить | = текущему | ≤ 1 с |
-| Открытие типового списка (первая страница) | измерить | = текущему | ≤ 500 мс |
-| Формирование типового отчёта (синхронного) | измерить | = текущему | ≤ 5 с |
-| Порог перевода отчёта в асинхронный режим | — | — | 5 с |
-| Первая отрисовка веб-приложения | измерить | = текущему | ≤ 2 с |
-| Размер основного бандла фронтенда | измерить | ≤ текущего | определить после G1 |
+---
 
-## Нагрузка
+## Performance
 
-| Показатель | Значение |
+| # | Figure | Baseline | No worse than | Target |
+|---|---|---|---|---|
+| NFR-01 | API response time, 95th percentile (operational screens) | to be measured | = the current one | ≤ 300 ms |
+| NFR-02 | API response time, 99th percentile | to be measured | = the current one | ≤ 1 s |
+| NFR-03 | Opening a typical list (the first page) | to be measured | = the current one | ≤ 500 ms |
+| NFR-04 | Producing a typical synchronous report | to be measured | = the current one | ≤ 5 s |
+| NFR-05 | Threshold for switching a report to asynchronous mode | — | — | 5 s |
+| NFR-06 | First paint of the web application | to be measured | = the current one | ≤ 2 s |
+| NFR-07 | Time to interactive | to be measured | = the current one | to be set after G1 |
+| NFR-08 | Size of the frontend's main bundle | to be measured | ≤ the current one | to be set after G1 |
+
+NFR-01 and NFR-03 are the two the operators feel. They are measured per endpoint
+and per list page, not as a system-wide average — an average over eight hundred
+endpoints hides exactly the twenty that hurt.
+
+## Load
+
+| # | Figure | Value |
+|---|---|---|
+| NFR-10 | Concurrent users, an ordinary day | to be measured |
+| NFR-11 | Concurrent users, peak | to be measured |
+| NFR-12 | Requests per second, peak | to be measured |
+| NFR-13 | Peak periods | to be determined: period close, month end, seasonality |
+| NFR-14 | Headroom above the measured peak | ×3 |
+
+**Peak periods in an ERP are not an abstraction.** The month close, payroll
+accrual and stocktaking produce load several times higher than usual, and they
+land on the three heaviest domains at once. The profile is measured over a period
+of at least one full month so that a close is inside it.
+
+## Data volume
+
+| # | Figure | Value |
+|---|---|---|
+| NFR-20 | Current database size | to be measured |
+| NFR-21 | The largest tables (top 20) by row count and size | to be measured |
+| NFR-22 | Annual growth | to be measured |
+| NFR-23 | Number of files and attachments, total size | to be measured |
+| NFR-24 | Capacity planning horizon | 5 years |
+
+The target schema already names which tables will be large and which are
+partitioned by time; the measured figures decide the partition sizes and the
+retention windows ([03-database rule 10](03-database/rules/10-large-tables.md)).
+
+## Availability
+
+| # | Figure | Value |
+|---|---|---|
+| NFR-30 | Target availability during business hours | 99.9% |
+| NFR-31 | Planned maintenance window | to be agreed with operations |
+| NFR-32 | RPO — acceptable data loss | ≤ 5 min `?` |
+| NFR-33 | RTO — recovery time | ≤ 1 h `?` |
+| NFR-34 | Deploying a new version with no downtime | mandatory |
+
+RPO and RTO are confirmed by the system owner —
+[OQ-006](../transition/12-open-questions.md). They are marked `?` because a
+figure nobody has agreed to is not a requirement, and because both drive real
+cost: RPO decides the replication topology, RTO decides how much restore
+rehearsal is enough.
+
+## Scalability
+
+| # | Requirement |
 |---|---|
-| Одновременных пользователей (обычный день) | измерить |
-| Одновременных пользователей (пик) | измерить |
-| Запросов в секунду, пик | измерить |
-| Пиковые периоды | определить (закрытие периода, конец месяца, сезонность) |
-| Запас по нагрузке к пику | ×3 |
+| NFR-40 | The application is stateless: horizontal scaling by adding instances |
+| NFR-41 | Background jobs are idempotent and safe with several workers running |
+| NFR-42 | No operation requires a single, particular application instance |
+| NFR-43 | Heavy reads are served from a replica and never affect operational work |
 
-Пиковые периоды в ERP — не абстракция: закрытие месяца, начисление зарплаты,
-инвентаризация дают нагрузку, кратно превышающую обычную. Профиль снимается за
-период не менее одного полного месяца.
+NFR-41 is the one that is easy to claim and hard to hold: a job that is safe with
+one worker and corrupts data with two fails only under load, on the day the load
+arrives.
 
-## Объём данных
+## Cutover window constraints
 
-| Показатель | Значение |
-|---|---|
-| Размер текущей БД | измерить |
-| Крупнейшие таблицы (топ-20) по числу строк и объёму | измерить |
-| Годовой прирост | измерить |
-| Число файлов и вложений, суммарный объём | измерить |
-| Горизонт планирования ёмкости | 5 лет |
+A separate group following from the
+[big bang](../docs/02-decisions/ADR-0001-strategy-big-bang.md):
 
-## Доступность
+| # | Figure | Value |
+|---|---|---|
+| NFR-50 | Acceptable downtime window for the cutover | to be agreed; provisionally ≤ 8 h `?` |
+| NFR-51 | Time for the full data migration | must fit inside the window with ×2 headroom |
+| NFR-52 | Rollback time | ≤ 1 h, verified by a rehearsal |
+| NFR-53 | Stabilization period with the standby environment | to be agreed; provisionally 30 days `?` |
 
-| Показатель | Значение |
-|---|---|
-| Целевая доступность в рабочие часы | 99,9 % |
-| Плановое окно обслуживания | согласовать с эксплуатацией |
-| RPO (допустимая потеря данных) | ≤ 5 мин `?` |
-| RTO (время восстановления) | ≤ 1 ч `?` |
-| Время развёртывания новой версии без простоя | обязательно |
+**NFR-51 is a hard constraint on the project, not a performance goal.** If the
+full transfer does not fit inside the agreed window, the cutover strategy changes
+— a staged migration with historical data preloaded — and that requires a new
+ADR. It is verified at the very first rehearsal, which is to say it must be
+measured long before the live cutover rather than discovered on the night.
 
-RPO и RTO подтверждаются владельцем системы — [OQ-006](../transition/12-open-questions.md).
+## Security and observability
 
-## Масштабируемость
+Not repeated here. The requirements are in [08-security.md](08-security.md) and
+[11-observability.md](11-observability.md), each numbered the same way so that a
+release decision can cite them together with the figures above.
 
-- Приложение без состояния: горизонтальное масштабирование добавлением
-  экземпляров.
-- Фоновые задачи идемпотентны и безопасны при нескольких обработчиках.
-- Ни одна операция не требует единственного экземпляра приложения.
+## How these requirements are verified
 
-## Ограничения окна переезда
+| Requirement group | Verified by | When |
+|---|---|---|
+| NFR-01 … NFR-08 | load tests in CI on the pre-production environment | weekly, and before every release |
+| NFR-10 … NFR-14 | a load profile captured over a full month, then trials at ×3 peak | Phase 0, then before G2 |
+| NFR-20 … NFR-24 | measurement against a copy of production data | Phase 0, then quarterly |
+| NFR-30 … NFR-34 | **drills** — a planned shutdown and a restore from backup | before G2, then twice a year |
+| NFR-40 … NFR-43 | a multi-instance run with concurrent job execution | on every release to stage |
+| NFR-50 … NFR-53 | **migration rehearsals**, timed | every rehearsal, from the first one |
 
-Отдельная группа требований, вытекающая из [big bang](../docs/02-decisions/ADR-0001-strategy-big-bang.md):
+**A degradation of a figure between releases is grounds for not shipping the
+release.** Performance is lost gradually and imperceptibly; it is caught only by
+comparison with the previous measurement, which is why the comparison is
+automated rather than requested.
 
-| Показатель | Значение |
-|---|---|
-| Допустимое окно простоя при переезде | согласовать; предварительно ≤ 8 ч `?` |
-| Время полной миграции данных | должно укладываться в окно с запасом ×2 |
-| Время отката | ≤ 1 ч, проверено репетицией |
-| Срок стабилизации с резервным контуром | согласовать; предварительно 30 дней `?` |
+The availability and recovery figures are verified by drills rather than by
+calculation on paper. A backup that has never been restored from is not a backup,
+and an RTO that has never been measured is a number in a document.
 
-**Время миграции данных — жёсткое ограничение проекта.** Если полный перенос не
-укладывается в согласованное окно, стратегия переезда меняется (поэтапная
-миграция с предварительной загрузкой исторических данных), и это требует
-нового ADR. Проверяется на первой же репетиции — то есть должно быть измерено
-задолго до боевого переезда.
+## Open questions
 
-## Безопасность
-
-Вынесено в [06-security.md](08-security.md).
-
-## Наблюдаемость
-
-Вынесено в [product/11-observability.md](11-observability.md).
-
-## Как эти требования проверяются
-
-- Показатели производительности — нагрузочными тестами в CI на предпродуктивном
-  контуре, регулярно, а не однократно перед запуском.
-- Деградация показателя между релизами — причина не выпускать релиз.
-- Показатели доступности и восстановления — учениями (плановое отключение,
-  восстановление из резервной копии), а не расчётом на бумаге.
-
-Подробно — [product/10-performance.md](10-performance.md).
+| # | Question | Blocks |
+|---|---|---|
+| NFR-Q1 | What are the RPO and RTO the business actually needs? | NFR-32, NFR-33, and the replication topology |
+| NFR-Q2 | What downtime window is acceptable for the cutover? | NFR-50, and therefore the whole migration design |
+| NFR-Q3 | How long must the old system stay available in standby after the cutover? | NFR-53, and the infrastructure budget |
+| NFR-Q4 | Are there contractual availability obligations to customers or partners? | NFR-30, and whether 99.9% is enough |

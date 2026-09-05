@@ -1,154 +1,162 @@
-# Как вести этот план
+# How to maintain this plan
 
-План — живой документ и ведётся как проект: изменения через PR, проверки в CI,
-решения через ADR.
+The plan is a living document and is run as a project: changes go through PRs,
+checks run in CI, decisions are recorded as ADRs.
 
-## Порядок изменений
+## Change procedure
 
-1. Ветка от `main`.
-2. Изменение.
-3. `./tools/validate.sh` локально.
-4. PR с описанием: что меняется и почему.
-5. Ревью. Изменения в ADR и в [правилах](docs/01-principles/01-no-compromise.md)
-   требуют согласия владельца плана.
-6. Слияние.
+1. Branch from `main`.
+2. Make the change.
+3. Run `./tools/validate.sh` locally.
+4. Open a PR describing what changes and why.
+5. Review. Changes to ADRs and to the
+   [rules](docs/01-principles/01-no-compromise.md) require the plan owner's
+   consent.
+6. Merge.
 
-Прямой push в `main` не выполняется.
+Direct pushes to `main` are not made.
 
-## Куда что писать
+## Where to write what
 
-Первый вопрос при любом изменении: **это о том, что будет, или о том, как мы
-туда переходим?**
+The first question for any change: **is this about what will be, or about how we
+get there?**
 
-| Хочу | Куда |
+| I want to | Where |
 |---|---|
-| Описать целевую таблицу, класс, эндпойнт, страницу | [product/](product/README.md) |
-| Описать, что во что переходит | [transition/](transition/README.md) |
-| Зафиксировать факт о действующей системе | [docs/00-context/](docs/00-context/) |
-| Зафиксировать архитектурное решение | новый ADR из [templates/ADR.md](templates/ADR.md) |
-| Изменить принятое решение | **не править старый ADR** — новый ADR со ссылкой `supersedes` |
-| Добавить работу | эпик в [backlog/](backlog/) из [templates/EPIC.md](templates/EPIC.md) |
-| Добавить риск | [transition/11-risks.md](transition/11-risks.md) |
-| Задать вопрос, меняющий план | [transition/12-open-questions.md](transition/12-open-questions.md) |
-| Изменить правило | PR к [01-no-compromise.md](docs/01-principles/01-no-compromise.md) с обоснованием |
-| Ввести термин | [GLOSSARY.md](GLOSSARY.md) |
+| Describe a target table, class, endpoint, page | [product/](product/README.md) |
+| Describe what turns into what | [transition/](transition/README.md) |
+| Record a fact about the system in operation | [docs/00-context/](docs/00-context/) |
+| Record an architectural decision | a new ADR from [templates/ADR.md](templates/ADR.md) |
+| Change a decision already taken | **do not edit the old ADR** — a new ADR with a `supersedes` link |
+| Add work | an epic in [backlog/](backlog/) from [templates/EPIC.md](templates/EPIC.md) |
+| Add a risk | [transition/11-risks.md](transition/11-risks.md) |
+| Ask a question that changes the plan | [transition/12-open-questions.md](transition/12-open-questions.md) |
+| Change a rule | a PR to [01-no-compromise.md](docs/01-principles/01-no-compromise.md) with a rationale |
+| Introduce a term | [GLOSSARY.md](GLOSSARY.md) |
 
-### Правило разделения
+### The split rule
 
-**`product/` не упоминает легаси. Никогда.**
+**`product/` does not mention legacy. Ever.**
 
-Проверка: уберите из документа все упоминания предыдущей системы. Остался
-осмысленным — он в `product/`. Развалился — он в `transition/`.
+The test: remove every mention of the previous system from the document. Still
+makes sense — it belongs in `product/`. Falls apart — it belongs in
+`transition/`.
 
-Это правило исполняется машиной: `tools/validate.sh` ищет в `product/` слова
-«легаси», «унаследованный», «текущая система» и имена легаси-репозиториев. PR с
-такими словами в `product/` не сливается.
+This rule is machine-enforced: `tools/validate.sh` searches `product/` for the
+words "legacy", "inherited", "current system" and the names of the legacy
+repositories. A PR with such words in `product/` is not merged.
 
-Обоснование требования живёт в `docs/00-context/`, и оба раздела на него
-ссылаются. Формулировка «сейчас так, а будет иначе» в `product/` заменяется на
-формулировку «будет так» плюс ссылку на точку боли.
+The rationale for a requirement lives in `docs/00-context/`, and both sections
+link to it. The phrasing "today it is like this, but it will be different" in
+`product/` is replaced by the phrasing "it will be like this" plus a link to the
+pain point.
 
-Симметричное правило: карты соответствий (`transition/01…04`, `transition/map/`)
-**обязаны** ссылаться на `product/` — карта, не указывающая на цель, не карта,
-а список. Тоже проверяется.
+The symmetric rule: mappings (`transition/01…04`, `transition/map/`) **must**
+link into `product/` — a map that does not point at the target is not a map but
+a list. This is checked too.
 
-### Парность документов
+### Document pairing
 
-Четыре среза системы описаны парами; обе половины меняются одним PR:
+Four slices of the system are described in pairs; both halves change in a single
+PR:
 
-| Срез | Продукт | Переход |
+| Slice | Product | Transition |
 |---|---|---|
-| База данных | `product/03-database.md`, `product/spec/D*.md` | `transition/01-database-mapping.md`, `transition/map/D*.md` |
-| Бэкенд | `product/04-backend.md`, `product/spec/D*.md` | `transition/02-backend-mapping.md`, `transition/map/D*.md` |
-| API | `product/05-api.md` | `transition/03-api-mapping.md` |
-| Фронтенд | `product/06-frontend.md` | `transition/04-frontend-mapping.md` |
+| Database | `product/03-database/`, `product/spec/D*.md` | `transition/01-database-mapping.md`, `transition/map/D*.md` |
+| Backend | `product/04-backend/`, `product/spec/D*.md` | `transition/02-backend-mapping.md`, `transition/map/D*.md` |
+| API | `product/05-api/` | `transition/03-api-mapping.md` |
+| Frontend | `product/06-frontend/` | `transition/04-frontend-mapping.md` |
 
-Спецификация домена и его карта соответствий пишутся **вместе**: колонка
-проектируется и сразу получает правило преобразования. Разнесённые во времени,
-они расходятся, и расхождение обнаруживается на репетиции миграции — то есть
-поздно.
+A domain's specification and its mapping are written **together**: a column is
+designed and immediately gets its transformation rule. Written at different
+times, they drift apart, and the drift is discovered at the migration rehearsal
+— that is, too late.
 
-## Правила
+## Rules
 
-### ADR не переписываются задним числом
+### ADRs are not rewritten after the fact
 
-Отменённое решение получает статус «Заменено» и ссылку на преемника. Сохраняется
-не только результат, но и причина — иначе через год решение будет принято заново
-и так же ошибочно.
+A cancelled decision gets the status "Superseded" and a link to its successor.
+What is preserved is not only the outcome but the reason — otherwise in a year's
+time the decision will be taken again, and just as wrongly.
 
-### Статусы зрелости артефактов
+### Artefact maturity statuses
 
-Каждая таблица, модуль, эндпойнт и страница в реестрах `product/` имеет статус:
-`спроектирован` (можно писать код), `набросок` (состав известен), `объявлен`
-(известно только, что нужен). Реализация не начинается раньше статуса
-`спроектирован`.
+Every table, module, endpoint and page in the `product/` registries has a
+status: `designed` (code may be written), `outlined` (its composition is known),
+`declared` (all that is known is that it is needed). Implementation does not
+start before the status is `designed`.
 
-Каждый элемент в картах `transition/` имеет решение: переносим / сводим / не
-переносим / появляется. Элемент без решения — незакрытая работа Фазы 0.
+Every item in the `transition/` maps has a decision: migrate / consolidate / do
+not migrate / new. An item without a decision is unfinished Phase 0 work.
 
-### Числа берутся из измерений
+### Numbers come from measurements
 
-Любое число в плане должно быть воспроизводимо. Метод измерения — в
-[приложении к инвентаризации](docs/00-context/01-inventory.md#приложение-как-измерялось);
-скрипт — [tools/measure.sh](tools/measure.sh).
+Every number in the plan must be reproducible. The measurement method is in the
+[appendix to the inventory](docs/00-context/01-inventory.md#appendix-how-this-was-measured);
+the script is [tools/measure.sh](tools/measure.sh).
 
-Если число получено оценкой, а не измерением, это указывается явно.
+If a number comes from an estimate rather than a measurement, that is stated
+explicitly.
 
-### Оценки — диапазоном, с указанием достоверности
+### Estimates come as ranges, with a stated confidence
 
-Оценка — обязательство пересчитать её на следующем гейте, а не обещание
-уложиться ([transition/10-estimates.md](transition/10-estimates.md)).
+An estimate is a commitment to recalculate it at the next gate, not a promise to
+fit inside it ([transition/10-estimates.md](transition/10-estimates.md)).
 
-### Идентификаторы не переиспользуются
+### Identifiers are not reused
 
-ADR-NNNN, EPIC-NNN, TASK-NNNN, R-NN, OQ-NN, P-NN, NC-NN, SC-NNN. Отменённая
-запись остаётся с пометкой. Уникальность проверяется в CI.
+ADR-NNNN, EPIC-NNN, TASK-NNNN, R-NN, OQ-NN, P-NN, NC-NN, SC-NNN. A cancelled
+entry stays in place with a note. Uniqueness is checked in CI.
 
-### Ссылки относительные
+### Links are relative
 
-Проверяются в CI. Битая ссылка — причина отказа в слиянии.
+Checked in CI. A broken link is grounds for refusing a merge.
 
-### Frontmatter обязателен
+### Frontmatter is mandatory
 
-Каждый документ в `docs/` и `backlog/` начинается с блока `---` с полями `id`,
-`title`, `status`. Проверяется в CI.
+Every document in `docs/` and `backlog/` starts with a `---` block containing the
+fields `id`, `title`, `status`. Checked in CI.
 
-## Чувствительные данные
+## Sensitive data
 
-Репозиторий **публичный**. Не должно попасть:
+The repository is **public**. The following must not get in:
 
-| Запрещено | Вместо этого |
+| Forbidden | Use instead |
 |---|---|
-| IP-адреса внутренней сети | `<internal-host>` |
-| Имена хостов и доменов инфраструктуры | «легаси-контур», «предпродуктивный контур» |
-| Номера портов сервисов | не указывать |
-| Имена баз данных, схем, учётных записей | обобщённо |
-| Имена cookie, заголовков с токенами | не указывать |
-| Секреты, ключи, токены в любом виде | никогда |
-| Исходный код легаси | описание поведения |
-| Выгрузки промышленных данных | агрегированные метрики |
-| Персональные данные | никогда |
-| Результаты аудита безопасности с описанием уязвимостей | только вытекающие требования ([EPIC-010](backlog/EPIC-010-security-audit.md#обращение-с-результатами)) |
+| Internal-network IP addresses | `<internal-host>` |
+| Infrastructure host and domain names | "the legacy environment", "the pre-production environment" |
+| Service port numbers | do not state them |
+| Database, schema and account names | describe them generically |
+| Cookie names, names of headers carrying tokens | do not state them |
+| Secrets, keys, tokens in any form | never |
+| Legacy source code | a description of the behaviour |
+| Production data dumps | aggregated metrics |
+| Personal data | never |
+| Security audit results describing vulnerabilities | only the requirements that follow from them ([EPIC-010](backlog/EPIC-010-security-audit.md#handling-the-results)) |
 
-Часть проверяется автоматически в `tools/validate.sh`. Автоматическая проверка
-не заменяет внимания при ревью: она ловит известные шаблоны, а не всё.
+Some of this is checked automatically in `tools/validate.sh`. The automated check
+does not replace attention during review: it catches known patterns, not
+everything.
 
-Ссылаться на репозитории по именам (`werp_java_back_v2`, `bridge`) допустимо —
-это имена, а не доступы.
+Referring to repositories by name (`werp_java_back_v2`, `bridge`) is acceptable
+— those are names, not access.
 
-## Локальная проверка
+## Local check
 
 ```sh
-./tools/validate.sh      # проверка целостности плана
-./tools/measure.sh <путь-к-репозиторию>   # пересчёт метрик легаси
+./tools/validate.sh      # plan integrity check
+./tools/measure.sh <path-to-repository>   # recompute legacy metrics
 ```
 
-`validate.sh` проверяет: frontmatter, уникальность идентификаторов, внутренние
-ссылки, шаблоны чувствительных данных, **разделение product/transition**,
-полноту реестров ADR и эпиков, остатки шаблонов. Тот же скрипт запускается в CI.
+`validate.sh` checks: frontmatter, identifier uniqueness, internal links,
+sensitive-data patterns, **the product/transition split**, completeness of the
+ADR and epic registries, leftover template placeholders. The same script runs in
+CI.
 
-## Статус плана
+## Plan status
 
-Меняется в [README.md](README.md) при прохождении гейта. После завершения
-проекта план переводится в статус `completed` и архивируется вместе с
-ретроспективой ([transition/plan/06-phase-5-decommission.md](transition/plan/06-phase-5-decommission.md#7-ретроспектива)).
+Updated in [README.md](README.md) when a gate is passed. Once the project is
+finished the plan is moved to the `completed` status and archived together with
+the retrospective
+([transition/plan/06-phase-5-decommission.md](transition/plan/06-phase-5-decommission.md#7-retrospective)).

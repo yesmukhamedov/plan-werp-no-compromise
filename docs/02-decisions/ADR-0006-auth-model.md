@@ -1,91 +1,96 @@
 ---
 id: ADR-0006
-title: Модель аутентификации и авторизации
-status: Предложено
+title: Authentication and authorization model
+status: Proposed
 date: 2026-09-03
-deadline: гейт G1
+deadline: gate G1
 ---
 
-# ADR-0006. Модель аутентификации и авторизации
+# ADR-0006. Authentication and authorization model
 
-## Контекст
+## Context
 
-Сейчас в системе одновременно работают:
+The following currently operate in the system at the same time:
 
-- собственный `auth-server` (1 032 строки) на `spring-cloud-starter-oauth2`
-  версии, рассчитанной на другое поколение Spring Boot;
-- JWT в cookie, разделяемых по домену с легаси-JSF, — так фронтенд «передаёт»
-  сессию в старый интерфейс;
-- две разные библиотеки JWT в разных модулях;
-- собственный ABAC внутри домена `dit` плюс `PermissionService` в `main-module`;
-- проверки прав, написанные руками в контроллерах.
+- a home-grown `auth-server` (1,032 lines) on `spring-cloud-starter-oauth2` in a
+  version designed for a different Spring Boot generation;
+- JWT in cookies shared by domain with the legacy JSF — that is how the frontend
+  "hands over" the session to the old interface;
+- two different JWT libraries in different modules;
+- a home-grown ABAC inside the `dit` domain plus a `PermissionService` in
+  `main-module`;
+- permission checks written by hand in controllers.
 
-Единой точки, отвечающей на вопрос «можно ли этому пользователю это действие»,
-не существует ([P-09](../00-context/02-pain-points.md#p-09-авторизация-склеена-из-трёх-схем)).
+There is no single point that answers the question "is this user allowed to do
+this"
+([P-09](../00-context/02-pain-points.md#p-09-authorization-is-glued-together-from-three-schemes)).
 
-## Решение (предлагается)
+## Decision (proposed)
 
-### Аутентификация
+### Authentication
 
-1. **Один провайдер идентичности** на всю систему. Внешний (готовый) —
-   предпочтительно: собственный сервер аутентификации в 2026 году не является
-   конкурентным преимуществом и является постоянным источником уязвимостей.
-2. **Одна библиотека токенов**, одна схема подписи, единая ротация ключей.
-3. Токены не хранятся в cookie, разделяемых между приложениями. Разделение
-   сессии с легаси не требуется — легаси не будет ([NC-07](../01-principles/01-no-compromise.md#nc-07)).
-4. Токены доступа короткоживущие, обновление — по отдельному токену с
-   возможностью отзыва.
-5. Многофакторная аутентификация поддерживается провайдером и включается по
-   политике для ролей с доступом к финансовым операциям.
-6. Служебные вызовы (`bridge` → внутренние сервисы, фоновые задачи) используют
-   отдельный тип учётных данных, не пользовательский.
+1. **One identity provider** for the whole system. An external (off-the-shelf)
+   one is preferable: a home-grown authentication server is not a competitive
+   advantage in 2026 and is a permanent source of vulnerabilities.
+2. **One token library**, one signature scheme, one key rotation process.
+3. Tokens are not stored in cookies shared between applications. Sharing the
+   session with the legacy is not needed — there will be no legacy
+   ([NC-07](../01-principles/01-no-compromise.md#nc-07)).
+4. Access tokens are short-lived; refresh happens through a separate token that
+   can be revoked.
+5. Multi-factor authentication is supported by the provider and enabled by policy
+   for roles with access to financial operations.
+6. Service calls (`bridge` → internal services, background jobs) use a separate
+   credential type, not a user's.
 
-### Авторизация
+### Authorization
 
-Комбинированная модель, где каждый уровень отвечает за своё:
+A combined model in which each level answers for its own concern:
 
-| Уровень | Отвечает на вопрос | Как задаётся |
+| Level | Answers the question | How it is defined |
 |---|---|---|
-| Роль | «какого рода эта учётная запись» | справочник ролей |
-| Право (permission) | «разрешено ли действие» | декларативно на эндпойнте в спецификации API |
-| Область данных (scope) | «над какими записями» — филиал, компания, подразделение | атрибут субъекта, применяется в слое доступа к данным |
-| Владение | «своя запись или чужая» | правило домена |
+| Role | "what kind of account is this" | the role reference list |
+| Permission | "is the action allowed" | declaratively on the endpoint in the API specification |
+| Data scope | "over which records" — branch, company, unit | a subject attribute, applied in the data-access layer |
+| Ownership | "own record or someone else's" | a domain rule |
 
-Ключевые требования:
+The key requirements:
 
-- **Каждый эндпойнт объявляет требуемое право.** Эндпойнт без объявленного права
-  не проходит CI (NC-12).
-- **Ограничение по области данных применяется в слое доступа к данным**, а не в
-  контроллере. Забыть его должно быть невозможно — это конструкция, а не
-  дисциплина.
-- Решение об авторизации принимается в одном месте и логируется вместе с
-  причиной отказа.
-- Права проверяются тестом, обходящим все эндпойнты: для каждого — минимум один
-  тест на разрешение и один на отказ.
+- **Every endpoint declares the permission it requires.** An endpoint without a
+  declared permission does not pass CI (NC-12).
+- **The data-scope restriction is applied in the data-access layer**, not in the
+  controller. Forgetting it must be impossible — that is a matter of
+  construction, not discipline.
+- The authorization decision is taken in one place and logged together with the
+  reason for a denial.
+- Permissions are verified by a test that walks all endpoints: for each one, at
+  least one test for allow and one for deny.
 
-### Что переносится из текущей системы
+### What is carried over from the current system
 
-Текущая ABAC-модель и `PermissionService` содержат накопленную за годы
-бизнес-логику прав — её нельзя выбросить, но и переносить как есть нельзя.
-Права инвентаризируются как отдельная работа Фазы 0
-([EPIC-006](../../backlog/EPIC-006-permissions-inventory.md)): полный список
-ролей, прав, их привязки к меню и эндпойнтам, реальное использование.
+The current ABAC model and `PermissionService` contain permission business logic
+accumulated over years — it cannot be thrown away, but neither can it be carried
+over as it is. Permissions are inventoried as separate Phase 0 work
+([EPIC-006](../../backlog/EPIC-006-permissions-inventory.md)): the full list of
+roles and permissions, their bindings to menu items and endpoints, and their
+actual usage.
 
-## Последствия
+## Consequences
 
-- Появляется зависимость от внешнего провайдера идентичности — выбор конкретного
-  и решение о самостоятельном или управляемом размещении требуют отдельного
-  разбора до гейта G1.
-- Миграция учётных записей и паролей — часть [миграции данных](../../transition/05-data-migration.md);
-  пароли не переносятся в открытом виде ни при каких условиях, схема хеширования
-  либо сохраняется, либо пароли сбрасываются с принудительной сменой.
-- Меню и навигация фронтенда строятся из прав пользователя — это существующее
-  поведение (`/current-user/routes`), которое сохраняется, но получает
-  единый источник.
+- A dependency on an external identity provider appears — choosing a specific one
+  and deciding between self-hosting and a managed offering require a separate
+  analysis before gate G1.
+- Migrating accounts and passwords is part of the
+  [data migration](../../transition/05-data-migration.md); passwords are never
+  carried over in plaintext under any circumstances — either the hashing scheme
+  is preserved or the passwords are reset with a forced change.
+- The frontend's menu and navigation are built from the user's permissions — this
+  is existing behaviour (`/current-user/routes`) that is preserved but gets a
+  single source.
 
-## Открытые вопросы
+## Open questions
 
-- Есть ли требование единого входа с корпоративным каталогом (LDAP / Active
-  Directory)? — [OQ-009](../../transition/12-open-questions.md)
-- Требования регулятора к журналированию доступа к персональным данным —
+- Is single sign-on with the corporate directory (LDAP / Active Directory)
+  required? — [OQ-009](../../transition/12-open-questions.md)
+- The regulator's requirements for logging access to personal data —
   [OQ-003](../../transition/12-open-questions.md)

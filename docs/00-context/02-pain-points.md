@@ -1,263 +1,285 @@
 ---
 id: CTX-02
-title: Костыли и точки боли
+title: Workarounds and pain points
 status: actual
 measured_at: 2026-09-03
 ---
 
-# Костыли и точки боли
+# Workarounds and pain points
 
-Каждый пункт — измеренный факт, а не впечатление. Каждому сопоставлено правило
-из [«без компромиссов»](../01-principles/01-no-compromise.md), которое запрещает
-повторить этот компромисс в новой системе.
+Every entry is a measured fact, not an impression. Each is matched with a rule
+from ["no compromise"](../01-principles/01-no-compromise.md) that forbids
+repeating that compromise in the new system.
 
-Это ключевой документ проекта: **если новая система не устраняет пункт из этого
-списка — она не считается написанной заново.**
-
----
-
-## P-01. Тестов практически нет
-
-**Факт.** На 3 597 исходных файлов и 354 761 строку в `werp_java_back_v2`
-приходится **4 тестовых файла**. Сборка в CI выполняется с `-x test`, то есть
-эти четыре теста тоже не запускаются.
-
-**Следствие.** Любое изменение проверяется только вручную и только в проде.
-Отсюда — страх трогать код, отсюда — дублирование доменов вместо правки
-существующих (см. P-04), отсюда — невозможность рефакторинга.
-
-**Почему это блокирует переписывание.** У нас нет исполняемого описания того,
-как система себя ведёт. Значит, ни одна автоматическая проверка паритета старого
-и нового поведения невозможна «из коробки» — характеризационные тесты придётся
-писать с нуля как отдельную работу (см. [EPIC-004](../../backlog/EPIC-004-characterization-tests.md)).
-
-**Правило:** [NC-01 — тест или его нет](../01-principles/01-no-compromise.md#nc-01).
+This is the project's key document: **if the new system does not eliminate an
+entry from this list, it does not count as rewritten.**
 
 ---
 
-## P-02. God-классы и полевая инъекция
+## P-01. Practically no tests
 
-**Факт.**
+**Fact.** For 3,597 source files and 354,761 lines in `werp_java_back_v2` there
+are **4 test files**. The CI build runs with `-x test`, meaning those four tests
+are not executed either.
 
-| Класс | `@Autowired` полей | Строк |
+**Consequence.** Any change is verified only by hand and only in production.
+Hence the fear of touching the code, hence duplicating domains instead of
+editing existing ones (see P-04), hence the impossibility of refactoring.
+
+**Why this blocks the rewrite.** We have no executable description of how the
+system behaves. That means no automated check of parity between the old and the
+new behaviour is possible out of the box — characterization tests will have to be
+written from scratch as separate work (see
+[EPIC-004](../../backlog/EPIC-004-characterization-tests.md)).
+
+**Rule:** [NC-01 — a test, or it does not exist](../01-principles/01-no-compromise.md#nc-01).
+
+---
+
+## P-02. God classes and field injection
+
+**Fact.**
+
+| Class | `@Autowired` fields | Lines |
 |---|---:|---:|
 | `ReferenceRestController` | 51 | — |
-| `ServiceTableService` | 48 | 3 984 |
-| `ContractController` | 38 | 3 775 |
-| `InvoiceServiceImpl` | 37 | 2 375 |
-| `FinanceMainoperationRestController` | 35 | 4 296 |
-| `PayrollService` | 27 | **7 598** |
-| `FinanceServiceDms` | 21 | 5 629 |
-| `FinanceReportRestController` | 20 | 5 366 |
+| `ServiceTableService` | 48 | 3,984 |
+| `ContractController` | 38 | 3,775 |
+| `InvoiceServiceImpl` | 37 | 2,375 |
+| `FinanceMainoperationRestController` | 35 | 4,296 |
+| `PayrollService` | 27 | **7,598** |
+| `FinanceServiceDms` | 21 | 5,629 |
+| `FinanceReportRestController` | 20 | 5,366 |
 
-`ContractController` (домен `marketing`) напрямую внедряет DAO и сервисы из
-`accounting`, `hr`, `dit`, `logistics`, `mreference`, `reference` и `general` —
-семь чужих предметных областей в одном контроллере.
+`ContractController` (the `marketing` domain) directly injects DAOs and services
+from `accounting`, `hr`, `dit`, `logistics`, `mreference`, `reference` and
+`general` — seven foreign subject areas in a single controller.
 
-**Следствие.** Границ между доменами нет. Класс на 7 598 строк невозможно ни
-покрыть тестами, ни удержать в голове, ни разделить между разработчиками.
-Полевая инъекция скрывает зависимости от компилятора и делает объект
-неконструируемым в тесте.
+**Consequence.** There are no boundaries between domains. A class of 7,598 lines
+can neither be covered by tests, nor held in one's head, nor split between
+developers. Field injection hides dependencies from the compiler and makes the
+object impossible to construct in a test.
 
-**Правила:** [NC-02](../01-principles/01-no-compromise.md#nc-02) (границы доменов),
-[NC-03](../01-principles/01-no-compromise.md#nc-03) (явные зависимости),
-[NC-04](../01-principles/01-no-compromise.md#nc-04) (лимиты размера).
-
----
-
-## P-03. Четыре способа ходить в базу одновременно
-
-**Факт.** В одной кодовой базе сосуществуют:
-
-- 165 репозиториев Spring Data с 451 `@Query` (из них 43 — `nativeQuery = true`);
-- 837 вызовов `EntityManager.createQuery` (JPQL строками);
-- 289 вызовов `EntityManager.createNativeQuery` (сырой SQL строками);
-- 20 использований `JdbcTemplate`;
-- собственный слой `dao/` c `DAOException` поверх всего перечисленного.
-
-Строки запросов местами собираются конкатенацией (`StringBuilder`, `sql += ...`).
-
-**Следствие.** Нет единого места, где можно оценить нагрузку на БД; нет единого
-способа профилировать запрос; сырой SQL намертво привязывает код к диалекту
-Oracle — что прямо мешает [ADR-0002](../02-decisions/ADR-0002-database-postgresql.md);
-конкатенация строк запроса — потенциальный класс уязвимостей.
-
-**Правило:** [NC-05](../01-principles/01-no-compromise.md#nc-05) — один способ доступа к данным.
+**Rules:** [NC-02](../01-principles/01-no-compromise.md#nc-02) (domain
+boundaries), [NC-03](../01-principles/01-no-compromise.md#nc-03) (explicit
+dependencies), [NC-04](../01-principles/01-no-compromise.md#nc-04) (size limits).
 
 ---
 
-## P-04. Домены реализованы дважды
+## P-03. Four ways to reach the database at once
 
-**Факт.**
+**Fact.** A single codebase contains, side by side:
 
-| Домен | Реализация A | Реализация B |
+- 165 Spring Data repositories with 451 `@Query` (43 of them
+  `nativeQuery = true`);
+- 837 calls to `EntityManager.createQuery` (JPQL as strings);
+- 289 calls to `EntityManager.createNativeQuery` (raw SQL as strings);
+- 20 uses of `JdbcTemplate`;
+- a home-grown `dao/` layer with `DAOException` on top of all of the above.
+
+Query strings are in places assembled by concatenation (`StringBuilder`,
+`sql += ...`).
+
+**Consequence.** There is no single place where the load on the database can be
+assessed; no single way to profile a query; raw SQL nails the code to the Oracle
+dialect — which directly obstructs
+[ADR-0002](../02-decisions/ADR-0002-database-postgresql.md); concatenating query
+strings is a potential class of vulnerabilities.
+
+**Rule:** [NC-05](../01-principles/01-no-compromise.md#nc-05) — one way of
+accessing data.
+
+---
+
+## P-04. Domains implemented twice
+
+**Fact.**
+
+| Domain | Implementation A | Implementation B |
 |---|---|---|
-| CRM | модуль `crm` в `werp_java_back_v2` (327 файлов, Oracle) | репозиторий `werp_crm` (320 файлов, PostgreSQL) |
-| Справочники | `core/reference` (176 файлов) | `core/mreference` (78 файлов) |
-| Сервисное обслуживание | `core/service` (71 файл) | модуль `service` (715 файлов) |
-| Учёт/зарплата | `core/accounting` | частично продублирован в модуле `service` (`maccounting`) |
-| CRM на фронтенде | `src/crm` (156 файлов) | `src/crm2021` (188 файлов) |
-| Колл-центр на фронтенде | `src/callcenter` (118 файлов) | `src/crm/callCenter` |
+| CRM | the `crm` module in `werp_java_back_v2` (327 files, Oracle) | the `werp_crm` repository (320 files, PostgreSQL) |
+| Reference data | `core/reference` (176 files) | `core/mreference` (78 files) |
+| Field service | `core/service` (71 files) | the `service` module (715 files) |
+| Accounting/payroll | `core/accounting` | partially duplicated in the `service` module (`maccounting`) |
+| CRM on the frontend | `src/crm` (156 files) | `src/crm2021` (188 files) |
+| Call centre on the frontend | `src/callcenter` (118 files) | `src/crm/callCenter` |
 
-**Следствие.** Неизвестно, какая реализация источник истины. Исправление
-дефекта требует правки в двух местах, и о втором обычно забывают. Данные
-расходятся.
+It reaches the level of individual tables. Measured over the four Java
+repositories on 2026-09-04
+([transition/map/01-schema-in-code.md](../../transition/map/01-schema-in-code.md#2-one-table-several-models)):
+**55 tables are mapped by more than one entity class** — 44 by two, 10 by three,
+`COMPANY` by four (`Bukrs`, `Company`, `Company2`, `CompanyQE`).
 
-**Причина.** Прямое следствие P-01: раз старый код нельзя безопасно менять, новую
-функциональность пишут рядом.
+**Consequence.** It is unknown which implementation is the source of truth.
+Fixing a defect requires editing two places, and the second is usually
+forgotten. The data diverges — and with two models writing one table, it can
+diverge inside a single row.
 
-**Правило:** [NC-06](../01-principles/01-no-compromise.md#nc-06) — один домен, одна реализация.
+**Cause.** A direct consequence of P-01: since the old code cannot be changed
+safely, new functionality is written next to it.
+
+**Rule:** [NC-06](../01-principles/01-no-compromise.md#nc-06) — one domain, one
+implementation.
 
 ---
 
-## P-05. Три поколения бэкенда в проде одновременно
+## P-05. Three backend generations in production at once
 
-**Факт.** Одновременно обслуживают пользователей:
+**Fact.** Serving users simultaneously:
 
 - `werp_jsf` — JSF 2.2.8 / PrimeFaces 5.1 / Hibernate 3.6.7 (2011) / MySQL,
-  233 913 строк, 472 xhtml-страницы;
+  233,913 lines, 472 xhtml pages;
 - `werp_java_back_v2` — Spring Boot 2.0.0 (2018) / Oracle;
-- `werp_crm` и `werp_call_center` — Spring Boot 2.4 / PostgreSQL.
+- `werp_crm` and `werp_call_center` — Spring Boot 2.4 / PostgreSQL.
 
-Фронтенд на React содержит **33 ссылки в легаси-JSF**: часть экранов (карточка
-договора, справочник клиентов, часть отчётов) открывается в старом интерфейсе
-из нового. Пользователь ходит между двумя UI.
+The React frontend contains **33 links into the legacy JSF**: some screens (the
+contract card, the customer reference list, some reports) open in the old
+interface from the new one. The user moves between two UIs.
 
-**Следствие.** Три модели авторизации, три модели данных, три способа
-логирования, три графика обновлений. Нельзя вывести из эксплуатации ни одну
-часть, не разобравшись со всеми тремя.
+**Consequence.** Three authorization models, three data models, three ways of
+logging, three release schedules. No part can be decommissioned without dealing
+with all three.
 
-**Правило:** [NC-07](../01-principles/01-no-compromise.md#nc-07) — одно поколение в проде.
-
----
-
-## P-06. Зависимости вне поддержки, сборка невоспроизводима
-
-**Факт.**
-
-- Spring Boot **2.0.0.RELEASE** — вне поддержки с 2019 года; Spring Cloud
-  `Finchley.M9` — предрелизная веха.
-- Oracle JDBC подключается из локальной папки `libs/ojdbc6-11.2.0.3.jar` через
-  `flatDir` — файл не воспроизводится из репозитория артефактов, чистая сборка
-  на новой машине без него невозможна.
-- Модуль `util` компилируется под Java 8, остальные — под Java 11.
-- Версии Hibernate, Spring Cloud OAuth2 и Spring Cloud Bootstrap вручную подняты
-  до версий, рассчитанных на другие поколения Boot.
-- Базовый образ `openjdk:11` — архивный, обновления безопасности не выходят.
-- В четырёх Dockerfile из пяти `ENTRYPOINT ["java","-jar"]` не содержит имени
-  jar-файла — контейнер работоспособен только при передаче аргумента извне.
-- Во фронтенде `faker` и `@faker-js/faker` — в производственных зависимостях;
-  `axios` 0.21, `react-table` 6.10.3, `semantic-ui-react` 0.72 — вне поддержки.
-
-**Правила:** [NC-08](../01-principles/01-no-compromise.md#nc-08) (воспроизводимая сборка),
-[NC-09](../01-principles/01-no-compromise.md#nc-09) (поддерживаемые зависимости).
+**Rule:** [NC-07](../01-principles/01-no-compromise.md#nc-07) — one generation in
+production.
 
 ---
 
-## P-07. Диагностика через `System.out`
+## P-06. Dependencies out of support, the build is not reproducible
 
-**Факт.** **1 443** вызова `System.out.print*` и **31** `printStackTrace()`
-в основном бэкенде. При этом в базовом `application.yml` включены
-`show-sql: true` и `hibernate.generate_statistics: true` — то есть каждый
-SQL-запрос логируется и статистика собирается **во всех профилях, включая
-производственный**.
+**Fact.**
 
-**Следствие.** Диагностическая информация не структурирована, не коррелирует по
-запросу и не индексируется. Постоянный вывод SQL — измеримая просадка
-производительности и риск попадания данных клиентов в журналы.
+- Spring Boot **2.0.0.RELEASE** — out of support since 2019; Spring Cloud
+  `Finchley.M9` — a pre-release milestone.
+- Oracle JDBC is wired in from the local folder `libs/ojdbc6-11.2.0.3.jar` via
+  `flatDir` — the file cannot be reproduced from an artefact repository, and a
+  clean build on a new machine is impossible without it.
+- The `util` module compiles for Java 8, the rest for Java 11.
+- The versions of Hibernate, Spring Cloud OAuth2 and Spring Cloud Bootstrap were
+  raised by hand to versions designed for other Boot generations.
+- The base image `openjdk:11` is archived; no security updates are published.
+- In four of the five Dockerfiles, `ENTRYPOINT ["java","-jar"]` does not contain
+  the jar file name — the container only works if the argument is passed from
+  outside.
+- On the frontend, `faker` and `@faker-js/faker` are in the production
+  dependencies; `axios` 0.21, `react-table` 6.10.3, `semantic-ui-react` 0.72 are
+  out of support.
 
-**Правило:** [NC-10](../01-principles/01-no-compromise.md#nc-10) — структурированные журналы, трассировка, никакого stdout.
-
----
-
-## P-08. Конфигурация окружений зашита в код
-
-**Факт.** Адреса и порты трёх контуров (dev / stage / prod) захардкожены прямо
-в `scripts` файла `package.json` фронтенда и попадают в собранный бандл. Обмен с
-бэкендом на части контуров идёт по HTTP без TLS. Имена cookie с токеном
-различаются между контурами и заданы в `.env`-файлах, закоммиченных в
-репозиторий.
-
-**Следствие.** Один и тот же артефакт нельзя продвинуть из stage в prod — под
-каждый контур собирается свой бандл. Внутренняя топология сети раскрывается
-клиенту.
-
-**Правило:** [NC-11](../01-principles/01-no-compromise.md#nc-11) — один артефакт, конфигурация снаружи.
+**Rules:** [NC-08](../01-principles/01-no-compromise.md#nc-08) (a reproducible
+build), [NC-09](../01-principles/01-no-compromise.md#nc-09) (supported
+dependencies).
 
 ---
 
-## P-09. Авторизация склеена из трёх схем
+## P-07. Diagnostics through `System.out`
 
-**Факт.** Одновременно используются: собственный `auth-server` на
-`spring-cloud-starter-oauth2` 2.2.4 (поверх Boot 2.0), JWT в cookie,
-разделяемых с легаси-JSF по домену, `jjwt` 0.7.0 в одних модулях и
-`com.auth0:java-jwt` 3.10.3 в других, плюс собственный ABAC внутри домена `dit`
-и `PermissionService` в `main-module`.
+**Fact.** **1,443** calls to `System.out.print*` and **31** `printStackTrace()`
+in the main backend. On top of that, the base `application.yml` has
+`show-sql: true` and `hibernate.generate_statistics: true` enabled — that is,
+every SQL query is logged and statistics are collected **in all profiles,
+production included**.
 
-**Следствие.** Нет единой точки, где можно ответить на вопрос «имеет ли
-пользователь право на это действие». Проверки прав размазаны по контроллерам.
-Токены в cookie между поддоменами — расширенная поверхность атаки.
+**Consequence.** Diagnostic information is unstructured, not correlated per
+request and not indexed. Continuous SQL output is a measurable performance hit
+and a risk of customer data ending up in the logs.
 
-**Правила:** [NC-12](../01-principles/01-no-compromise.md#nc-12) (единая модель доступа),
-см. также [product/08-security.md](../../product/08-security.md).
-
----
-
-## P-10. CI/CD собирает и деплоит одну седьмую системы
-
-**Факт.** Единственный работающий пайплайн (`deploy-develop.yml`) срабатывает на
-push в `develop`, собирает **весь** Gradle-проект с `-x test`, но пакует и
-выкатывает **только модуль `service`**. Остальные шесть модулей (`core` — 230 тыс.
-строк) деплоятся вручную. Рядом лежит неработающий `bitbucket-pipelines.yml` от
-Maven-эпохи. Нет пайплайнов для stage и prod, нет проверки качества, нет
-статического анализа, нет сканирования зависимостей.
-
-**Правило:** [NC-13](../01-principles/01-no-compromise.md#nc-13) — деплой только через пайплайн.
+**Rule:** [NC-10](../01-principles/01-no-compromise.md#nc-10) — structured logs,
+tracing, no stdout.
 
 ---
 
-## P-11. Фронтенд — три библиотеки на каждую задачу
+## P-08. Environment configuration is baked into the code
 
-**Факт.** Три библиотеки деревьев, три способа выгрузки в Excel, два стека
-графиков, две библиотеки дат, две библиотеки чисел произвольной точности.
-273 классовых компонента против 2 185 использований `useState` — две парадигмы
-в одной кодовой базе. 189 использований методов жизненного цикла, объявленных
-устаревшими (`componentWillMount`, `componentWillReceiveProps`,
-`componentWillUpdate`). Ноль TypeScript при 369 тыс. строк. `routes.js` —
-2 695 строк.
+**Fact.** The addresses and ports of the three environments (dev / stage / prod)
+are hardcoded right in the `scripts` section of the frontend's `package.json` and
+end up in the built bundle. Communication with the backend on some environments
+goes over HTTP without TLS. The names of the cookies carrying the token differ
+between environments and are set in `.env` files committed to the repository.
 
-**Следствие.** Размер бандла, несогласованный UX (разные таблицы ведут себя
-по-разному), невозможность обновить React — устаревшие методы жизненного цикла
-удалены в StrictMode и несовместимы с конкурентным режимом.
+**Consequence.** The same artefact cannot be promoted from stage to prod — a
+separate bundle is built for each environment. The internal network topology is
+exposed to the client.
 
-**Правило:** [NC-14](../01-principles/01-no-compromise.md#nc-14) — одна задача, одна библиотека.
-
----
-
-## P-12. Мусор в репозиториях
-
-**Факт.** В `werp_call_center` закоммичены журнал приложения (348 КБ), его
-суточные архивы и аварийные дампы JVM `hs_err_pid*.log`. В корне рабочей папки
-лежат `.cmd`-скрипты запуска с номерами в именах (`-1. run auth-server.cmd` …
-`-6. run crm.cmd`) — ручной оркестратор запуска семи сервисов.
-
-**Правило:** [NC-15](../01-principles/01-no-compromise.md#nc-15) — в репозитории только исходники.
+**Rule:** [NC-11](../01-principles/01-no-compromise.md#nc-11) — one artefact,
+configuration from outside.
 
 ---
 
-## Сводная таблица
+## P-09. Authorization is glued together from three schemes
 
-| # | Проблема | Метрика | Правило |
+**Fact.** In simultaneous use: a home-grown `auth-server` on
+`spring-cloud-starter-oauth2` 2.2.4 (on top of Boot 2.0), JWT in cookies shared
+with the legacy JSF by domain, `jjwt` 0.7.0 in some modules and
+`com.auth0:java-jwt` 3.10.3 in others, plus a home-grown ABAC inside the `dit`
+domain and a `PermissionService` in `main-module`.
+
+**Consequence.** There is no single point that can answer the question "is this
+user allowed to do this". Permission checks are smeared across controllers.
+Tokens in cookies shared between subdomains are an enlarged attack surface.
+
+**Rules:** [NC-12](../01-principles/01-no-compromise.md#nc-12) (a single access
+model), see also [product/08-security.md](../../product/08-security.md).
+
+---
+
+## P-10. CI/CD builds and deploys one seventh of the system
+
+**Fact.** The only working pipeline (`deploy-develop.yml`) triggers on a push to
+`develop`, builds the **whole** Gradle project with `-x test`, but packages and
+ships **only the `service` module**. The other six modules (`core` — 230k lines)
+are deployed by hand. Alongside it sits a non-working `bitbucket-pipelines.yml`
+from the Maven era. There are no pipelines for stage and prod, no quality gate,
+no static analysis, no dependency scanning.
+
+**Rule:** [NC-13](../01-principles/01-no-compromise.md#nc-13) — deployment only
+through a pipeline.
+
+---
+
+## P-11. The frontend — three libraries for every job
+
+**Fact.** Three tree libraries, three ways of exporting to Excel, two charting
+stacks, two date libraries, two arbitrary-precision number libraries. 273 class
+components against 2,185 uses of `useState` — two paradigms in one codebase. 189
+uses of lifecycle methods declared deprecated (`componentWillMount`,
+`componentWillReceiveProps`, `componentWillUpdate`). Zero TypeScript across 369k
+lines. `routes.js` — 2,695 lines.
+
+**Consequence.** Bundle size, inconsistent UX (different tables behave
+differently), the impossibility of upgrading React — the deprecated lifecycle
+methods are removed under StrictMode and are incompatible with concurrent mode.
+
+**Rule:** [NC-14](../01-principles/01-no-compromise.md#nc-14) — one job, one
+library.
+
+---
+
+## P-12. Junk in the repositories
+
+**Fact.** Committed into `werp_call_center` are the application log (348 KB), its
+daily archives and JVM crash dumps `hs_err_pid*.log`. In the root of the working
+folder sit `.cmd` start-up scripts with numbers in their names
+(`-1. run auth-server.cmd` … `-6. run crm.cmd`) — a manual orchestrator for
+starting seven services.
+
+**Rule:** [NC-15](../01-principles/01-no-compromise.md#nc-15) — only sources in
+the repository.
+
+---
+
+## Summary table
+
+| # | Problem | Metric | Rule |
 |---|---|---|---|
-| P-01 | Нет тестов | 4 файла на 355 тыс. строк, CI с `-x test` | NC-01 |
-| P-02 | God-классы | до 7 598 строк, до 51 инъекции | NC-02, NC-03, NC-04 |
-| P-03 | 4 способа доступа к БД | 451 + 837 + 289 + 20 | NC-05 |
-| P-04 | Домены продублированы | 6 доменов ×2 | NC-06 |
-| P-05 | 3 поколения в проде | JSF + Boot 2.0 + Boot 2.4 | NC-07 |
-| P-06 | Мёртвые зависимости | Boot 2.0.0, ojdbc6 из `libs/` | NC-08, NC-09 |
-| P-07 | `System.out` вместо логов | 1 443 + 31 | NC-10 |
-| P-08 | Конфиг в коде | адреса 3 контуров в `package.json` | NC-11 |
-| P-09 | 3 схемы авторизации | 2 JWT-библиотеки + ABAC + cookie | NC-12 |
-| P-10 | CI покрывает 1/7 системы | 1 модуль из 7 | NC-13 |
-| P-11 | Дублирующие библиотеки | 3 дерева, 3 Excel, 2 графика | NC-14 |
-| P-12 | Мусор в git | журналы, дампы JVM | NC-15 |
+| P-01 | No tests | 4 files across 355k lines, CI with `-x test` | NC-01 |
+| P-02 | God classes | up to 7,598 lines, up to 51 injections | NC-02, NC-03, NC-04 |
+| P-03 | 4 ways of accessing the DB | 451 + 837 + 289 + 20 | NC-05 |
+| P-04 | Domains duplicated | 6 domains ×2 | NC-06 |
+| P-05 | 3 generations in production | JSF + Boot 2.0 + Boot 2.4 | NC-07 |
+| P-06 | Dead dependencies | Boot 2.0.0, ojdbc6 from `libs/` | NC-08, NC-09 |
+| P-07 | `System.out` instead of logs | 1,443 + 31 | NC-10 |
+| P-08 | Config in the code | addresses of 3 environments in `package.json` | NC-11 |
+| P-09 | 3 authorization schemes | 2 JWT libraries + ABAC + cookies | NC-12 |
+| P-10 | CI covers 1/7 of the system | 1 module out of 7 | NC-13 |
+| P-11 | Duplicated libraries | 3 trees, 3 Excel, 2 charts | NC-14 |
+| P-12 | Junk in git | logs, JVM dumps | NC-15 |

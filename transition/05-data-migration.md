@@ -1,165 +1,177 @@
 ---
 id: TRANS-05
-title: Миграция данных
+title: Data migration
 status: draft
 ---
 
-# Миграция данных Oracle/MySQL → PostgreSQL
+# Data migration: Oracle/MySQL → PostgreSQL
 
-Самая рискованная техническая часть проекта: код можно переписать заново, данные
-— нет. Требование [ADR-0002](../docs/02-decisions/ADR-0002-database-postgresql.md).
+The riskiest technical part of the project: code can be rewritten from scratch,
+data cannot. Required by
+[ADR-0002](../docs/02-decisions/ADR-0002-database-postgresql.md).
 
-## Что мигрируется
+## What is migrated
 
-| Источник | Содержимое | Объём |
+| Source | Content | Volume |
 |---|---|---|
-| Oracle (`werp_java_back_v2`) | 523 сущности + таблицы аудита + объекты БД | измерить |
-| MySQL (`werp_jsf`) | данные легаси-монолита; пересечение с Oracle требует выяснения | измерить |
-| PostgreSQL (`werp_crm`, `werp_call_center`) | CRM и колл-центр | измерить |
-| Файловое хранилище | вложения и документы | измерить |
+| Oracle (`werp_java_back_v2`) | 523 entities + the audit tables + database objects | to be measured |
+| MySQL (`werp_jsf`) | the legacy monolith's data; the overlap with Oracle needs establishing | to be measured |
+| PostgreSQL (`werp_crm`, `werp_call_center`) | CRM and the call centre | to be measured |
+| The file store | attachments and documents | to be measured |
 
-**Открытый вопрос первой величины:** насколько данные легаси-JSF (MySQL)
-пересекаются с Oracle. Если легаси-монолит хранит собственные данные, не
-представленные в Oracle, объём миграции существенно больше оценённого.
-→ [OQ-012](12-open-questions.md), закрыть до гейта G0.
+**An open question of the first order:** how far the legacy JSF's data (MySQL)
+overlaps with Oracle. If the legacy monolith holds data of its own that is not
+represented in Oracle, the migration volume is substantially larger than
+estimated.
+→ [OQ-012](12-open-questions.md), to be closed before gate G0.
 
-## Принципы
+## Principles
 
-1. **Миграция — код, а не разовый скрипт.** Живёт в репозитории, ревьюится,
-   покрыта тестами, запускается одной командой, воспроизводима.
-2. **Идемпотентность.** Повторный запуск на том же входе даёт тот же результат.
-3. **Только чтение источника.** Инструмент миграции физически не имеет прав на
-   запись в легаси-базы.
-4. **Сверка — часть миграции**, а не последующий этап. Инструмент, который
-   перенёс данные и не проверил их, работу не выполнил.
-5. **Каждое преобразование объяснимо.** Для любой строки в новой базе можно
-   ответить, откуда она взялась и по какому правилу преобразована.
-6. **Ничего не выбрасывается молча.** Строка, не прошедшая перенос, попадает в
-   журнал отбраковки с причиной; пустой журнал отбраковки — тоже результат,
-   который нужно объяснить.
+1. **The migration is code, not a one-off script.** It lives in the repository,
+   is reviewed, is covered by tests, is run with a single command and is
+   reproducible.
+2. **Idempotency.** A repeat run on the same input produces the same result.
+3. **The source is read-only.** The migration tool physically has no permission
+   to write to the legacy databases.
+4. **Reconciliation is part of the migration**, not a subsequent stage. A tool
+   that moved the data and did not verify it has not done its job.
+5. **Every transformation is explainable.** For any row in the new database one
+   can say where it came from and by which rule it was transformed.
+6. **Nothing is discarded silently.** A row that failed to transfer lands in the
+   rejection log with a reason; an empty rejection log is also a result that has
+   to be explained.
 
-## Этапы
+## Stages
 
-### Э1. Инвентаризация схемы (Фаза 0)
+### S1. Schema inventory (Phase 0)
 
-[EPIC-003](../backlog/EPIC-003-schema-inventory.md). Для каждой таблицы
-источника фиксируется:
+[EPIC-003](../backlog/EPIC-003-schema-inventory.md). For every source table the
+following is recorded:
 
-- число строк, объём, годовой прирост;
-- используется ли реально (запросами приложения, отчётами, внешними системами);
-- владелец-домен по [карте](../product/02-domains.md);
-- решение: **перенести** / **свести с другой таблицей** / **не переносить**;
-- правила преобразования типов и имён;
-- качество данных: доля `NULL`, нарушения ссылочной целостности, дубликаты.
+- the row count, the size, the annual growth;
+- whether it is actually used (by application queries, by reports, by external
+  systems);
+- the owning domain per the [map](../product/02-domains.md);
+- the decision: **migrate** / **consolidate with another table** / **do not
+  migrate**;
+- the rules for transforming types and names;
+- data quality: the share of `NULL`, referential integrity violations,
+  duplicates.
 
-Отдельно инвентаризуются **объекты БД, не видимые из кода приложения**:
-представления, триггеры, последовательности, хранимые процедуры, задания
-планировщика БД, права доступа. Если в Oracle есть бизнес-логика на PL/SQL —
-это отдельный, пока не оценённый объём работы ([OQ-007](12-open-questions.md)).
+Separately, an inventory is taken of the **database objects invisible from the
+application code**: views, triggers, sequences, stored procedures, DB scheduler
+jobs, access permissions. If Oracle holds business logic in PL/SQL, that is a
+separate and as yet unestimated amount of work
+([OQ-007](12-open-questions.md)).
 
-### Э2. Проектирование соответствий
+### S2. Designing the mappings
 
-Таблица соответствий «источник → цель» на уровне столбца:
+A "source → target" mapping table at the column level:
 
-| Источник | Цель | Преобразование | Проверка |
+| Source | Target | Transformation | Verification |
 |---|---|---|---|
-| таблица.столбец | схема.таблица.столбец | правило | как убедиться |
+| table.column | schema.table.column | the rule | how to make sure |
 
-Особое внимание:
+Special attention to:
 
-- **Имена.** Унаследованные сокращения (`bukrs`, `matnr`, `lifnr`, `werks`)
-  заменяются осмысленными; таблица соответствия имён — часть глоссария
-  ([GLOSSARY.md](../GLOSSARY.md)) и часть инструмента миграции.
-- **Пустая строка против `NULL`.** Oracle их не различает, PostgreSQL —
-  различает. Каждый текстовый столбец получает явное решение.
-- **Даты и время.** Приведение к UTC с явным указанием исходной зоны.
-- **Деньги.** Точность и округление по [04-data-model.md](../product/03-database.md);
-  результат сверяется до копейки.
-- **Логические значения.** `char(1)`/`number(1)` → `boolean` с явным перечнем
-  допустимых входных значений.
-- **Идентификаторы.** Сохранение или перевыпуск — решение принимается один раз
-  на систему; сохранение упрощает сверку и откат, перевыпуск чище. По умолчанию
-  — сохранять, с фиксацией соответствия.
+- **Names.** Inherited abbreviations (`bukrs`, `matnr`, `lifnr`, `werks`) are
+  replaced with meaningful ones; the name mapping table is part of the glossary
+  ([GLOSSARY.md](../GLOSSARY.md)) and part of the migration tool.
+- **Empty string versus `NULL`.** Oracle does not distinguish them, PostgreSQL
+  does. Every text column gets an explicit decision.
+- **Dates and times.** Conversion to UTC with the source zone stated explicitly.
+- **Money.** Precision and rounding per
+  [the database model](../product/03-database/README.md); the result is reconciled to the
+  cent.
+- **Boolean values.** `char(1)`/`number(1)` → `boolean` with an explicit list of
+  acceptable input values.
+- **Identifiers.** Preserving or reissuing them is a decision taken once for the
+  whole system; preserving simplifies the reconciliation and the rollback,
+  reissuing is cleaner. The default is to preserve, with the mapping recorded.
 
-### Э3. Инструмент миграции
+### S3. The migration tool
 
-- Отдельная часть монорепозитория (`migration/` по [ADR-0007](../docs/02-decisions/ADR-0007-repo-layout.md)).
-- Порядок переноса — по графу зависимостей доменов.
-- Пакетная обработка с контрольными точками: сбой не требует начинать заново.
-- Подробное журналирование: сколько прочитано, перенесено, отбраковано,
-  с какими причинами.
-- Измерение времени каждого шага — время миграции есть жёсткое ограничение
-  ([05-nfr.md](../product/07-nfr.md#ограничения-окна-переезда)).
+- A separate part of the monorepo (`migration/` per
+  [ADR-0007](../docs/02-decisions/ADR-0007-repo-layout.md)).
+- The transfer order follows the domain dependency graph.
+- Batch processing with checkpoints: a failure does not require starting over.
+- Detailed logging: how much was read, transferred, rejected, and for which
+  reasons.
+- Timing of every step — the migration time is a hard constraint
+  ([07-nfr.md](../product/07-nfr.md#cutover-window-constraints)).
 
-### Э4. Качество данных
+### S4. Data quality
 
-Промышленные данные, накопленные за 12 лет, содержат то, чего не допускает новая
-схема. **Это обнаруживается на первой же репетиции и является нормальным
-результатом, а не аварией.**
+Production data accumulated over 12 years contains things the new schema does not
+permit. **This is discovered at the very first rehearsal and is a normal result,
+not an emergency.**
 
-Ожидаемые находки: нарушения ссылочной целостности, дубликаты в справочниках,
-некорректные даты, отрицательные количества, «магические» значения вместо
-`NULL`, несогласованность между дублирующимися доменами
-([P-04](../docs/00-context/02-pain-points.md#p-04-домены-реализованы-дважды)).
+Expected findings: referential integrity violations, duplicates in reference
+lists, invalid dates, negative quantities, "magic" values instead of `NULL`,
+inconsistency between duplicated domains
+([P-04](../docs/00-context/02-pain-points.md#p-04-domains-implemented-twice)).
 
-Для каждого класса проблем — явное решение, принятое **вместе с бизнесом**:
-исправить, перенести как есть с пометкой, или не переносить. Решение
-документируется. Тихая «починка» данных при миграции недопустима — это ровно тот
-способ, которым теряют деньги.
+For every class of problem there is an explicit decision taken **together with
+the business**: fix it, carry it over as it is with a marker, or do not carry it
+over. The decision is documented. Silently "repairing" data during the migration
+is unacceptable — that is exactly how money gets lost.
 
-Очистка данных, где она возможна, **выполняется в легаси до переезда**, а не в
-момент миграции: так у неё есть время, проверка и владелец.
+Data cleansing, where possible, is **performed in the legacy before the
+cutover**, not at the moment of migration: that way it has time, verification and
+an owner.
 
-### Э5. Репетиции
+### S5. Rehearsals
 
-Не менее четырёх полных репетиций на свежей копии промышленных данных.
+At least four full rehearsals against a fresh copy of production data.
 
-Каждая репетиция даёт отчёт: время выполнения, число перенесённых и
-отбракованных строк, результаты сверки, найденные проблемы качества данных,
-время отката. Репетиция без отчёта не засчитывается.
+Every rehearsal produces a report: the execution time, the number of transferred
+and rejected rows, the reconciliation results, the data-quality problems found,
+the rollback time. A rehearsal without a report does not count.
 
-| Репетиция | Цель |
+| Rehearsal | Goal |
 |---|---|
-| Р1 | инструмент работает от начала до конца; выявление проблем качества данных |
-| Р2 | все находки Р1 закрыты; измерение времени |
-| Р3 | укладываемся в окно; полная сверка; репетиция отката |
-| Р4 | подтверждение стабильности; результат совпадает с Р3 |
+| R1 | the tool runs end to end; identifying data-quality problems |
+| R2 | all the R1 findings are closed; timing measured |
+| R3 | we fit inside the window; a full reconciliation; a rollback rehearsal |
+| R4 | confirmation of stability; the result matches R3 |
 
-Р3 и Р4 должны пройти подряд и успешно — это условие допуска к боевому переезду.
+R3 and R4 must pass consecutively and successfully — that is the condition for
+admission to the live cutover.
 
-### Э6. Боевая миграция
+### S6. The live migration
 
-По процедуре из [01-cutover-strategy.md](07-cutover.md).
+Per the procedure in [01-cutover-strategy.md](07-cutover.md).
 
-## Сверка
+## Reconciliation
 
-Обязательный минимум после каждого прогона:
+The mandatory minimum after every run:
 
-| Уровень | Что проверяется | Допуск |
+| Level | What is verified | Tolerance |
 |---|---|---|
-| Количественный | число строк по каждой таблице источник ↔ цель | 0 (кроме объяснённых отбраковок) |
-| Контрольные суммы | агрегаты по ключевым числовым столбцам | 0 |
-| Финансовый | сальдо, обороты, задолженности по каждому договору | **0, до копейки** |
-| Ссылочный | отсутствие «висящих» ссылок | 0 |
-| Выборочный | сравнение N случайных записей поштучно | 0 |
-| Сценарный | ключевые отчёты старой и новой системы совпадают | 0 |
+| Counts | the row count per table, source ↔ target | 0 (apart from explained rejections) |
+| Checksums | aggregates over the key numeric columns | 0 |
+| Financial | balances, turnovers, receivables per contract | **0, to the cent** |
+| Referential | the absence of dangling references | 0 |
+| Sampled | a one-by-one comparison of N random records | 0 |
+| Scenario | the key reports of the old and the new system match | 0 |
 
-Подробнее — [03-parity-verification.md](06-parity-verification.md).
+In more detail — [03-parity-verification.md](06-parity-verification.md).
 
-## Файлы и вложения
+## Files and attachments
 
-Отдельный трек: объём файлового хранилища может превышать объём базы, а
-копирование файлов — самая долгая часть переезда.
+A separate track: the file store's volume may exceed the database's, and copying
+files is the longest part of the cutover.
 
-**Файлы копируются заранее**, до окна переезда, с последующей до-синхронизацией
-изменившегося. В окно переезда попадает только дельта. Целостность проверяется
-по контрольным суммам.
+**The files are copied in advance**, before the cutover window, with a subsequent
+re-synchronization of whatever changed. Only the delta falls inside the cutover
+window. Integrity is verified by checksums.
 
-## Чего делать нельзя
+## What must not be done
 
-- Мигрировать напрямую из промышленной базы в промышленную без репетиции.
-- Править данные в источнике инструментом миграции.
-- Считать миграцию успешной без сверки.
-- Оставлять решения по качеству данных на усмотрение разработчика в момент
-  переезда.
-- Переносить таблицы «на всякий случай», не разобравшись, нужны ли они.
+- Migrating straight from one production database to another without a rehearsal.
+- Editing data in the source with the migration tool.
+- Considering the migration successful without a reconciliation.
+- Leaving data-quality decisions to a developer's discretion at the moment of the
+  cutover.
+- Carrying tables over "just in case", without establishing whether they are
+  needed.

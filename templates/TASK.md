@@ -1,49 +1,50 @@
 ---
 id: TASK-NNNN
-title: <название>
+title: <name>
 epic: EPIC-NNN
-owner: <человек>
+owner: <a person>
 status: todo | in-progress | blocked | done
-estimate: <человеко-дни>
+estimate: <person-days>
 ---
 
-# TASK-NNNN. <Название>
+# TASK-NNNN. <Name>
 
-## Что делаем
+## What we are doing
 
-Конкретно и в границах. Выход за границы оформляется отдельной задачей, а не
-делается «заодно».
+Specifically and within bounds. Going beyond the bounds is filed as a separate
+task rather than done "along the way".
 
-## Зачем
+## Why
 
-Одно предложение: что станет возможно после.
+One sentence: what becomes possible afterwards.
 
-## Как проверить (критерии приёмки)
+## How to verify (acceptance criteria)
 
 - [ ] …
 - [ ] …
 
-Каждый критерий — наблюдаемый факт, по которому выносится вердикт да/нет.
-Формулировки «работает корректно», «оптимизировано», «улучшено» критериями не
-являются.
+Every criterion is an observable fact on which a yes/no verdict is reached.
+Statements like "works correctly", "optimized", "improved" are not criteria.
 
 ## Definition of Done
 
-Дополнительно к критериям выше — [DoD задачи](../docs/01-principles/02-definition-of-done.md#dod-задачи):
+In addition to the criteria above — the
+[Task DoD](../docs/01-principles/02-definition-of-done.md#task-dod):
 
-- [ ] Тесты написаны, покрытие не ниже порога
-- [ ] Правила [NC-01…NC-15](../docs/01-principles/01-no-compromise.md) не нарушены, CI зелёный
-- [ ] Контракт API обновлён, если менялось публичное поведение
-- [ ] Миграция схемы с проверенным откатом, если менялась схема
-- [ ] Ревью пройдено
-- [ ] Журналы, метрики, трассировка добавлены там, где операция значима
-- [ ] README модуля обновлён, если менялся его контракт
+- [ ] Tests are written and coverage is at or above the threshold
+- [ ] The rules [NC-01…NC-15](../docs/01-principles/01-no-compromise.md) are not
+      violated, CI is green
+- [ ] The API contract is updated if public behaviour changed
+- [ ] A schema migration with a verified rollback, if the schema changed
+- [ ] Review is done
+- [ ] Logs, metrics and traces are added wherever the operation matters
+- [ ] The module's README is updated if its contract changed
 
-## Зависимости
+## Dependencies
 
-От чего зависит, что блокирует.
+What it depends on, what it blocks.
 
-## Заметки
+## Notes
 
-Найденное в ходе работы: неожиданности, решения, ссылки. Заполняется по факту, а
-не заранее.
+What was found during the work: surprises, decisions, links. Filled in as things
+happen, not in advance.

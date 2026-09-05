@@ -1,112 +1,115 @@
 ---
 id: TRANS-PLAN-01
-title: Фаза 0 — Основание
+title: Phase 0 — Foundation
 status: draft
 gate: G0
 ---
 
-# Фаза 0 — Основание
+# Phase 0 — Foundation
 
-**Цель:** узнать, что именно мы обязаны воспроизвести. Ни строки кода новой
-системы в этой фазе не пишется.
+**Goal:** find out what exactly we are obliged to reproduce. Not a line of the
+new system's code is written in this phase.
 
-**Почему это отдельная фаза.** Текущая система за 12 лет накопила поведение,
-которое нигде не описано: 1 286 эндпойнтов, 523 сущности, неизвестное число
-отчётов и прав. Единственный носитель этого знания — код и люди. При big bang
-неизвестное всплывает не постепенно, а всё сразу и в конце. Фаза 0 переводит
-неизвестное в известное **до** того, как оно станет дорогим.
+**Why this is a separate phase.** Over 12 years the current system has
+accumulated behaviour that is documented nowhere: 1,286 endpoints, 523 entities,
+an unknown number of reports and permissions. The only holders of that knowledge
+are the code and the people. Under a big bang the unknown surfaces not gradually
+but all at once and at the end. Phase 0 turns the unknown into the known
+**before** it becomes expensive.
 
-**Ключевое свойство:** фаза полностью **стек-независима**. Она выполняется, пока
-решается [ADR-0003](../../docs/02-decisions/ADR-0003-backend-stack.md), и не блокируется
-им.
+**A key property:** the phase is entirely **stack-independent**. It runs while
+[ADR-0003](../../docs/02-decisions/ADR-0003-backend-stack.md) is being decided
+and is not blocked by it.
 
-## Результаты фазы
+## Phase deliverables
 
-| # | Результат | Эпик |
+| # | Deliverable | Epic |
 |---|---|---|
-| 1 | Формальная спецификация текущего API | [EPIC-002](../../backlog/EPIC-002-contract-inventory.md) |
-| 2 | Инвентаризация схемы БД с решением по каждой таблице | [EPIC-003](../../backlog/EPIC-003-schema-inventory.md) |
-| 3 | Характеризационные тесты критичных расчётов | [EPIC-004](../../backlog/EPIC-004-characterization-tests.md) |
-| 4 | Реестр ролей и прав | [EPIC-006](../../backlog/EPIC-006-permissions-inventory.md) |
-| 5 | Реестр отчётов с отсевом мёртвых | [EPIC-007](../../backlog/EPIC-007-reports-inventory.md) |
-| 6 | Измеренные базовые показатели | [EPIC-009](../../backlog/EPIC-009-baseline-measurement.md) |
-| 7 | Реестр бизнес-сценариев | [EPIC-011](../../backlog/EPIC-011-scenario-registry.md) |
-| 8 | Подтверждённая карта доменов | [product/02-domains.md](../../product/02-domains.md) |
-| 9 | Принятые ADR-0005, ADR-0007 | [02-decisions](../02-decisions/) |
-| 10 | Прототипы на кандидатах стека, заполненная матрица | [ADR-0003](../../docs/02-decisions/ADR-0003-backend-stack.md#дальнейшие-шаги) |
-| 11 | Организация: команда, роли, владельцы доменов | [EPIC-001](../../backlog/EPIC-001-project-setup.md) |
-| 12 | Аудит безопасности текущей системы | [EPIC-010](../../backlog/EPIC-010-security-audit.md) |
+| 1 | A formal specification of the current API | [EPIC-002](../../backlog/EPIC-002-contract-inventory.md) |
+| 2 | A database schema inventory with a decision on every table | [EPIC-003](../../backlog/EPIC-003-schema-inventory.md) |
+| 3 | Characterization tests for the critical calculations | [EPIC-004](../../backlog/EPIC-004-characterization-tests.md) |
+| 4 | A registry of roles and permissions | [EPIC-006](../../backlog/EPIC-006-permissions-inventory.md) |
+| 5 | A report registry with the dead ones weeded out | [EPIC-007](../../backlog/EPIC-007-reports-inventory.md) |
+| 6 | Measured baseline figures | [EPIC-009](../../backlog/EPIC-009-baseline-measurement.md) |
+| 7 | A registry of business scenarios | [EPIC-011](../../backlog/EPIC-011-scenario-registry.md) |
+| 8 | A domain map confirmed by the business | [product/02-domains.md](../../product/02-domains.md) |
+| 9 | ADR-0005 and ADR-0007 accepted | [02-decisions](../02-decisions/) |
+| 10 | Prototypes on the stack candidates, the matrix filled in | [ADR-0003](../../docs/02-decisions/ADR-0003-backend-stack.md#next-steps) |
+| 11 | Organization: the team, the roles, the domain owners | [EPIC-001](../../backlog/EPIC-001-project-setup.md) |
+| 12 | A security audit of the current system | [EPIC-010](../../backlog/EPIC-010-security-audit.md) |
 
-## Порядок работ
+## The order of work
 
 ```
-EPIC-001 организация ──┬─► EPIC-002 контракты API ──┐
-                       ├─► EPIC-003 схема БД ───────┤
-                       ├─► EPIC-006 права ──────────┼─► карта доменов ─► G0
-                       ├─► EPIC-007 отчёты ─────────┤
-                       ├─► EPIC-009 показатели ─────┤
-                       ├─► EPIC-010 безопасность ───┤
-                       └─► EPIC-011 сценарии ───────┘
+EPIC-001 organization ─┬─► EPIC-002 API contracts ──┐
+                       ├─► EPIC-003 DB schema ──────┤
+                       ├─► EPIC-006 permissions ────┼─► the domain map ─► G0
+                       ├─► EPIC-007 reports ────────┤
+                       ├─► EPIC-009 figures ────────┤
+                       ├─► EPIC-010 security ───────┤
+                       └─► EPIC-011 scenarios ──────┘
                                    │
                                    ▼
-                       EPIC-004 характеризационные тесты
+                       EPIC-004 characterization tests
                                    │
                                    ▼
-                       прототипы стека ─► ADR-0003 (к G1)
+                       stack prototypes ─► ADR-0003 (by G1)
 ```
 
-EPIC-002, 003, 006, 007, 009, 010, 011 идут параллельно и независимо. EPIC-004
-опирается на 002 и 011. Прототипы стека начинаются после 002 и 003 — иначе
-прототип будет решать не ту задачу.
+EPIC-002, 003, 006, 007, 009, 010 and 011 run in parallel and independently.
+EPIC-004 relies on 002 and 011. The stack prototypes begin after 002 and 003 —
+otherwise the prototype will be solving the wrong problem.
 
-## Что важно сделать правильно
+## What matters to get right
 
-### Инвентаризация — не документирование
+### Inventory is not documentation
 
-Задача не в том, чтобы описать всё. Задача в том, чтобы по каждому элементу
-принять **решение**: переносим, сводим, отказываемся. Инвентаризация без решений
-превращается в 300 страниц, которые никто не прочтёт.
+The task is not to describe everything. The task is to take a **decision** on
+every element: migrate, consolidate, drop. An inventory without decisions turns
+into 300 pages nobody will read.
 
-Живая система за 12 лет всегда содержит мёртвое: отчёты, которыми не пользуются;
-эндпойнты, к которым не обращаются; таблицы, которые не читают; права, которые
-никому не назначены. Найти и отсечь мёртвое — самый дешёвый способ сократить
-объём проекта. Это делается один раз, здесь, и больше нигде.
+A live system of 12 years always contains dead matter: reports nobody uses;
+endpoints nobody calls; tables nobody reads; permissions assigned to nobody.
+Finding and cutting off the dead matter is the cheapest way to reduce the
+project's volume. It is done once, here, and nowhere else.
 
-**Источник истины о живом — не мнение, а данные:** журналы обращений к
-эндпойнтам, статистика запросов к таблицам, история использования отчётов. Если
-таких данных нет — их сбор нужно включить в легаси в первую неделю Фазы 0,
-иначе решения будут приниматься по памяти.
+**The source of truth about what is alive is data, not opinion:** endpoint access
+logs, table query statistics, report usage history. If such data does not exist,
+collecting it has to be switched on in the legacy in the first week of Phase 0,
+otherwise the decisions will be taken from memory.
 
-### Носители знания
+### The people who hold the knowledge
 
-Часть поведения системы не выводится из кода: почему расчёт устроен именно так,
-какое из двух дублирующихся мест правильное, что означает `aes`. Носители этого
-знания — люди, и их время нужно запланировать заранее.
+Some of the system's behaviour cannot be derived from the code: why a calculation
+is arranged the way it is, which of two duplicated places is the right one, what
+`aes` means. The holders of that knowledge are people, and their time has to be
+planned in advance.
 
-Это ограничивающий фактор фазы. Если ключевой человек доступен два часа в
-неделю, фаза займёт столько, сколько займёт.
+That is the phase's limiting factor. If a key person is available two hours a
+week, the phase will take as long as it takes.
 
-### Характеризационные тесты
+### Characterization tests
 
-[EPIC-004](../../backlog/EPIC-004-characterization-tests.md) — не обычные тесты.
-Они не проверяют, что система работает **правильно**; они фиксируют, как она
-работает **сейчас**, включая ошибки. Это эталон для сверки паритета.
+[EPIC-004](../../backlog/EPIC-004-characterization-tests.md) is not ordinary
+tests. They do not verify that the system works **correctly**; they record how it
+works **now**, bugs included. They are the reference for the parity
+reconciliation.
 
-Пишутся для того, что нельзя проверить теневым прогоном: расчёты, многошаговые
-процессы, граничные случаи. В первую очередь — для расчёта зарплаты (7 598 строк
-в одном классе) и учётных операций.
+They are written for what a shadow run cannot verify: calculations, multi-step
+processes, edge cases. First of all for payroll calculation (7,598 lines in a
+single class) and accounting operations.
 
-## Чего в этой фазе не делать
+## What not to do in this phase
 
-- Не писать код новой системы. Соблазн «начать с чего-нибудь простого» приведёт
-  к переписыванию этого кода после выбора стека.
-- Не проектировать интерфейс. Дизайн-система — Фаза 1, после подтверждения
-  сценариев.
-- Не пытаться улучшить легаси. Заморозка ещё не введена, но и улучшать то, что
-  будет выключено, смысла нет.
-- Не откладывать неудобные вопросы. Вопрос, отложенный в Фазе 0, всплывёт в
-  Фазе 4 и будет стоить в десять раз дороже.
+- Do not write the new system's code. The temptation to "start with something
+  simple" will lead to rewriting that code once the stack is chosen.
+- Do not design the interface. The design system belongs to Phase 1, after the
+  scenarios are confirmed.
+- Do not try to improve the legacy. The freeze is not in force yet, but improving
+  something that will be switched off makes no sense either.
+- Do not defer the uncomfortable questions. A question deferred in Phase 0 will
+  surface in Phase 4 and cost ten times as much.
 
-## Критерии завершения
+## Completion criteria
 
-Гейт [G0](00-roadmap.md#g0--конец-фазы-0).
+Gate [G0](00-roadmap.md#g0--end-of-phase-0).

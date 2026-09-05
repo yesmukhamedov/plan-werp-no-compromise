@@ -1,122 +1,127 @@
 ---
 id: CTX-03
-title: Ограничения
+title: Constraints
 status: draft
 ---
 
-# Ограничения
+# Constraints
 
-Ограничения — то, что план обязан принять как данность. В отличие от рисков
-(которые могут не сработать) и открытых вопросов (которые будут закрыты),
-ограничения не обсуждаются — под них проектируется решение.
+Constraints are what the plan must accept as given. Unlike risks (which may not
+materialize) and open questions (which will be closed), constraints are not up
+for discussion — the solution is designed around them.
 
-Часть ограничений помечена `?` — требует подтверждения владельцем продукта до
-гейта G0 и продублирована в [открытых вопросах](../../transition/12-open-questions.md).
+Some constraints are marked `?` — they require confirmation by the product owner
+before gate G0 and are mirrored in the
+[open questions](../../transition/12-open-questions.md).
 
-## C-01. Прод не останавливается
+## C-01. Production does not stop
 
-Текущая система обслуживает операционную деятельность ежедневно. Всё время
-разработки нового WERP старый продолжает работать, принимать изменения и
-накапливать данные.
+The current system serves day-to-day operations every day. Throughout the
+development of the new WERP the old one keeps running, keeps accepting changes
+and keeps accumulating data.
 
-**Следствие для плана:** нужна [политика заморозки](../../transition/09-freeze-policy.md),
-которая ограничивает изменения в легаси, но не запрещает их полностью, и
-механизм переноса изменений легаси в новую систему (delta backlog).
+**Consequence for the plan:** a [freeze policy](../../transition/09-freeze-policy.md)
+is needed that restricts changes to the legacy without forbidding them
+outright, along with a mechanism for carrying legacy changes over into the new
+system (the delta backlog).
 
-## C-02. Стратегия — big bang
+## C-02. The strategy is big bang
 
-Решение принято ([ADR-0001](../02-decisions/ADR-0001-strategy-big-bang.md)):
-новая система разрабатывается параллельно и вводится одним переездом.
-Постепенное «выдавливание» доменов через маршрутизацию не применяется.
+The decision is taken ([ADR-0001](../02-decisions/ADR-0001-strategy-big-bang.md)):
+the new system is developed in parallel and introduced in a single cutover.
+Gradually "squeezing out" domains through routing is not used.
 
-**Следствие:** нет промежуточных выходов в прод для проверки гипотез. Значит,
-обратная связь должна приходить из другого источника — теневого прогона на
-копии промышленных данных ([transition/06-parity-verification.md](../../transition/06-parity-verification.md))
-и из регулярных демонстраций пользователям на предпродуктивном контуре.
+**Consequence:** there are no intermediate production releases for validating
+hypotheses. Feedback must therefore come from another source — a shadow run
+against a copy of production data
+([transition/06-parity-verification.md](../../transition/06-parity-verification.md))
+and regular demonstrations to users on the pre-production environment.
 
-## C-03. СУБД — PostgreSQL
+## C-03. The DBMS is PostgreSQL
 
-Решение принято ([ADR-0002](../02-decisions/ADR-0002-database-postgresql.md)).
-Целевая система работает на PostgreSQL; Oracle выводится из эксплуатации вместе
-с легаси-бэкендом.
+The decision is taken
+([ADR-0002](../02-decisions/ADR-0002-database-postgresql.md)). The target system
+runs on PostgreSQL; Oracle is decommissioned together with the legacy backend.
 
-**Следствие:** 289 нативных запросов и 43 `nativeQuery` в текущем коде
-непереносимы напрямую и подлежат переписыванию, а не переносу; схема данных
-мигрируется отдельным треком.
+**Consequence:** the 289 native queries and 43 `nativeQuery` in the current code
+are not directly portable and are subject to rewriting rather than porting; the
+data schema is migrated on a separate track.
 
-## C-04. Стек бэкенда ещё не выбран
+## C-04. The backend stack has not been chosen yet
 
-Решение сознательно отложено ([ADR-0003](../02-decisions/ADR-0003-backend-stack.md)).
+The decision is deliberately deferred
+([ADR-0003](../02-decisions/ADR-0003-backend-stack.md)).
 
-**Следствие:** до гейта G1 план не должен содержать решений, которые нельзя
-выполнить на любом из кандидатов. Все места, зависящие от стека, помечены
-`[STACK]` и перечислены в ADR-0003. Работы Фазы 0 полностью стек-независимы,
-поэтому старт проекта решением не блокируется.
+**Consequence:** until gate G1 the plan must contain no decisions that cannot be
+carried out on any of the candidates. Every stack-dependent place is marked
+`[STACK]` and listed in ADR-0003. The Phase 0 work is entirely
+stack-independent, so the start of the project is not blocked by the decision.
 
-## C-05. Внешние интеграции менять нельзя
+## C-05. External integrations cannot be changed
 
-Контракты с внешними системами (платёжный провайдер, кредитное бюро,
-SMS-провайдер, мессенджеры, формы на публичных сайтах, мобильное приложение)
-определяются контрагентами. Новый WERP обязан их соблюдать без изменений.
+Contracts with external systems (the payment provider, the credit bureau, the
+SMS provider, messengers, forms on public sites, the mobile app) are defined by
+the counterparties. The new WERP must honour them unchanged.
 
-**Следствие:** `bridge` остаётся точкой входа и не переписывается; новая система
-обязана предоставить `bridge` те же внутренние эндпойнты, что и текущая, либо
-изменение вносится синхронно в оба репозитория. Полный перечень —
+**Consequence:** `bridge` stays the entry point and is not rewritten; the new
+system must provide `bridge` with the same internal endpoints as the current one,
+or else the change is made in both repositories at once. The full list —
 [04-current-integrations.md](04-current-integrations.md).
 
-## C-06. Мобильное приложение — отдельный клиент вне этого плана
+## C-06. The mobile app — a separate client outside this plan
 
-Мобильное приложение обращается к бэкенду через `bridge` по фиксированному
-списку путей. Его переписывание в объём проекта не входит.
+The mobile app calls the backend through `bridge` over a fixed list of paths.
+Rewriting it is not part of the project scope.
 
-**Следствие:** для мобильного клиента новый бэкенд обязан сохранить контракт
-**1:1**, включая формат ошибок и коды состояния. Это жёстче, чем для веб-фронта,
-который пишется заново вместе с бэкендом.
+**Consequence:** for the mobile client the new backend must preserve the contract
+**1:1**, including the error format and the status codes. That is stricter than
+for the web frontend, which is written anew together with the backend.
 
-## C-07. Многоязычность обязательна
+## C-07. Multilingual support is mandatory
 
-Текущая система локализована на трёх языках (ru / en / tr), словари содержат
-~1 700 сообщений. Отказ от любого из языков — продуктовое решение, не
-инженерное.
+The current system is localized in three languages (ru / en / tr); the
+dictionaries contain ~1,700 messages. Dropping any of the languages is a product
+decision, not an engineering one.
 
-## C-08. Три контура
+## C-08. Three environments
 
-Dev, stage, prod. Kubernetes, самоуправляемый CI-runner, внешний реестр образов.
-Смена платформы оркестрации в объём не входит.
+Dev, stage, prod. Kubernetes, a self-hosted CI runner, an external image
+registry. Changing the orchestration platform is out of scope.
 
-## C-09. Финансовые расчёты требуют точной арифметики
+## C-09. Financial calculations require exact arithmetic
 
-Домены `accounting` (62 776 строк) и расчёт зарплаты — денежные вычисления.
-Текущий код использует `decimal4j` на бэкенде и одновременно `bigdecimal` и
-`bignumber.js` на фронтенде.
+The `accounting` domain (62,776 lines) and payroll calculation are monetary
+computations. The current code uses `decimal4j` on the backend and both
+`bigdecimal` and `bignumber.js` on the frontend at the same time.
 
-**Следствие:** тип для денег и правила округления фиксируются на уровне
-платформы один раз ([product/03-database.md](../../product/03-database.md)),
-а сверка расчётов старой и новой системы — обязательная часть проверки паритета,
-с нулевым допуском расхождения.
+**Consequence:** the money type and the rounding rules are fixed once at the
+platform level ([product/03-database/](../../product/03-database/README.md)), and
+reconciling the calculations of the old and the new system is a mandatory part of
+the parity verification, with zero tolerance for divergence.
 
-## C-10. Аудит изменений уже существует и должен сохраниться
+## C-10. Change audit already exists and must be preserved
 
-Текущая система использует Hibernate Envers для версионирования части сущностей.
-Историю изменений нельзя потерять при миграции.
+The current system uses Hibernate Envers to version some entities. The change
+history must not be lost during the migration.
 
-**Следствие:** миграция данных переносит не только текущее состояние, но и
-таблицы аудита; целевая система обязана иметь работающий механизм аудита с
-первого дня, а не «потом».
+**Consequence:** the data migration carries over not only the current state but
+also the audit tables; the target system must have a working audit mechanism from
+day one, not "later".
 
-## C-11. Команда и бюджет `?`
+## C-11. Team and budget `?`
 
-Численность и состав команды на период разработки не подтверждены. Оценки в
-[transition/10-estimates.md](../../transition/10-estimates.md) даны в человеко-месяцах и
-пересчитываются в календарь только после подтверждения.
+The size and composition of the team for the development period are not
+confirmed. The estimates in
+[transition/10-estimates.md](../../transition/10-estimates.md) are given in
+person-months and are converted into a calendar only after confirmation.
 
 → [OQ-001](../../transition/12-open-questions.md)
 
-## C-12. Требования регуляторов к хранению данных `?`
+## C-12. Regulators' data-retention requirements `?`
 
-Требуется подтвердить: сроки хранения первичных документов, требования к
-локализации персональных данных, требования к неизменяемости журналов операций.
-От ответа зависит модель хранения и политика удаления в
-[product/03-database.md](../../product/03-database.md).
+To be confirmed: retention periods for primary documents, requirements for
+localizing personal data, requirements for the immutability of operation logs.
+The storage model and deletion policy in
+[product/03-database/](../../product/03-database/README.md) depend on the answer.
 
 → [OQ-003](../../transition/12-open-questions.md)

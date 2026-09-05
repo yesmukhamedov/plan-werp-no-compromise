@@ -1,109 +1,112 @@
 ---
 id: EPIC-010
-title: Аудит безопасности легаси
+title: Legacy security audit
 phase: 0
-owner: не назначен
+owner: not assigned
 status: todo
 gate: G0
 ---
 
-# EPIC-010. Аудит безопасности легаси
+# EPIC-010. Legacy security audit
 
-## Зачем
+## Why
 
-Из конфигурации и структуры кода видно несколько проблем
-([product/08-security.md](../product/08-security.md#что-известно-о-текущем-состоянии)):
-обмен по HTTP без TLS на части контуров, JWT в cookie, разделяемых с легаси,
-конкатенация SQL, диагностика через `System.out` с включённой печатью SQL,
-зависимости вне поддержки.
+Several problems are visible from the configuration and the structure of the code
+([product/08-security.md](../product/08-security.md#what-is-known-about-the-current-state)):
+traffic over HTTP without TLS on some environments, JWT in cookies shared with
+the legacy, SQL concatenation, diagnostics through `System.out` with SQL printing
+enabled, dependencies out of support.
 
-**Полноценный аудит не проводился.** Список выше — то, что видно, а не
-результат проверки.
+**No full audit has been carried out.** The list above is what is visible, not
+the result of a check.
 
-Две причины сделать аудит в Фазе 0, а не позже:
+Two reasons to do the audit in Phase 0 rather than later:
 
-1. Найденное может потребовать **немедленного** исправления в легаси — независимо
-   от переписывания. Система работает сейчас.
-2. Найденное меняет приоритеты плана: если в текущей модели доступа есть
-   системная дыра, к соответствующей части новой системы требования будут выше.
+1. What is found may require an **immediate** fix in the legacy — independently
+   of the rewrite. The system is running now.
+2. What is found changes the plan's priorities: if there is a systemic hole in
+   the current access model, the requirements on the corresponding part of the
+   new system will be higher.
 
-## Результат
+## Result
 
-Отчёт об аудите с классификацией находок и планом действий по каждой.
+An audit report with the findings classified and an action plan for each.
 
-## Задачи
+## Tasks
 
-### TASK-1001. Проверить транспорт и конфигурацию
+### TASK-1001. Check the transport and the configuration
 
-TLS во всех контурах, заголовки безопасности, раскрытие внутренней топологии,
-секреты в репозиториях и образах, конфигурация в собранном бандле.
+TLS in all environments, security headers, exposure of the internal topology,
+secrets in repositories and images, configuration in the built bundle.
 
-**Приёмка:** находки перечислены с оценкой критичности.
+**Acceptance:** the findings are listed with a criticality assessment.
 
-### TASK-1002. Проверить модель доступа
+### TASK-1002. Check the access model
 
-Эндпойнты без проверки прав; пропуски в ограничении по области данных
-(результаты TASK-0603); возможность обратиться к чужому объекту по
-идентификатору; корректность обработки токенов.
+Endpoints with no permission check; gaps in the data-scope restriction (the
+results of TASK-0603); the possibility of accessing someone else's object by
+identifier; the correctness of token handling.
 
-**Приёмка:** список эндпойнтов без проверки прав; список мест, где ограничение
-области данных не применяется.
+**Acceptance:** a list of endpoints with no permission check; a list of places
+where the data-scope restriction is not applied.
 
-> Это самая вероятная область серьёзных находок: проверки написаны руками в
-> контроллерах, а значит, где-то не написаны.
+> This is the most likely area of serious findings: the checks are written by
+> hand in controllers, which means that somewhere they are not written at all.
 
-### TASK-1003. Проверить работу с данными
+### TASK-1003. Check the handling of data
 
-Места конкатенации SQL; валидация входных данных на границе; обработка
-загружаемых файлов; выдача файлов с проверкой прав.
+Places where SQL is concatenated; validation of input at the boundary; handling
+of uploaded files; delivery of files with a permission check.
 
-**Приёмка:** находки перечислены; для конкатенации SQL — оценка эксплуатируемости.
+**Acceptance:** the findings are listed; for the SQL concatenation — an
+assessment of exploitability.
 
-### TASK-1004. Проверить утечки в диагностику
+### TASK-1004. Check for leaks into diagnostics
 
-Что попадает в 1 443 вызова `System.out.print*` и в журналы при включённой
-печати SQL: персональные данные, токены, содержимое запросов.
+What ends up in the 1,443 `System.out.print*` calls and in the logs with SQL
+printing enabled: personal data, tokens, request contents.
 
-**Приёмка:** оценка утечки; при подтверждении — немедленное исправление в
-легаси, а не после переезда.
+**Acceptance:** an assessment of the leak; if confirmed — an immediate fix in the
+legacy, not after the cutover.
 
-### TASK-1005. Просканировать зависимости
+### TASK-1005. Scan the dependencies
 
-Известные уязвимости во всех репозиториях: бэкенд, фронтенд, отдельные сервисы,
-легаси.
+Known vulnerabilities across all the repositories: the backend, the frontend, the
+separate services, the legacy.
 
-**Приёмка:** отчёт с критичностью и эксплуатируемостью в контексте системы.
+**Acceptance:** a report with criticality and exploitability in the system's
+context.
 
-### TASK-1006. Классифицировать находки и назначить действия
+### TASK-1006. Classify the findings and assign actions
 
-| Класс | Действие |
+| Class | Action |
 |---|---|
-| Критично, эксплуатируемо | исправить в легаси немедленно, вне заморозки |
-| Критично, не эксплуатируемо извне | исправить в легаси в плановом порядке |
-| Требует переработки архитектуры | учесть в требованиях к новой системе |
-| Устраняется переписыванием | зафиксировать, не чинить в легаси |
+| Critical, exploitable | fix in the legacy immediately, outside the freeze |
+| Critical, not exploitable from outside | fix in the legacy as planned work |
+| Requires architectural rework | account for it in the requirements on the new system |
+| Removed by the rewrite | record it, do not fix it in the legacy |
 
-**Приёмка:** по каждой находке — класс и назначенное действие с владельцем и
-сроком.
+**Acceptance:** every finding has a class and an assigned action with an owner
+and a deadline.
 
-> Заморозка никогда не запрещает исправления безопасности
-> ([05-freeze-policy.md](../transition/09-freeze-policy.md#что-заморозка-не-запрещает-никогда)).
+> The freeze never forbids security fixes
+> ([05-freeze-policy.md](../transition/09-freeze-policy.md#what-the-freeze-never-forbids)).
 
-### TASK-1007. Уточнить требования к новой системе
+### TASK-1007. Refine the requirements on the new system
 
-**Приёмка:** [product/08-security.md](../product/08-security.md)
-дополнен требованиями, вытекающими из находок.
+**Acceptance:** [product/08-security.md](../product/08-security.md) is extended
+with the requirements that follow from the findings.
 
-## Критерии закрытия эпика
+## Epic closure criteria
 
-- [ ] Все области проверены
-- [ ] Находки классифицированы, действия назначены
-- [ ] Критичные эксплуатируемые находки исправлены в легаси
-- [ ] Требования к новой системе уточнены
+- [ ] All the areas are checked
+- [ ] The findings are classified and actions assigned
+- [ ] The critical exploitable findings are fixed in the legacy
+- [ ] The requirements on the new system are refined
 
-## Обращение с результатами
+## Handling the results
 
-Отчёт об аудите содержит сведения об уязвимостях действующей системы. Он
-**не публикуется в этом репозитории** (репозиторий публичный) и хранится в
-закрытом контуре. Здесь остаются только вытекающие из него требования, без
-описания уязвимостей.
+The audit report contains information about vulnerabilities in the system in
+operation. It is **not published in this repository** (the repository is public)
+and is kept in a closed environment. What stays here is only the requirements
+that follow from it, without any description of the vulnerabilities.

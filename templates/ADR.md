@@ -1,61 +1,63 @@
 ---
 id: ADR-NNNN
-title: <краткое имя решения>
-status: Предложено
+title: <short decision name>
+status: Proposed
 date: YYYY-MM-DD
-deadline: <гейт, до которого решение должно быть принято; или ->
+deadline: <the gate by which the decision must be taken; or ->
 supersedes: null
 superseded_by: null
 ---
 
-# ADR-NNNN. <Краткое имя решения>
+# ADR-NNNN. <Short decision name>
 
-## Контекст
+## Context
 
-Что происходит, из-за чего понадобилось решение. Факты и измерения, а не
-впечатления. Ссылки на [инвентаризацию](../docs/00-context/01-inventory.md) и
-[точки боли](../docs/00-context/02-pain-points.md), если решение отменяет
-конкретный компромисс.
+What is going on and why a decision became necessary. Facts and measurements, not
+impressions. Links to the [inventory](../docs/00-context/01-inventory.md) and the
+[pain points](../docs/00-context/02-pain-points.md) if the decision cancels a
+specific compromise.
 
-Существенные входные данные, ограничивающие выбор.
+The material inputs that constrain the choice.
 
-## Варианты
+## Options
 
-### A. <Название>
+### A. <Name>
 
-- **За:** …
-- **Против:** …
+- **For:** …
+- **Against:** …
 
-### B. <Название>
+### B. <Name>
 
-- **За:** …
-- **Против:** …
+- **For:** …
+- **Against:** …
 
-> Отвергнутые варианты описываются с той же честностью, что и принятый.
-> ADR, где альтернативы описаны формально «чтобы были», бесполезен: через год
-> никто не поймёт, почему выбрали именно это.
+> The rejected options are described with the same honesty as the accepted one.
+> An ADR whose alternatives are described pro forma "just to have them" is
+> useless: in a year nobody will understand why this one was chosen.
 
-## Решение
+## Decision
 
-**Принят вариант X.**
+**Option X is accepted.**
 
-Решающие соображения — почему именно этот, а не соседний.
+The deciding considerations — why this one and not the one next to it.
 
-## Осознанная плата
+## Accepted cost
 
-Что мы теряем, выбрав это. Если кажется, что ничего, — либо варианты
-сформулированы неверно, либо плата не найдена.
+What we lose by choosing this. If it seems that we lose nothing, then either the
+options are formulated wrongly or the cost has not been found.
 
-Если у решения есть обязательные компенсирующие механизмы — перечислить их
-здесь и пометить как необязательные к отмене.
+If the decision has mandatory compensating mechanisms, list them here and mark
+them as not being subject to cancellation.
 
-## Последствия
+## Consequences
 
-- Что меняется в плане: какие фазы, эпики, документы.
-- Что становится проще.
-- Что требует отдельного внимания.
-- Какие риски усиливаются ([transition/11-risks.md](../transition/11-risks.md)).
+- What changes in the plan: which phases, epics, documents.
+- What gets easier.
+- What needs separate attention.
+- Which risks grow stronger
+  ([transition/11-risks.md](../transition/11-risks.md)).
 
-## Открытые вопросы
+## Open questions
 
-Что осталось нерешённым, с ссылкой на [transition/12-open-questions.md](../transition/12-open-questions.md).
+What remains unresolved, with a link to
+[transition/12-open-questions.md](../transition/12-open-questions.md).

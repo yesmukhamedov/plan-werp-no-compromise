@@ -1,89 +1,92 @@
 ---
 id: EPIC-008
-title: Перенос многоязычности
-phase: 0 (подготовка) → 3 (исполнение)
-owner: не назначен
+title: Multilingual support migration
+phase: 0 (preparation) → 3 (execution)
+owner: not assigned
 status: todo
 ---
 
-# EPIC-008. Перенос многоязычности
+# EPIC-008. Multilingual support migration
 
-## Зачем
+## Why
 
-Три языка (ru / en / tr), ~1 700 сообщений на язык. Сейчас словари живут в двух
-местах в разных форматах: `react-intl` с файлом объявлений на 1 573 строки и
-скриптом извлечения через Babel на фронтенде, каталог `i18n` и
-`messages*.properties` на бэкенде.
+Three languages (ru / en / tr), ~1,700 messages per language. Today the
+dictionaries live in two places in two different formats: `react-intl` with a
+1,573-line declaration file and a Babel extraction script on the frontend, an
+`i18n` directory and `messages*.properties` on the backend.
 
-Ключи непрозрачны и частично совпадают с транслитерированными именами полей
-унаследованной ERP.
+The keys are opaque and partly coincide with transliterated field names from the
+inherited ERP.
 
-Работа кажется «бесплатной» — и потому регулярно недооценивается.
+The work seems "free" — which is why it is regularly underestimated.
 
-## Результат
+## Result
 
-Единый словарь на систему с осмысленными ключами, полный на всех трёх языках.
+A single dictionary for the system with meaningful keys, complete in all three
+languages.
 
-## Задачи
+## Tasks
 
-### TASK-0801. Собрать все сообщения
+### TASK-0801. Collect all the messages
 
-Из всех источников: фронтенд, бэкенд, отдельные сервисы, сообщения об ошибках,
-шаблоны писем и SMS, тексты в отчётах.
+From all the sources: the frontend, the backend, the separate services, error
+messages, email and SMS templates, texts in reports.
 
-**Приёмка:** сводный перечень; выявлены дубли и расхождения между источниками.
+**Acceptance:** a consolidated list; duplicates and discrepancies between the
+sources are identified.
 
-### TASK-0802. Определить живость
+### TASK-0802. Determine liveness
 
-Сообщения, не используемые ни одним экраном или сервисом.
+Messages not used by any screen or service.
 
-**Приёмка:** мёртвые сообщения помечены и не переносятся.
+**Acceptance:** the dead messages are flagged and are not carried over.
 
-### TASK-0803. Спроектировать схему ключей
+### TASK-0803. Design the key scheme
 
-Иерархические, привязанные к домену и экрану
-([ADR-0010](../docs/02-decisions/ADR-0010-i18n.md)). Соответствие «старый ключ →
-новый».
+Hierarchical, tied to the domain and the screen
+([ADR-0010](../docs/02-decisions/ADR-0010-i18n.md)). The "old key → new" mapping.
 
-**Приёмка:** схема описана; соответствие полно для переносимых сообщений.
+**Acceptance:** the scheme is described; the mapping is complete for the messages
+being carried over.
 
-### TASK-0804. Проверить полноту переводов
+### TASK-0804. Check the completeness of the translations
 
-Сообщения, переведённые не на все три языка.
+Messages not translated into all three languages.
 
-**Приёмка:** список пробелов; решение по каждому — перевести или отказаться от
-сообщения.
+**Acceptance:** a list of gaps; a decision on each — translate it or drop the
+message.
 
-> Проверка полноты после переноса становится частью CI: отсутствующий перевод
-> ломает сборку ([ADR-0010](../docs/02-decisions/ADR-0010-i18n.md)).
+> After the migration the completeness check becomes part of CI: a missing
+> translation breaks the build
+> ([ADR-0010](../docs/02-decisions/ADR-0010-i18n.md)).
 
-### TASK-0805. Определить процесс ведения переводов
+### TASK-0805. Define the translation maintenance process
 
-Кто и как добавляет переводы после запуска — разработчик в коде или
-ответственный за контент через инструмент.
+Who adds translations after launch and how — a developer in the code or a content
+owner through a tool.
 
-**Приёмка:** [OQ-010](../transition/12-open-questions.md#oq-010) закрыт;
-от ответа зависит выбор хранилища сообщений.
+**Acceptance:** [OQ-010](../transition/12-open-questions.md#oq-010) is closed;
+the choice of message store depends on the answer.
 
-### TASK-0806. Спроектировать локализацию ошибок
+### TASK-0806. Design the localization of errors
 
-Сервер отдаёт код ошибки и параметры, клиент подставляет локализованный текст
-([product/05-api.md](../product/05-api.md#ошибки)).
+The server returns an error code and parameters, and the client substitutes the
+localized text ([API rule 5](../product/05-api/rules/05-errors.md)).
 
-**Приёмка:** перечень кодов ошибок с сообщениями на трёх языках; коды
-объявлены в спецификации API.
+**Acceptance:** a list of error codes with messages in three languages; the codes
+are declared in the API specification.
 
-### TASK-0807. Локализация отчётов и печатных форм
+### TASK-0807. Localization of reports and printable forms
 
-**Приёмка:** требование передано в отчётную подсистему
+**Acceptance:** the requirement is handed over to the reporting subsystem
 ([ADR-0009](../docs/02-decisions/ADR-0009-reporting-and-exports.md)).
 
-## Критерии закрытия эпика
+## Epic closure criteria
 
-- [ ] Все сообщения собраны, дубли и расхождения выявлены
-- [ ] Мёртвые сообщения отсеяны
-- [ ] Схема ключей спроектирована, соответствие описано
-- [ ] Пробелы в переводах закрыты
-- [ ] OQ-010 закрыт
-- [ ] Коды ошибок локализованы и объявлены в спецификации
-- [ ] Требования к локализации отчётов переданы
+- [ ] All the messages are collected and duplicates and discrepancies identified
+- [ ] The dead messages are weeded out
+- [ ] The key scheme is designed and the mapping described
+- [ ] The gaps in the translations are closed
+- [ ] OQ-010 is closed
+- [ ] The error codes are localized and declared in the specification
+- [ ] The requirements for localizing reports are handed over

@@ -1,108 +1,165 @@
 ---
 id: PROD-11
-title: Наблюдаемость
+title: Observability
 status: draft
 ---
 
-# Наблюдаемость
+# Observability
 
-Требование [NC-10](../docs/01-principles/01-no-compromise.md#nc-10). Текущее
-состояние: 1 443 вызова `System.out.print*`, 31 `printStackTrace()`, печать SQL
-включена во всех профилях ([P-07](../docs/00-context/02-pain-points.md#p-07-диагностика-через-systemout)).
+The requirement is
+[NC-10](../docs/01-principles/01-no-compromise.md#nc-10). Where things stand
+today: 1,443 calls to `System.out.print*`, 31 `printStackTrace()`, SQL printing
+enabled in all profiles
+([P-07](../docs/00-context/02-pain-points.md#p-07-diagnostics-through-systemout)).
 
-Наблюдаемость — часть платформы (Фаза 1), а не то, что добавляют перед запуском.
-При big bang она нужна с первого дня: теневой прогон, репетиции миграции и
-переезд без неё невозможны.
+Observability is **part of the platform, written in Phase 1**, not something
+added just before launch. Under a big bang it is needed from day one: the shadow
+run, the migration rehearsals and the cutover are impossible without it.
 
-## Три источника
+---
 
-| Источник | Отвечает на вопрос | Основное применение |
+## Three sources, one identifier
+
+| Source | Answers the question | Main use |
 |---|---|---|
-| Журналы | что именно произошло в конкретном запросе | разбор инцидента |
-| Метрики | как система чувствует себя в целом | оповещения, тренды |
-| Трассировка | где в цепочке ушло время | поиск узкого места |
+| Logs | what exactly happened in a specific request | incident analysis |
+| Metrics | how the system as a whole is feeling | alerts, trends |
+| Tracing | where in the chain the time went | finding the bottleneck |
 
-Связаны идентификатором запроса: по нему из оповещения попадают в трассировку, а
-из трассировки — в журналы.
+They are linked by the **request identifier**: with it one moves from an alert to
+a trace, and from a trace to the logs. Without it the three are three separate
+tools and an incident takes an hour instead of a minute.
 
-## Журналы
+## Logs
 
-- **Структурированные**, машиночитаемые. `System.out`, `printStackTrace` и
-  печать SQL в проде запрещены и проверяются в CI.
-- Обязательные поля: время, уровень, идентификатор запроса, идентификатор
-  пользователя, домен, операция, длительность, результат.
-- **Персональные данные и секреты в журналы не попадают.** Это требование к
-  платформе — механизм маскирования, а не дисциплина разработчика.
-- Уровни осмысленны: `ERROR` — требует вмешательства человека; `WARN` — требует
-  внимания; `INFO` — значимое бизнес-событие; `DEBUG` — только в разработке.
-- Срок хранения и объём определяются требованиями регулятора
-  ([OQ-003](../transition/12-open-questions.md)).
-
-## Метрики
-
-### Технические
-
-Частота и длительность запросов по эндпойнтам (процентили), доля ошибок,
-пул соединений с БД, длительность запросов к БД, очередь фоновых задач,
-потребление ресурсов, время старта приложения.
-
-### Бизнесовые
-
-Их отсутствие — типичная ошибка. Именно бизнес-метрики показывают, что система
-сломалась **логически**, при формально зелёных технических показателях.
-
-Примеры: число созданных договоров в час, число проведённых операций, число
-обработанных обращений, объём выгрузок, число неуспешных входов. Конкретный
-набор определяется вместе с владельцами доменов.
-
-### Метрики проекта
-
-На время переезда — отдельная группа: доля расхождений в теневом прогоне по
-доменам, длительность миграции по шагам, число отбракованных строк. Они
-публикуются еженедельно и являются главным индикатором готовности
-([transition/06-parity-verification.md](../transition/06-parity-verification.md#отчётность)).
-
-## Трассировка
-
-- Сквозная: от запроса браузера через `bridge` и приложение до запроса к БД.
-- Идентификатор трассировки возвращается клиенту в ответе об ошибке
-  ([product/05-api.md](05-api.md#ошибки)) —
-  пользователь называет его в обращении, дежурный находит запрос за секунды.
-- Фоновые задачи и обработка событий трассируются наравне с запросами.
-
-## Оповещения
-
-Правила, отличающие работающие оповещения от игнорируемых:
-
-1. **Оповещение = действие.** Если на него не нужно реагировать — это метрика,
-   а не оповещение.
-2. **По симптому, а не по причине.** «Пользователи не могут создать договор»
-   полезнее, чем «загрузка процессора 90 %».
-3. **Известны получатель и ранбук.** Оповещение без ранбука бесполезно ночью.
-4. **Проверено срабатыванием.** Ненастоящее оповещение обнаруживается только в
-   момент, когда оно было нужно.
-5. **Шум удаляется.** Оповещение, которое регулярно игнорируют, отключают или
-   чинят — но не терпят: оно обесценивает все остальные.
-
-## Панели
-
-| Панель | Для кого |
+| # | Requirement |
 |---|---|
-| Состояние системы | дежурная смена |
-| Домен | владелец домена и его разработчики |
-| Бизнес-показатели | бизнес |
-| Переезд | руководитель переезда, только на период Фазы 4 |
+| OBS-01 | Logs are **structured** and machine-readable |
+| OBS-02 | `System.out`, `printStackTrace` and SQL printing are forbidden and checked in CI |
+| OBS-03 | Mandatory fields: time, level, request identifier, user identifier, domain, operation, duration, result |
+| OBS-04 | **Personal data and secrets never reach the logs** — a platform masking mechanism, not developer discipline |
+| OBS-05 | The levels are meaningful: `ERROR` requires human intervention, `WARN` requires attention, `INFO` is a significant business event, `DEBUG` is development only |
+| OBS-06 | Retention and volume follow the regulator's requirements ([OQ-003](../transition/12-open-questions.md)) |
 
-## Готовность и живость
+OBS-04 is stated as a platform requirement deliberately. Masking that depends on
+every developer remembering which field is personal fails on the first field
+somebody forgets, and the failure is discovered by someone reading the logs who
+should not have been able to.
 
-- Приложение сообщает о готовности принимать трафик и о своей живости
-  раздельно.
-- Проверка готовности учитывает доступность БД и критичных зависимостей.
-- Развёртывание без простоя опирается на эти проверки.
+## Metrics
 
-## Что проверяется в CI
+### Technical
 
-- Ноль `System.out` / `printStackTrace` / `console.log`.
-- Ноль `show-sql` в непроизводственных профилях.
-- Каждый новый эндпойнт покрыт метрикой и трассировкой (обеспечивается
-  платформой автоматически, а не вручную).
+Request rate and duration per endpoint with percentiles, the error share, the
+database connection pool, database query duration, the background job queue
+depth, resource consumption, application start-up time.
+
+### Business
+
+| # | Requirement |
+|---|---|
+| OBS-10 | Every domain declares business metrics together with its owner |
+| OBS-11 | A domain with no business metric is not complete |
+
+**Their absence is the typical mistake.** It is precisely the business metrics
+that show the system has broken *logically* while every technical figure is
+formally green: contracts created per hour, operations posted, cases handled,
+export volume, failed logins.
+
+Examples the design already implies, one per money domain:
+
+| Domain | Metric | What its silence would mean |
+|---|---|---|
+| D5 | entries posted per hour; open items cleared per day | posting is failing silently, or a subledger has stopped feeding the ledger |
+| D6 | payslips calculated per run; runs reaching `POSTED` | a payroll run is stuck between calculated and approved |
+| D7 | movements per hour; balance reconciliation divergence | the derived balance has drifted from the movements |
+| D8 | maintenance slots closed per day; slots going overdue | field work has stopped and nobody has phoned yet |
+
+### Reconciliation metrics
+
+The design puts four scheduled reconciliations in the system, and each publishes
+its divergence as a metric with an alert:
+`EntryBalanceReconciliation`, `SubledgerReconciliation`, the stock balance
+rebuild, and the cross-domain orphan-reference job.
+
+| # | Requirement |
+|---|---|
+| OBS-12 | Every derived table has a reconciliation job, and its divergence is a metric |
+| OBS-13 | A non-zero divergence is an alert, not a report line somebody reads next quarter |
+
+### Project metrics
+
+For the duration of the cutover — a separate group: the share of divergences in
+the shadow run per domain, the migration duration per step, the number of
+rejected rows. They are published weekly and are the main readiness indicator
+([transition/06-parity-verification.md](../transition/06-parity-verification.md#reporting)).
+
+## Tracing
+
+| # | Requirement |
+|---|---|
+| OBS-20 | End-to-end: from the browser request, through `bridge` and the application, to the database query |
+| OBS-21 | The trace identifier is returned to the client in every error response ([05-api rule 5](05-api/rules/05-errors.md)) |
+| OBS-22 | Background jobs and event processing are traced on a par with requests |
+| OBS-23 | An outbox event carries the trace identifier of the request that produced it |
+
+OBS-21 is what turns a support request from "it broke" into a specific request in
+the logs: the user quotes the identifier and the on-call engineer finds it in
+seconds. OBS-23 extends that across an asynchronous boundary, which is where a
+trace is normally lost.
+
+## Alerts
+
+The five rules that separate alerts that work from alerts that get ignored:
+
+| # | Rule |
+|---|---|
+| OBS-30 | **An alert equals an action.** If nobody needs to react, it is a metric, not an alert |
+| OBS-31 | **By symptom, not by cause.** "Users cannot create a contract" is more useful than "CPU load is 90%" |
+| OBS-32 | **The recipient and the runbook are known.** An alert without a runbook is useless at night ([14-runbooks.md](14-runbooks.md)) |
+| OBS-33 | **Verified by firing.** A fake alert is discovered only at the moment it was needed |
+| OBS-34 | **Noise is removed.** An alert that gets ignored regularly is switched off or fixed — never tolerated, because it devalues all the others |
+
+OBS-34 is the one that decides whether the other four survive year two. A single
+alert that fires nightly for no reason teaches an entire on-call rotation to
+dismiss alerts without reading them.
+
+## Dashboards
+
+| Dashboard | For whom | Must answer |
+|---|---|---|
+| System status | the on-call shift | is anything broken right now, and where |
+| Domain | the domain owner and their developers | is this domain healthy, technically and in business terms |
+| Business figures | the business | is the company's work flowing |
+| Reconciliation | the finance and warehouse owners | do the derived figures still agree with their sources |
+| Cutover | the cutover lead, only during Phase 4 | are we ready, by the numbers |
+
+## Readiness and liveness
+
+| # | Requirement |
+|---|---|
+| OBS-40 | The application reports readiness to accept traffic and liveness **separately** |
+| OBS-41 | The readiness check takes into account the database and the critical dependencies |
+| OBS-42 | Zero-downtime deployment relies on these checks ([NFR-34](07-nfr.md#availability)) |
+
+Conflating the two is a common and expensive mistake: an instance that is alive
+but not yet ready receives traffic and fails it, and an instance that is
+temporarily not ready gets killed and restarted in a loop.
+
+## What is checked in CI
+
+| Check | Rule |
+|---|---|
+| zero `System.out`, `printStackTrace`, `console.log` | OBS-02, [FE-22](06-frontend/checks.md) |
+| zero `show-sql` in non-production profiles | OBS-02 |
+| every new endpoint is covered by a metric and a trace, provided by the platform rather than by hand | OBS-20 |
+| every alert definition references a runbook | OBS-32, [RB-03](14-runbooks.md#rules) |
+| every masked field stays masked — a test asserting it never appears in a log line | OBS-04 |
+
+## Open questions
+
+| # | Question | Affects |
+|---|---|---|
+| OBS-Q1 | What log retention does the regulator require? | OBS-06, and the storage budget |
+| OBS-Q2 | Which business metrics does each domain owner actually want? | OBS-10, OBS-11 — and there are no owners yet |
+| OBS-Q3 | Who receives an alert outside business hours, from the first day of the cutover? | OBS-32, and the on-call rota in [14-runbooks.md](14-runbooks.md) |

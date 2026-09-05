@@ -1,115 +1,119 @@
 ---
 id: ADR-0003
-title: Стек бэкенда
-status: Отложено
+title: Backend stack
+status: Deferred
 date: 2026-09-03
-deadline: гейт G1 (конец Фазы 0)
+deadline: gate G1 (end of Phase 0)
 ---
 
-# ADR-0003. Стек бэкенда
+# ADR-0003. Backend stack
 
-## Статус: Отложено
+## Status: Deferred
 
-Решение **сознательно не принимается сейчас** и должно быть принято до гейта
-**G1** — то есть до начала Фазы 1. Откладывание не блокирует старт: вся Фаза 0
-стек-независима.
+The decision is **deliberately not being taken now** and must be taken before
+gate **G1** — that is, before Phase 1 begins. Deferring it does not block the
+start: all of Phase 0 is stack-independent.
 
-Откладывание — это не «мы не подумали». Это фиксация того, что решение будет
-приниматься на основании данных, которых сегодня нет: результатов
-инвентаризации контрактов ([EPIC-002](../../backlog/EPIC-002-contract-inventory.md)),
-инвентаризации схемы БД ([EPIC-003](../../backlog/EPIC-003-schema-inventory.md))
-и подтверждённого состава команды ([OQ-001](../../transition/12-open-questions.md)).
+Deferring is not "we did not think about it". It records that the decision will
+be taken on the basis of data that does not exist today: the results of the
+contract inventory ([EPIC-002](../../backlog/EPIC-002-contract-inventory.md)),
+the database schema inventory
+([EPIC-003](../../backlog/EPIC-003-schema-inventory.md)) and a confirmed team
+composition ([OQ-001](../../transition/12-open-questions.md)).
 
-## Что решение обязано обеспечить
+## What the decision must deliver
 
-Независимо от того, какой стек будет выбран, он должен позволять:
+Whichever stack is chosen, it must make the following possible:
 
-| # | Требование | Откуда |
+| # | Requirement | Source |
 |---|---|---|
-| 1 | Модульность с машинно-проверяемыми границами доменов | NC-02 |
-| 2 | Конструкторное внедрение зависимостей | NC-03 |
-| 3 | **Один** механизм доступа к данным, покрывающий и простые CRUD, и сложные отчётные запросы | NC-05 |
-| 4 | Типобезопасные запросы к PostgreSQL без конкатенации SQL | NC-05, [ADR-0002](ADR-0002-database-postgresql.md) |
-| 5 | Транзакции с явными границами и контролируемым уровнем изоляции | [C-09](../00-context/03-constraints.md#c-09-финансовые-расчёты-требуют-точной-арифметики) |
-| 6 | Десятичная арифметика фиксированной точности как штатный тип | C-09 |
-| 7 | Генерация кода из спецификации API (contract-first) | [ADR-0005](ADR-0005-contract-first-api.md) |
-| 8 | Декларативная авторизация на уровне эндпойнта | NC-12 |
-| 9 | Структурированные журналы, метрики, распределённая трассировка | NC-10 |
-| 10 | Тестирование на настоящей PostgreSQL в контейнере, быстрый прогон | NC-01 |
-| 11 | Аудит изменений сущностей | [C-10](../00-context/03-constraints.md#c-10-аудит-изменений-уже-существует-и-должен-сохраниться) |
-| 12 | Формирование Excel и PDF | [ADR-0009](ADR-0009-reporting-and-exports.md) |
-| 13 | Многоязычные сообщения, включая ошибки валидации | [ADR-0010](ADR-0010-i18n.md) |
-| 14 | Сборка на чистой машине одной командой, lock-файл зависимостей | NC-08 |
-| 15 | Наличие на рынке специалистов и возможность нанять | практика |
+| 1 | Modularity with machine-checkable domain boundaries | NC-02 |
+| 2 | Constructor dependency injection | NC-03 |
+| 3 | **One** data-access mechanism covering both simple CRUD and complex reporting queries | NC-05 |
+| 4 | Type-safe queries against PostgreSQL without SQL concatenation | NC-05, [ADR-0002](ADR-0002-database-postgresql.md) |
+| 5 | Transactions with explicit boundaries and a controllable isolation level | [C-09](../00-context/03-constraints.md#c-09-financial-calculations-require-exact-arithmetic) |
+| 6 | Fixed-precision decimal arithmetic as a first-class type | C-09 |
+| 7 | Code generation from the API specification (contract-first) | [ADR-0005](ADR-0005-contract-first-api.md) |
+| 8 | Declarative authorization at the endpoint level | NC-12 |
+| 9 | Structured logs, metrics, distributed tracing | NC-10 |
+| 10 | Testing against a real PostgreSQL in a container, with a fast run | NC-01 |
+| 11 | Auditing of entity changes | [C-10](../00-context/03-constraints.md#c-10-change-audit-already-exists-and-must-be-preserved) |
+| 12 | Producing Excel and PDF | [ADR-0009](ADR-0009-reporting-and-exports.md) |
+| 13 | Multilingual messages, validation errors included | [ADR-0010](ADR-0010-i18n.md) |
+| 14 | A build on a clean machine with one command, a dependency lock file | NC-08 |
+| 15 | Specialists available on the market and hireable | practice |
 
-Требование 3 в сочетании с 4 — самое ограничивающее. В системе с 62 тыс. строк
-учётного домена и сотнями отчётов «один механизм доступа к данным» должен
-одинаково хорошо работать и для формы редактирования, и для сводного отчёта на
-десятки миллионов строк.
+Requirement 3 combined with 4 is the most constraining. In a system with 62k
+lines of accounting domain and hundreds of reports, "one data-access mechanism"
+has to work equally well for an edit form and for a summary report over tens of
+millions of rows.
 
-## Кандидаты
+## Candidates
 
-Матрица заполняется в ходе Фазы 0. Столбец «оценка» — результат
-[TASK-0301](../../backlog/EPIC-003-schema-inventory.md), а не мнение.
+The matrix is filled in during Phase 0. The "score" column is the result of
+[TASK-0301](../../backlog/EPIC-003-schema-inventory.md), not an opinion.
 
-| Кандидат | Сильные стороны | Слабые стороны | Оценка |
+| Candidate | Strengths | Weaknesses | Score |
 |---|---|---|---|
-| Java (LTS) + Spring Boot 3.x | Команда знает Spring; максимальная переносимость логики из текущих 355 тыс. строк; готовые решения под все 15 требований; глубокий рынок найма | Тот же фреймворк, что и в текущей системе, — риск воспроизвести привычки вместе с кодом; вес рантайма | — |
-| Kotlin + Spring Boot 3.x | То же, плюс null-безопасность и меньше шаблонного кода | Смешанный период Java/Kotlin; переучивание команды | — |
-| Go | Подтверждённый в этом проекте опыт: `bridge` написан и работает; предсказуемое потребление ресурсов; быстрый старт; явность | ORM-слой на 523 сущности переписывается вручную; отчётные запросы и транзакционная логика ERP пишутся с нуля; объём работы существенно выше | — |
-| Гибрид: Go на периферии + JVM в домене | Каждому слою свой инструмент | Две экосистемы в эксплуатации; двойная стоимость платформы и найма | — |
+| Java (LTS) + Spring Boot 3.x | The team knows Spring; maximum portability of logic from the current 355k lines; off-the-shelf answers to all 15 requirements; a deep hiring market | The same framework as the current system — a risk of reproducing the habits along with the code; runtime weight | — |
+| Kotlin + Spring Boot 3.x | The same, plus null safety and less boilerplate | A mixed Java/Kotlin period; retraining the team | — |
+| Go | Experience already proven in this project: `bridge` is written and running; predictable resource consumption; fast start-up; explicitness | The ORM layer for 523 entities is rewritten by hand; reporting queries and the ERP's transactional logic are written from scratch; substantially more work | — |
+| Hybrid: Go at the edge + JVM in the domain | The right tool for each layer | Two ecosystems in operation; double the platform and hiring cost | — |
 
-## Критерии выбора
+## Selection criteria
 
-Решение принимается по сумме взвешенных критериев. Веса утверждаются вместе с
-решением; предварительно:
+The decision is taken on the sum of weighted criteria. The weights are approved
+together with the decision; provisionally:
 
-| Критерий | Вес | Почему |
+| Criterion | Weight | Why |
 |---|---:|---|
-| Переносимость существующей доменной логики | 30 % | 355 тыс. строк — основная стоимость проекта |
-| Соответствие требованиям 1–15 | 25 % | без этого стек непригоден |
-| Компетенция и наём | 20 % | проект длиннее, чем состав команды |
-| Стоимость эксплуатации | 15 % | ресурсы, лицензии, наблюдаемость |
-| Скорость разработки | 10 % | важно, но не решающе при big bang |
+| Portability of the existing domain logic | 30% | 355k lines are the project's main cost |
+| Compliance with requirements 1–15 | 25% | without it the stack is unusable |
+| Competence and hiring | 20% | the project outlasts the team roster |
+| Cost of operation | 15% | resources, licences, observability |
+| Development speed | 10% | important but not decisive under a big bang |
 
-**Отдельное правило:** «модно» и «интересно» не являются критериями. Проект
-переписывает ERP, работающую 12 лет; выбранный стек должен прожить сравнимый срок.
+**A separate rule:** "fashionable" and "interesting" are not criteria. The
+project is rewriting an ERP that has been running for 12 years; the chosen stack
+must live a comparable span.
 
-## Что в плане зависит от этого решения
+## What in the plan depends on this decision
 
-Все места, помеченные маркером `[STACK]`. Полный перечень:
+Every place marked with the `[STACK]` marker. The full list:
 
-| Где | Что именно зависит |
+| Where | What exactly depends on it |
 |---|---|
-| [01-principles/03-engineering-standards.md](../01-principles/03-engineering-standards.md) | конкретные линтеры, форматтеры, инструмент проверки архитектурных правил |
-| [product/01-architecture.md](../../product/01-architecture.md) | механизм изоляции модулей, способ внутримодульного взаимодействия |
-| [product/03-database.md](../../product/03-database.md) | механизм доступа к данным, инструмент миграций, механизм аудита |
-| [product/09-quality.md](../../product/09-quality.md) | фреймворк тестирования, инструмент контейнеров для интеграционных тестов |
-| [product/11-observability.md](../../product/11-observability.md) | библиотека журналирования и экспортёр метрик |
-| [product/13-cicd.md](../../product/13-cicd.md) | шаги сборки, кэш зависимостей, базовый образ |
-| [transition/plan/02-phase-1-platform.md](../../transition/plan/02-phase-1-platform.md) | вся фаза целиком: платформа строится на выбранном стеке |
-| [transition/10-estimates.md](../../transition/10-estimates.md) | коэффициент трудоёмкости переноса домена |
+| [01-principles/03-engineering-standards.md](../01-principles/03-engineering-standards.md) | the specific linters, formatters, architecture-rule checking tool |
+| [product/01-architecture.md](../../product/01-architecture.md) | the module isolation mechanism, the way modules interact internally |
+| [product/03-database/](../../product/03-database/README.md) | the data-access mechanism, the migration tool, the audit mechanism |
+| [product/09-quality.md](../../product/09-quality.md) | the testing framework, the container tooling for integration tests |
+| [product/11-observability.md](../../product/11-observability.md) | the logging library and the metrics exporter |
+| [product/13-cicd.md](../../product/13-cicd.md) | the build steps, the dependency cache, the base image |
+| [transition/plan/02-phase-1-platform.md](../../transition/plan/02-phase-1-platform.md) | the whole phase: the platform is built on the chosen stack |
+| [transition/10-estimates.md](../../transition/10-estimates.md) | the effort coefficient for migrating a domain |
 
-**Ничего, кроме перечисленного.** Если в ходе работы обнаружится, что от стека
-зависит что-то ещё, — это добавляется в таблицу, а не решается молча.
+**Nothing beyond the above.** If it turns out during the work that something else
+depends on the stack, it is added to the table rather than decided silently.
 
-## Последствия откладывания
+## Consequences of deferring
 
-- Фаза 0 выполняется полностью и без ограничений — она про контракты, данные,
-  требования и организацию, не про технологию.
-- Фаза 1 **не может стартовать** до принятия решения. Это жёсткий гейт.
-- Оценки в [transition/10-estimates.md](../../transition/10-estimates.md) даны в диапазоне,
-  который схлопнется в точку после выбора стека.
-- Если решение не будет принято к гейту G1, проект встаёт. Это осознанный
-  механизм: он не даёт начать разработку «пока думаем», параллельно с
-  фундаментальным нерешённым вопросом.
+- Phase 0 is executed in full and without restrictions — it is about contracts,
+  data, requirements and organization, not about technology.
+- Phase 1 **cannot start** until the decision is taken. This is a hard gate.
+- The estimates in
+  [transition/10-estimates.md](../../transition/10-estimates.md) are given as a
+  range that will collapse to a point once the stack is chosen.
+- If the decision is not taken by gate G1, the project stops. That is a
+  deliberate mechanism: it prevents starting development "while we think", in
+  parallel with a fundamental unresolved question.
 
-## Дальнейшие шаги
+## Next steps
 
-1. Дождаться результатов [EPIC-002](../../backlog/EPIC-002-contract-inventory.md)
-   и [EPIC-003](../../backlog/EPIC-003-schema-inventory.md).
-2. Собрать прототип на двух ведущих кандидатах: один нетривиальный домен —
-   предлагается расчёт по договору как самый показательный (денежная арифметика,
-   несколько таблиц, отчёт, права доступа).
-3. Заполнить матрицу, взвесить, принять решение, перевести ADR в «Принято».
-4. Обновить все места с маркером `[STACK]`.
+1. Wait for the results of
+   [EPIC-002](../../backlog/EPIC-002-contract-inventory.md) and
+   [EPIC-003](../../backlog/EPIC-003-schema-inventory.md).
+2. Build a prototype on the two leading candidates: one non-trivial domain — the
+   proposal is contract-based calculation as the most telling one (monetary
+   arithmetic, several tables, a report, access permissions).
+3. Fill in the matrix, weigh it, take the decision, move the ADR to "Accepted".
+4. Update every place carrying the `[STACK]` marker.

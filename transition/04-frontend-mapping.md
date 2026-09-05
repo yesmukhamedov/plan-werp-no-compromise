@@ -1,185 +1,191 @@
 ---
 id: TRANS-04
-title: Соответствие фронтенда
+title: Frontend mapping
 status: draft
 ---
 
-# Соответствие фронтенда
+# Frontend mapping
 
-Какая существующая страница какой заменяется
-([product/06-frontend.md](../product/06-frontend.md)).
+Which existing page is replaced by which
+([06-frontend/](../product/06-frontend/README.md)).
 
-Самая неопределённая из четырёх карт: у страницы, в отличие от таблицы или
-эндпойнта, нет машиночитаемого перечня. Поэтому она строится не от кода, а от
-**сценариев** ([EPIC-011](../backlog/EPIC-011-scenario-registry.md)).
+The most uncertain of the four maps: unlike a table or an endpoint, a page has no
+machine-readable list. That is why it is built not from the code but from the
+**scenarios** ([EPIC-011](../backlog/EPIC-011-scenario-registry.md)).
 
 ---
 
-# Часть I. Что придётся преобразовать
+# Part I. What will have to be transformed
 
-## Масштаб и его неопределённость
+## The scale and its uncertainty
 
-| Метрика | Значение |
+| Metric | Value |
 |---|---:|
-| Файлов `.js` / `.jsx` | 2 092 |
-| Строк | 369 214 |
-| Объявлений `<Route path=` в главном файле маршрутов | 107 |
-| Ленивых загрузок страниц (`Loadable`) в нём же | 345 |
-| Строк в файле маршрутов | 2 695 |
+| `.js` / `.jsx` files | 2,092 |
+| Lines | 369,214 |
+| `<Route path=` declarations in the main routes file | 107 |
+| Lazy page loads (`Loadable`) in the same file | 345 |
+| Lines in the routes file | 2,695 |
 
-**Числа 107 и 345 не сходятся и не должны:** часть маршрутов объявлена внутри
-разделов, а не в главном файле. Сколько всего экранов в системе — неизвестно, и
-из кода это узнать сложнее, чем из сценариев.
+**The numbers 107 and 345 do not add up, and they should not:** some routes are
+declared inside sections rather than in the main file. How many screens the
+system has in total is unknown, and learning that from the code is harder than
+learning it from the scenarios.
 
-Поэтому реестр целевых страниц строится от реестра сценариев, а не от
-инвентаризации файлов. Это единственная из четырёх карт, где источник — не код.
+That is why the target page registry is built from the scenario registry rather
+than from a file inventory. This is the only one of the four maps whose source is
+not the code.
 
-## Транзакционные коды в маршрутах
+## Transaction codes in routes
 
-Действующие пути: `/accounting/mainoperation/hrpl`,
+The paths in operation: `/accounting/mainoperation/hrpl`,
 `/accounting/mainoperation/acser`, `/hr/report/hrrsb`,
 `/hr/mainoperation/customer/hrc01`, `…/hrc02`, `…/hrc03/:id`,
 `/marketing/mainoperation/mmcef`, `/marketing/mainoperation/mmcefa`,
 `/hr/reference/hrrefistd`, `/dit/werpreference`.
 
-`hrc01`, `hrc02`, `hrc03` — три экрана одной сущности, различающиеся номером.
-Маршрут не сообщает ни что за экран, ни чем он отличается от соседнего.
+`hrc01`, `hrc02`, `hrc03` are three screens of the same entity differing by
+number. The route says neither what the screen is nor how it differs from its
+neighbour.
 
-**Правило:** маршрут читается человеком:
+**Rule:** a route is readable by a human:
 `/reference/branches`, `/reference/branches/:id`.
 
-Коды сохраняются как **алиасы** на переходный период: пользователи знают их
-наизусть и ищут по ним. Алиас перенаправляет на новый маршрут и выводится из
-употребления после обучения.
+The codes are kept as **aliases** for the transition period: users know them by
+heart and search by them. An alias redirects to the new route and is retired once
+training is done.
 
-> Это единственная уступка в маршрутизации, и она временная. Решение о сроке
-> снятия алиасов принимается при закрытии Фазы 5.
+> This is the only concession in routing, and it is temporary. The decision on
+> when to remove the aliases is taken when Phase 5 is closed.
 
-## Дублирующиеся разделы
+## Duplicated sections
 
-| Раздел | Файлов | Дубль | Файлов |
+| Section | Files | Duplicate | Files |
 |---|---:|---|---:|
 | `src/crm` | 156 | `src/crm2021` | 188 |
-| `src/callcenter` | 118 | `src/crm/callCenter` | внутри `crm` |
+| `src/callcenter` | 118 | `src/crm/callCenter` | inside `crm` |
 | `src/finance` | 179 | `src/accounting` | 43 |
 
-Первые две пары — параллельные реализации одного раздела. Третья — разделение,
-не совпадающее с разделением на бэкенде.
+The first two pairs are parallel implementations of the same section. The third
+is a split that does not coincide with the split on the backend.
 
-**Правило:** один раздел на домен, границы — по
-[карте доменов](../product/02-domains.md), а не по истории фронтенда.
+**Rule:** one section per domain, the boundaries taken from the
+[domain map](../product/02-domains.md) rather than from the frontend's history.
 
-## Две парадигмы одновременно
+## Two paradigms at once
 
-273 классовых компонента против 2 185 использований `useState`; 189
-использований методов жизненного цикла, объявленных устаревшими
-(`componentWillMount`, `componentWillReceiveProps`, `componentWillUpdate`).
+273 class components against 2,185 uses of `useState`; 189 uses of lifecycle
+methods declared deprecated (`componentWillMount`, `componentWillReceiveProps`,
+`componentWillUpdate`).
 
-Устаревшие методы несовместимы с современным React — они и есть причина, по
-которой фронтенд нельзя обновить постепенно.
+The deprecated methods are incompatible with modern React — they are the very
+reason the frontend cannot be upgraded gradually.
 
-**Правило:** только функциональные компоненты, TypeScript в строгом режиме.
-Автоматический перенос JS → TS не производится: он перенесёт архитектуру вместе
-с кодом ([ADR-0004](../docs/02-decisions/ADR-0004-frontend-stack.md)).
+**Rule:** functional components only, TypeScript in strict mode. No automated
+JS → TS conversion is performed: it would carry the architecture over along with
+the code ([ADR-0004](../docs/02-decisions/ADR-0004-frontend-stack.md)).
 
-## Ссылки в легаси-интерфейс
+## Links into the legacy interface
 
-33 места, где React открывает экран старого JSF-интерфейса (карточка договора,
-справочник клиентов, часть отчётов).
+33 places where React opens a screen of the old JSF interface (the contract card,
+the customer reference list, some reports).
 
-**Каждая такая ссылка — экран, которого в React нет вовсе.** Это не «перенести
-страницу», а «написать страницу впервые», и по трудоёмкости отличается в разы.
+**Every such link is a screen that does not exist in React at all.** That is not
+"move a page over" but "write a page for the first time", and the effort differs
+by a wide margin.
 
-Разбор всех 33 ссылок — задача Фазы 0; от результата зависит
-[OQ-012](12-open-questions.md#oq-012) и оценка Фазы 3.
+Working through all 33 links is a Phase 0 task; the result determines
+[OQ-012](12-open-questions.md#oq-012) and the Phase 3 estimate.
 
-## Логика, уезжающая на сервер
+## Logic moving to the server
 
-Часть кода фронтенда не имеет целевого аналога, потому что переезжает на
-бэкенд:
+Some frontend code has no target counterpart because it moves to the backend:
 
-| Что | Куда | Почему |
+| What | Where | Why |
 |---|---|---|
-| Формирование Excel (три библиотеки) | `platform-report` | клиент получал весь набор данных |
-| Расчёты в браузере (`bigdecimal`, `bignumber.js`) | доменные модули | одна арифметика на систему |
-| Ручные обёртки над HTTP | генерация из спецификации | |
-| Хранилище ответов API | кэш запросов | |
+| Excel generation (three libraries) | `platform-report` | the client used to receive the whole data set |
+| Calculations in the browser (`bigdecimal`, `bignumber.js`) | the domain modules | one arithmetic per system |
+| Hand-written HTTP wrappers | generation from the specification | |
+| The store of API responses | the request cache | |
 
-**Следствие:** объём фронтенда сокращается не только за счёт дублей. Оценивать
-Фазу 3 по 369 тыс. строк — значит завысить её кратно.
+**Consequence:** the frontend's volume shrinks not only because of the
+duplicates. Estimating Phase 3 from 369k lines means overstating it several times
+over.
 
 ---
 
-# Часть II. Правила соответствия
+# Part II. Mapping rules
 
-| Категория | Правило |
+| Category | Rule |
 |---|---|
-| Экран-список | → страница типа L с серверной пагинацией и фильтрами в URL |
-| Экран-карточка | → тип C; связанные сущности во вкладках |
-| Экран-форма | → тип F; валидация по схеме из спецификации |
-| Экран-отчёт | → тип R; расчёт на сервере, длинные — асинхронно |
-| Панель показателей | → тип D |
-| Модальное окно `*F4` | → компонент `Lookup` из дизайн-системы |
-| Дублирующиеся разделы | сводятся в один; какой правильный — решает владелец домена |
-| Ссылка в легаси | **новая страница**, пишется с нуля |
-| Выгрузка в браузере | исчезает; заменяется серверной |
-| Экран без сценария | не переносится |
-| Сценарий без экрана | новая страница |
+| A list screen | → a type L page with server-side pagination and filters in the URL |
+| A card screen | → type C; related entities in tabs |
+| A form screen | → type F; validation against the schema from the specification |
+| A report screen | → type R; computed on the server, long ones asynchronously |
+| An indicator dashboard | → type D |
+| A `*F4` modal window | → the `Lookup` component from the design system |
+| Duplicated sections | consolidated into one; which is the right one is decided by the domain owner |
+| A link into the legacy | **a new page**, written from scratch |
+| An export in the browser | disappears; replaced by a server-side one |
+| A screen with no scenario | not carried over |
+| A scenario with no screen | a new page |
 
-## Последние две строки — самое важное
+## The last two rows are the most important
 
-Карта строится не «экран → экран», а через сценарии:
+The map is built not "screen → screen" but through the scenarios:
 
 ```
-экран легаси  →  сценарий из реестра  →  страница продукта
+a legacy screen  →  a scenario from the registry  →  a product page
 ```
 
-Это даёт две категории, которых не даёт сравнение кода:
+That yields two categories a code comparison cannot yield:
 
-- **экран без сценария** — им никто не пользуется, он не переносится;
-- **сценарий без экрана** — пользователи выполняют его обходным путём
-  (выгрузка в Excel, ручной пересчёт, договорённости вне системы). Такой
-  сценарий требует **новой** страницы.
+- **a screen with no scenario** — nobody uses it, and it is not carried over;
+- **a scenario with no screen** — users perform it by a workaround (an export to
+  Excel, a manual recalculation, arrangements outside the system). Such a scenario
+  requires a **new** page.
 
-Вторая категория — самая ценная находка Фазы 0
-([TASK-1103](../backlog/EPIC-011-scenario-registry.md)) и самая пропускаемая
-при оценке. Если её не выявить, новая система воспроизведёт те же неудобства.
+The second category is the most valuable find of Phase 0
+([TASK-1103](../backlog/EPIC-011-scenario-registry.md)) and the one most often
+skipped when estimating. If it is not identified, the new system will reproduce
+the same inconveniences.
 
 ---
 
-# Часть III. Карта страниц
+# Part III. Page map
 
-Заполняется в [EPIC-011](../backlog/EPIC-011-scenario-registry.md).
+Filled in in [EPIC-011](../backlog/EPIC-011-scenario-registry.md).
 
-| Раздел легаси | Файлов | Сценариев | Страниц продукта | Решение | Владелец |
+| Legacy section | Files | Scenarios | Product pages | Decision | Owner |
 |---|---:|---:|---:|---|---|
-| `src/reference` | 38 | — | 14 | **спроектировано** | не назначен |
-| `src/service` | 234 | — | — | не принято | — |
-| `src/hr` | 260 | — | — | не принято | — |
-| `src/logistics` | 213 | — | — | не принято | — |
-| `src/finance` + `src/accounting` | 222 | — | — | сводим | — |
-| `src/crm` + `src/crm2021` | 344 | — | — | **сводим** | — |
-| `src/callcenter` | 118 | — | — | сводим с `crm` | — |
-| `src/dit` | 241 | — | — | не принято | — |
-| `src/marketing` | 125 | — | — | не принято | — |
-| `src/edu` | 101 | — | — | не принято | — |
+| `src/reference` | 38 | — | 14 | **designed** | not assigned |
+| `src/service` | 234 | — | — | not taken | — |
+| `src/hr` | 260 | — | — | not taken | — |
+| `src/logistics` | 213 | — | — | not taken | — |
+| `src/finance` + `src/accounting` | 222 | — | — | consolidate | — |
+| `src/crm` + `src/crm2021` | 344 | — | — | **consolidate** | — |
+| `src/callcenter` | 118 | — | — | consolidate with `crm` | — |
+| `src/dit` | 241 | — | — | not taken | — |
+| `src/marketing` | 125 | — | — | not taken | — |
+| `src/edu` | 101 | — | — | not taken | — |
 | `src/aes` | 33 | — | — | [OQ-004](12-open-questions.md#oq-004) | — |
-| `src/lawyer` | 24 | — | — | не принято | — |
-| `src/admin` | 12 | — | — | не принято | — |
-| `src/documents` | 8 | — | — | не принято | — |
-| экраны только в JSF | 472 xhtml | — | — | **[OQ-012](12-open-questions.md#oq-012)** | — |
+| `src/lawyer` | 24 | — | — | not taken | — |
+| `src/admin` | 12 | — | — | not taken | — |
+| `src/documents` | 8 | — | — | not taken | — |
+| screens that exist only in JSF | 472 xhtml | — | — | **[OQ-012](12-open-questions.md#oq-012)** | — |
 
-Образец заполненной карты — [map/D1-reference.md](map/D1-reference.md#страницы).
+A sample of a filled-in map — [map/D1-reference.md](map/D1-reference.md#pages).
 
-## Порядок заполнения
+## The order of filling it in
 
-1. Собрать сценарии по доменам (TASK-1101).
-2. Сопоставить сценарии с существующими экранами (TASK-1104).
-3. Выявить экраны без сценариев — кандидаты на отсев.
-4. Выявить сценарии без экранов — новые страницы (TASK-1103).
-5. Разобрать 33 ссылки в легаси — экраны, которых в React нет.
-6. Спроектировать страницы в [product/spec/](../product/spec/README.md).
-7. Пересчитать оценку Фазы 3.
+1. Collect the scenarios per domain (TASK-1101).
+2. Match the scenarios against the existing screens (TASK-1104).
+3. Identify screens with no scenarios — candidates for removal.
+4. Identify scenarios with no screens — new pages (TASK-1103).
+5. Work through the 33 links into the legacy — screens that do not exist in
+   React.
+6. Design the pages in [product/spec/](../product/spec/README.md).
+7. Recalculate the Phase 3 estimate.
 
-Шаг 7 обязателен: до него оценка фронтенда остаётся диапазоном
+Step 7 is mandatory: until it is done, the frontend estimate remains a range
 ([10-estimates.md](10-estimates.md)).

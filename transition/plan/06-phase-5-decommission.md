@@ -1,109 +1,116 @@
 ---
 id: TRANS-PLAN-06
-title: Фаза 5 — Вывод легаси из эксплуатации
+title: Phase 5 — Legacy decommissioning
 status: draft
 gate: G4
 ---
 
-# Фаза 5 — Вывод легаси из эксплуатации
+# Phase 5 — Legacy decommissioning
 
-**Цель:** старых систем не существует.
+**Goal:** the old systems do not exist.
 
-**Почему это отдельная фаза, а не «уберём потом».** Не выведенная из
-эксплуатации старая система — это [P-05](../../docs/00-context/02-pain-points.md#p-05-три-поколения-бэкенда-в-проде-одновременно):
-именно так в текущем ландшафте оказались три поколения бэкенда одновременно.
-Каждое из них когда-то должно было быть выключено «потом».
+**Why this is a separate phase rather than "we will clean up later".** An old
+system that has not been decommissioned is
+[P-05](../../docs/00-context/02-pain-points.md#p-05-three-backend-generations-in-production-at-once):
+that is exactly how three backend generations ended up in the current landscape
+at the same time. Each of them was once meant to be switched off "later".
 
-Правило [NC-07](../../docs/01-principles/01-no-compromise.md#nc-07) существует ровно для
-этой фазы: **проект не завершён, пока легаси работает.**
+Rule [NC-07](../../docs/01-principles/01-no-compromise.md#nc-07) exists for
+precisely this phase: **the project is not finished while the legacy is
+running.**
 
-## Условие начала
+## The condition for starting
 
-Период стабилизации завершён, гейт [G3](00-roadmap.md#g3--переезд-выполнен)
-пройден, решения об откате не принималось.
+The stabilization period is over, gate
+[G3](00-roadmap.md#g3--cutover-done) is passed, and no rollback decision was
+taken.
 
-## Работы
+## The work
 
-### 1. Остановка легаси
+### 1. Stopping the legacy
 
-| Шаг | Действие |
+| Step | Action |
 |---|---|
-| 1 | Полная резервная копия всех легаси-баз и файлов, проверенная восстановлением |
-| 2 | Выгрузка исторических данных в долговременный архив в открытом формате |
-| 3 | Отключение легаси-приложений от сети |
-| 4 | Ожидание согласованного срока (никто не обратился — значит, не нужно) |
-| 5 | Остановка серверов приложений |
-| 6 | Остановка Oracle и MySQL |
-| 7 | Освобождение ресурсов |
+| 1 | A full backup of all the legacy databases and files, verified by a restore |
+| 2 | Exporting the historical data into a long-term archive in an open format |
+| 3 | Disconnecting the legacy applications from the network |
+| 4 | Waiting out the agreed period (nobody came asking — so it is not needed) |
+| 5 | Stopping the application servers |
+| 6 | Stopping Oracle and MySQL |
+| 7 | Releasing the resources |
 
-Шаг 4 — не перестраховка: за 12 лет к базе могли быть подключены выгрузки и
-отчёты, о которых не знает никто из действующих сотрудников. Отключение от сети
-с сохранением работоспособности выявляет их безопасно.
+Step 4 is not over-caution: over 12 years exports and reports may have been
+connected to the database that none of the current staff knows about.
+Disconnecting from the network while keeping the system operational reveals them
+safely.
 
-### 2. Лицензии и договоры
+### 2. Licences and contracts
 
-- Лицензии Oracle не продлеваются — один из измеримых экономических результатов
-  проекта ([ADR-0002](../../docs/02-decisions/ADR-0002-database-postgresql.md)).
-- Пересматриваются договоры на поддержку и хостинг, относящиеся только к легаси.
+- The Oracle licences are not renewed — one of the project's measurable economic
+  results
+  ([ADR-0002](../../docs/02-decisions/ADR-0002-database-postgresql.md)).
+- Support and hosting contracts relating only to the legacy are revised.
 
-### 3. Код и репозитории
+### 3. Code and repositories
 
 - `werp_jsf`, `werp_java_back_v2`, `werp_react_front`, `werp_crm`,
-  `werp_call_center`, `target-bridge` — **архивируются, а не удаляются**: они
-  остаются единственным ответом на вопрос «а как это работало раньше».
-- Доступ — только на чтение.
-- В README каждого — пометка о выводе из эксплуатации, дата, ссылка на новый
-  репозиторий.
-- CI-пайплайны легаси отключаются.
+  `werp_call_center`, `target-bridge` — **archived, not deleted**: they remain
+  the only answer to the question "how did this work before?".
+- Access is read-only.
+- The README of each carries a decommissioning note, the date and a link to the
+  new repository.
+- The legacy CI pipelines are switched off.
 
-`bridge` не архивируется — он остаётся в работе.
+`bridge` is not archived — it stays in operation.
 
-### 4. Инфраструктура
+### 4. Infrastructure
 
-- Удаляются манифесты, конфигурации, секреты, DNS-записи и правила
-  маршрутизации, относящиеся к легаси.
-- Удаляются образы легаси из реестра.
-- Панели мониторинга и оповещения по легаси отключаются.
+- The manifests, configurations, secrets, DNS records and routing rules relating
+  to the legacy are deleted.
+- The legacy images are deleted from the registry.
+- The legacy dashboards and alerts are switched off.
 
-### 5. Проверка результата
+### 5. Verifying the result
 
-Формальная проверка по сводной таблице
-[P-01…P-12](../../docs/00-context/02-pain-points.md#сводная-таблица): ни один пункт не
-воспроизводится в новой системе. Проверяется теми же командами, которыми
-измерялась текущая система, — метод описан в
-[приложении к инвентаризации](../../docs/00-context/01-inventory.md#приложение-как-измерялось).
+A formal check against the summary table
+[P-01…P-12](../../docs/00-context/02-pain-points.md#summary-table): not one item
+is reproduced in the new system. It is verified with the same commands that
+measured the current system — the method is described in the
+[appendix to the inventory](../../docs/00-context/01-inventory.md#appendix-how-this-was-measured).
 
-Это единственный объективный способ ответить на вопрос «получилось ли».
+That is the only objective way of answering the question "did it work?".
 
-### 6. Передача в эксплуатацию
+### 6. Handover to operations
 
-- Дежурная команда работает по ранбукам без участия разработчиков переезда.
-- Процесс обновлений, дежурств и реагирования на инциденты установлен.
-- Правила [NC-01…NC-15](../../docs/01-principles/01-no-compromise.md) продолжают
-  действовать и проверяться в CI — иначе новая система начнёт свой путь к
-  состоянию старой с первого же дня.
+- The on-call team works from the runbooks without the involvement of the
+  migration developers.
+- The process for updates, on-call duty and incident response is established.
+- The rules
+  [NC-01…NC-15](../../docs/01-principles/01-no-compromise.md) remain in force and
+  keep being checked in CI — otherwise the new system will begin its own journey
+  towards the old one's state from day one.
 
-### 7. Ретроспектива
+### 7. Retrospective
 
-- Что оценили верно, что нет, и на сколько.
-- Что нашли в Фазе 0, а что всплыло в Фазе 4 — и почему.
-- Сработали ли механизмы компенсации big bang.
-- Сколько составил delta backlog за проект.
-- Что бы сделали иначе.
+- What was estimated correctly, what was not, and by how much.
+- What was found in Phase 0 and what surfaced in Phase 4 — and why.
+- Whether the big bang compensation mechanisms worked.
+- How large the delta backlog was over the project.
+- What we would do differently.
 
-Результат — документ в этом репозитории. Он архивируется вместе с планом и
-остаётся ответом для следующего большого переписывания.
+The result is a document in this repository. It is archived together with the
+plan and remains the answer for the next large rewrite.
 
-## Критерии завершения
+## Completion criteria
 
-Гейт [G4](00-roadmap.md#g4--проект-завершён).
+Gate [G4](00-roadmap.md#g4--project-finished).
 
-## После проекта
+## After the project
 
-Этот репозиторий переводится в статус `completed` и архивируется. Действующей
-документацией новой системы становится `docs/` монорепозитория
+This repository is moved to the `completed` status and archived. The living
+documentation of the new system becomes the monorepo's `docs/`
 ([ADR-0007](../../docs/02-decisions/ADR-0007-repo-layout.md)).
 
-Правила «без компромиссов» переезжают в новый репозиторий и продолжают
-исполняться. Они написаны не для проекта переписывания, а для системы, которая
-должна прожить следующие 12 лет.
+The "no compromise" rules move into the new repository and keep being enforced.
+They were written not for the rewrite project but for a system that has to live
+the next 12 years.

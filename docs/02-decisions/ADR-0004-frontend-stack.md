@@ -1,76 +1,79 @@
 ---
 id: ADR-0004
-title: Стек фронтенда
-status: Предложено
+title: Frontend stack
+status: Proposed
 date: 2026-09-03
-deadline: гейт G1
+deadline: gate G1
 ---
 
-# ADR-0004. Стек фронтенда
+# ADR-0004. Frontend stack
 
-## Контекст
+## Context
 
-Текущий фронтенд — 369 214 строк JavaScript без единого файла TypeScript,
-React 16.11 на `react-scripts` 3.4.0 (Create React App снят с поддержки),
-Redux 3.7 + `redux-form` 7.2 + `react-router` 4. 273 классовых компонента
-сосуществуют с 2 185 использованиями `useState`; 189 использований методов
-жизненного цикла, объявленных устаревшими. По три библиотеки на задачи деревьев
-и выгрузки в Excel, по две — на графики, даты и десятичную арифметику
-([P-11](../00-context/02-pain-points.md#p-11-фронтенд--три-библиотеки-на-каждую-задачу)).
+The current frontend is 369,214 lines of JavaScript without a single TypeScript
+file, React 16.11 on `react-scripts` 3.4.0 (Create React App is out of support),
+Redux 3.7 + `redux-form` 7.2 + `react-router` 4. 273 class components coexist
+with 2,185 uses of `useState`; there are 189 uses of lifecycle methods declared
+deprecated. Three libraries each for trees and Excel export, two each for
+charts, dates and decimal arithmetic
+([P-11](../00-context/02-pain-points.md#p-11-the-frontend--three-libraries-for-every-job)).
 
-Фронтенд ERP — это в основном таблицы, формы, справочники с поиском, отчёты и
-выгрузки. Экзотики мало, объёма много: ~1 300 эндпойнтов на бэкенде порождают
-сопоставимое число экранов.
+An ERP frontend is mostly tables, forms, searchable reference lists, reports and
+exports. There is little exotica and a lot of volume: ~1,300 endpoints on the
+backend produce a comparable number of screens.
 
-## Решение (предлагается)
+## Decision (proposed)
 
-1. **TypeScript в строгом режиме.** Не опция. 369 тыс. строк нетипизированного
-   кода — прямая причина того, что фронтенд нельзя рефакторить.
-2. **React, актуальная версия**, только функциональные компоненты. React выбран
-   не по инерции, а потому что вся команда и вся кодовая база уже на нём —
-   переучивание на другой фреймворк не даёт ничего, что окупило бы стоимость.
-3. **Один инструмент сборки** с быстрой пересборкой; собранный артефакт получает
-   конфигурацию в рантайме, а не на сборке (NC-11).
-4. **Разделение серверного и клиентского состояния.** Серверное состояние —
-   библиотека кэширования запросов; клиентское — минимальное локальное
-   хранилище. Redux в текущем виде (глобальное хранилище под всё, включая
-   ответы API) не воспроизводится.
-5. **Одна библиотека форм с валидацией по схеме**, общей с бэкендом (см.
-   [ADR-0005](ADR-0005-contract-first-api.md)).
-6. **Одна библиотека таблиц** — данных, а не оформления: серверная пагинация,
-   сортировка, фильтрация, закрепление колонок, виртуализация. Все списки в
-   системе выглядят и ведут себя одинаково.
-7. **Одна дизайн-система**, одна библиотека компонентов, одна библиотека дат,
-   одна библиотека графиков, один способ выгрузки в Excel — реестр разрешённых
-   библиотек ведётся явно (NC-14).
-8. **Клиент API генерируется из спецификации** — рукописных обёрток над HTTP не
-   существует ([ADR-0005](ADR-0005-contract-first-api.md)).
+1. **TypeScript in strict mode.** Not optional. 369k lines of untyped code are
+   the direct reason the frontend cannot be refactored.
+2. **React, current version**, functional components only. React is chosen not
+   out of inertia but because the whole team and the whole codebase are already
+   on it — retraining onto another framework buys nothing that would repay the
+   cost.
+3. **One build tool** with fast rebuilds; the built artefact receives its
+   configuration at runtime, not at build time (NC-11).
+4. **Separation of server and client state.** Server state — a request-caching
+   library; client state — a minimal local store. Redux in its current form (a
+   global store for everything, API responses included) is not reproduced.
+5. **One form library with schema-based validation**, shared with the backend
+   (see [ADR-0005](ADR-0005-contract-first-api.md)).
+6. **One table library** — for data, not decoration: server-side pagination,
+   sorting, filtering, pinned columns, virtualization. Every list in the system
+   looks and behaves the same way.
+7. **One design system**, one component library, one date library, one charting
+   library, one way of exporting to Excel — the registry of allowed libraries is
+   maintained explicitly (NC-14).
+8. **The API client is generated from the specification** — hand-written HTTP
+   wrappers do not exist ([ADR-0005](ADR-0005-contract-first-api.md)).
 
-## Что специально не переносится
+## What is deliberately not carried over
 
-- Глобальное хранилище под ответы API.
-- Дублирование разделов (`crm` и `crm2021`, `callcenter` и `crm/callCenter`).
-- Ссылки в легаси-интерфейс — их не будет, потому что не будет легаси
-  ([NC-07](../01-principles/01-no-compromise.md#nc-07)).
-- Файл маршрутов на 2 695 строк: маршруты объявляются рядом с разделами.
-- Генераторы тестовых данных в производственных зависимостях.
+- A global store for API responses.
+- Duplicated sections (`crm` and `crm2021`, `callcenter` and `crm/callCenter`).
+- Links into the legacy interface — there will be none, because there will be no
+  legacy ([NC-07](../01-principles/01-no-compromise.md#nc-07)).
+- A 2,695-line routes file: routes are declared next to their sections.
+- Test-data generators in the production dependencies.
 
-## Последствия
+## Consequences
 
-- Полное переписывание фронтенда — это Фаза 3, сопоставимая по объёму с
-  бэкендом. Автоматический перенос JS → TS не рассматривается: он перенесёт
-  архитектуру вместе с кодом.
-- Требуется дизайн-система до начала массовой разработки экранов, иначе 1 300
-  экранов будут выглядеть как 1 300 разных приложений — ровно как сейчас.
-- Многоязычность (ru / en / tr, ~1 700 сообщений) переносится вместе с
-  переработкой ключей → [ADR-0010](ADR-0010-i18n.md).
-- Доступность и работа с клавиатуры — требование к дизайн-системе, а не задача
-  отдельных экранов: в ERP операторы работают с клавиатуры, и это влияет на
-  скорость их работы напрямую.
+- Rewriting the frontend in full is Phase 3, comparable in size to the backend.
+  Automated JS → TS conversion is not considered: it would carry the architecture
+  over along with the code.
+- A design system is required before mass screen development starts, otherwise
+  1,300 screens will look like 1,300 different applications — exactly as they do
+  now.
+- Multilingual support (ru / en / tr, ~1,700 messages) is carried over together
+  with a rework of the keys → [ADR-0010](ADR-0010-i18n.md).
+- Accessibility and keyboard operation are a requirement on the design system,
+  not a task for individual screens: in an ERP the operators work from the
+  keyboard, and it affects their speed directly.
 
-## Открытые вопросы
+## Open questions
 
-- Нужна ли поддержка работы в отключённом режиме и на планшетах (склад,
-  выездной сервис)? От ответа зависит выбор между обычным веб-приложением и
-  приложением с офлайн-хранилищем — [OQ-008](../../transition/12-open-questions.md).
-- Минимально поддерживаемые браузеры — [OQ-008](../../transition/12-open-questions.md).
+- Is support for offline operation and for tablets needed (warehouse, field
+  service)? The answer determines the choice between an ordinary web application
+  and an application with an offline store —
+  [OQ-008](../../transition/12-open-questions.md).
+- The minimum supported browsers —
+  [OQ-008](../../transition/12-open-questions.md).

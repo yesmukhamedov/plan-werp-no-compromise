@@ -1,195 +1,204 @@
 ---
 id: TRANS-03
-title: Соответствие API
+title: API mapping
 status: draft
 ---
 
-# Соответствие API
+# API mapping
 
-Какой существующий эндпойнт каким заменяется
-([product/05-api.md](../product/05-api.md)).
+Which existing endpoint is replaced by which
+([05-api/](../product/05-api/README.md)).
 
-Это самая формализуемая из четырёх карт: и источник, и цель — машиночитаемые
-списки. Она же — критерий полноты новой системы.
+This is the most formalizable of the four maps: both the source and the target
+are machine-readable lists. It is also the completeness criterion for the new
+system.
 
 ---
 
-# Часть I. Что придётся преобразовать
+# Part I. What will have to be transformed
 
-## Масштаб
+## Scale
 
-| Источник | Эндпойнтов |
+| Source | Endpoints |
 |---|---:|
-| `werp_java_back_v2` | 1 286 (+ 410 `@RequestMapping` на классах) |
-| `werp_crm` | не подсчитано |
-| `werp_call_center` | не подсчитано |
-| `werp_jsf` | 472 страницы, эндпойнтов нет — навигация xhtml |
+| `werp_java_back_v2` | 1,286 (+ 410 `@RequestMapping` on classes) |
+| `werp_crm` | not counted |
+| `werp_call_center` | not counted |
+| `werp_jsf` | 472 pages, no endpoints — xhtml navigation |
 
-## Два источника истины о путях
+## Two sources of truth about paths
 
-Часть путей объявлена аннотациями в коде, часть — подстановкой из конфигурации:
+Some paths are declared by annotations in the code, others by substitution from
+the configuration:
 
 ```
-@GetMapping("${routes.api.reference.companies}")     из application.yml
-@GetMapping("/states")                                прямо в коде
+@GetMapping("${routes.api.reference.companies}")     from application.yml
+@GetMapping("/states")                                right in the code
 ```
 
-Оба варианта встречаются **в одном классе**. Полный список путей нельзя
-получить ни из кода, ни из конфигурации — только из их объединения.
+Both variants occur **in one class**. The full list of paths cannot be obtained
+from the code or from the configuration — only from their union.
 
-**Правило:** источник истины один — спецификация OpenAPI
-([ADR-0005](../docs/02-decisions/ADR-0005-contract-first-api.md)). Путь в коде
-не задаётся вовсе: контроллеры генерируются.
+**Rule:** there is one source of truth — the OpenAPI specification
+([ADR-0005](../docs/02-decisions/ADR-0005-contract-first-api.md)). The path is
+not set in the code at all: the controllers are generated.
 
-## Глаголы и заглавные буквы в путях
+## Verbs and capital letters in paths
 
-Действующие формы: `/FETCH_COUNTRIES`, `/FETCH_COUNTRIES2`, `/FETCH_USERS`,
+The forms in operation: `/FETCH_COUNTRIES`, `/FETCH_COUNTRIES2`, `/FETCH_USERS`,
 `/checkAccess`, `/checkAccessWithTcode`, `/dmulstAll`, `/dmumovenode`,
 `/userInfo`, `/crm/allCrmGroupDealersForCurrentUser`,
 `/crm/dealersContractSalesDailyByBranchIdAndYearAndMonth`.
 
-Последний пример показывает суть проблемы: параметры вынесены **в имя пути**, а
-не в строку запроса. Каждое новое сочетание фильтров порождает новый эндпойнт —
-так 1 286 эндпойнтов и накопились.
+The last example shows the essence of the problem: the parameters are moved
+**into the path name** rather than the query string. Every new combination of
+filters spawns a new endpoint — that is how 1,286 endpoints accumulated.
 
-**Правило:** ресурс в пути, фильтры в параметрах. Приведённый эндпойнт
-становится:
+**Rule:** the resource in the path, the filters in the parameters. The endpoint
+above becomes:
 
 ```
 GET /api/v1/contract/dealer-sales?branchId=…&period=…&granularity=DAILY
 ```
 
-Одна строка вместо двух эндпойнтов (`…ByBranchIdAndYearAndMonth` и
+One line instead of two endpoints (`…ByBranchIdAndYearAndMonth` and
 `…DailyByBranchIdAndYearAndMonth`).
 
-## Версии в имени
+## Versions in the name
 
-`/FETCH_COUNTRIES` и `/FETCH_COUNTRIES2` сосуществуют; DTO называются
-`Branch2DTO`, `Company2DTO`. Вторая версия добавлена рядом, первая осталась.
+`/FETCH_COUNTRIES` and `/FETCH_COUNTRIES2` coexist; the DTOs are called
+`Branch2DTO`, `Company2DTO`. The second version was added alongside; the first
+stayed.
 
-**Правило:** версия — в пути (`/api/v1/`), одна на систему. Суффикс `2` в имени
-ресурса или модели невозможен по правилам линтера спецификации.
+**Rule:** the version goes in the path (`/api/v1/`), one per system. A `2` suffix
+in a resource or model name is impossible under the specification linter's rules.
 
-## Эндпойнты не в своём домене
+## Endpoints in the wrong domain
 
-`ReferenceRestController` (домен справочников) содержит 72 эндпойнта, среди них:
+`ReferenceRestController` (the reference-data domain) contains 72 endpoints,
+among them:
 
 ```
-/crm/staffListForCrm              данные о персонале      → D3
-/crm/salaryListForCrm/{staffId}   зарплата                → D6
-/crm/pyramidByYearAndMonth        структура продаж        → D9
-/crm/dealersContractSales…        продажи по договорам    → D4
-/checkAccess                      проверка прав           → D0
+/crm/staffListForCrm              personnel data          → D3
+/crm/salaryListForCrm/{staffId}   salary                  → D6
+/crm/pyramidByYearAndMonth        the sales structure     → D9
+/crm/dealersContractSales…        sales by contract       → D4
+/checkAccess                      a permission check      → D0
 ```
 
-Домен эндпойнта определяется **предметом данных**, а не тем, в каком классе он
-исторически оказался. При переносе такие эндпойнты уходят в свои домены — и это
-меняет карту доменов, а не только карту API.
+An endpoint's domain is determined by **the subject of the data**, not by which
+class it historically ended up in. During the transfer such endpoints move to
+their own domains — and that changes the domain map, not only the API map.
 
-## Возврат сущностей вместо DTO
+## Returning entities instead of DTOs
 
-Часть эндпойнтов возвращает JPA-сущность напрямую (`fetchCountries` отдаёт
-`Map<Long, Country>`). Клиент получает структуру таблицы, включая поля, о
-которых знать не должен, а любое изменение схемы ломает контракт.
+Some endpoints return a JPA entity directly (`fetchCountries` returns
+`Map<Long, Country>`). The client receives the table's structure, including
+fields it should not know about, and any schema change breaks the contract.
 
-**Правило:** сущности за пределы модуля не выходят; ответ описан в спецификации.
+**Rule:** entities do not leave the module; the response is described in the
+specification.
 
-## Произвольная фильтрация
+## Arbitrary filtering
 
-Используется RSQL — язык запросов в строке URL, позволяющий клиенту составить
-произвольное условие. Следствия: невозможен контроль прав по полям, невозможна
-оценка стоимости запроса, невозможна генерация типизированного клиента.
+RSQL is in use — a query language in the URL string that lets the client compose
+an arbitrary condition. The consequences: field-level permission control is
+impossible, estimating a query's cost is impossible, generating a typed client is
+impossible.
 
-**Правило:** явные именованные фильтры, объявленные в спецификации
-([product/05-api.md](../product/05-api.md#списки)).
+**Rule:** explicit named filters declared in the specification
+([API rule 4](../product/05-api/rules/04-lists.md)).
 
 ---
 
-# Часть II. Правила соответствия
+# Part II. Mapping rules
 
-| Категория | Правило | Пример |
+| Category | Rule | Example |
 |---|---|---|
-| CRUD | прямое соответствие | `GET /reference/branch/list` → `GET /api/v1/reference/branches` |
-| Параметр в пути | выносится в строку запроса | `/regions/{countryId}` → `/regions?countryId=` |
-| Глагол в пути | метод + подресурс состояния | `POST /cancelContract` → `POST /contracts/{id}/cancellation` |
-| `FETCH_*` | обычный список | `/FETCH_COUNTRIES` → `GET /countries` |
-| Версии `*2` | сводятся в один | `/FETCH_COUNTRIES2` → тот же `GET /countries` |
-| Специализированные выборки | один список + фильтры | несколько → один |
-| Эндпойнт чужого домена | переезжает в свой домен | `/reference/crm/staffList…` → `/api/v1/hr/…` |
-| Механизм `*F4` | обычный список с поиском | `BranchF4` → `GET /branches?q=` |
-| Мёртвый эндпойнт | не переносится | решение владельца, письменно |
-| Новый | появляется без предшественника | помечается «появляется» |
+| CRUD | a direct mapping | `GET /reference/branch/list` → `GET /api/v1/reference/branches` |
+| A parameter in the path | moved into the query string | `/regions/{countryId}` → `/regions?countryId=` |
+| A verb in the path | the method + a state sub-resource | `POST /cancelContract` → `POST /contracts/{id}/cancellation` |
+| `FETCH_*` | an ordinary list | `/FETCH_COUNTRIES` → `GET /countries` |
+| The `*2` versions | consolidated into one | `/FETCH_COUNTRIES2` → the same `GET /countries` |
+| Specialized extracts | one list + filters | several → one |
+| An endpoint of another domain | moves to its own domain | `/reference/crm/staffList…` → `/api/v1/hr/…` |
+| The `*F4` mechanism | an ordinary list with search | `BranchF4` → `GET /branches?q=` |
+| A dead endpoint | not carried over | the owner's decision, in writing |
+| New | appears with no predecessor | marked "new" |
 
-## Ожидаемое сокращение
+## Expected reduction
 
-Число эндпойнтов должно заметно уменьшиться за счёт: сведения версий,
-объединения специализированных выборок в списки с фильтрами, замены механизма
-`*F4`, отсева мёртвых.
+The number of endpoints should decrease noticeably thanks to: consolidating
+versions, merging specialized extracts into lists with filters, replacing the
+`*F4` mechanism, and weeding out the dead ones.
 
-**Насколько — неизвестно до инвентаризации.** Оценка появляется в
-[EPIC-002](../backlog/EPIC-002-contract-inventory.md) и уточняет
-[оценку Фазы 2](10-estimates.md).
+**By how much is unknown until the inventory.** The estimate appears in
+[EPIC-002](../backlog/EPIC-002-contract-inventory.md) and refines the
+[Phase 2 estimate](10-estimates.md).
 
 ---
 
-# Часть III. Слой совместимости
+# Part III. The compatibility layer
 
-Единственное место, где правила выше **не применяются**.
+The only place where the rules above **do not apply**.
 
-Мобильное приложение не переписывается и требует контракта 1:1
-([C-06](../docs/00-context/03-constraints.md#c-06-мобильное-приложение--отдельный-клиент-вне-этого-плана)).
-Для него сохраняются существующие пути и формы ответов без изменений.
+The mobile app is not being rewritten and requires a 1:1 contract
+([C-06](../docs/00-context/03-constraints.md#c-06-the-mobile-app--a-separate-client-outside-this-plan)).
+For it, the existing paths and response shapes are preserved unchanged.
 
-## Откуда берётся список
+## Where the list comes from
 
-Из `bridge` — файла `internal/routes/mobile.go`. Там объявлен **явный
-allowlist** путей, открытых мобильному приложению: не префиксы, а поимённый
-список.
+From `bridge` — the file `internal/routes/mobile.go`. It declares an **explicit
+allowlist** of the paths opened to the mobile app: not prefixes but a list by
+name.
 
-Это готовая, проверенная в эксплуатации спецификация обязательного минимума —
-самый ценный входной артефакт [EPIC-002](../backlog/EPIC-002-contract-inventory.md).
-Ничего восстанавливать не нужно, список уже существует.
+That is a ready specification of the mandatory minimum, proven in operation — the
+most valuable input artefact of
+[EPIC-002](../backlog/EPIC-002-contract-inventory.md). Nothing has to be
+reconstructed; the list already exists.
 
-## Требования к слою
+## Requirements on the layer
 
-| Требование | Почему |
+| Requirement | Why |
 |---|---|
-| Пути и формы ответов совпадают 1:1, включая коды ошибок | приложение не переписывается |
-| Реализован поверх доменных фасадов, своей логики не содержит | иначе появится вторая реализация домена |
-| Ограничен списком из `bridge`; ничего сверх | тот же принцип allowlist |
-| Покрыт тестами, фиксирующими ответы | единственный способ гарантировать 1:1 |
-| Помечен в спецификации как устаревший | чтобы его вывели, а не забыли |
-| Условие вывода записано | обновление мобильного приложения |
+| The paths and response shapes match 1:1, error codes included | the app is not being rewritten |
+| Implemented on top of the domain facades, with no logic of its own | otherwise a second implementation of the domain appears |
+| Limited to the list from `bridge`; nothing beyond it | the same allowlist principle |
+| Covered by tests that pin the responses | the only way to guarantee 1:1 |
+| Marked deprecated in the specification | so that it gets retired rather than forgotten |
+| The retirement condition is recorded | an update to the mobile app |
 
-## Проверка
+## Verification
 
-Тесты слоя пишутся **против действующей системы** в Фазе 0
-([TASK-0202](../backlog/EPIC-002-contract-inventory.md)) — как
-характеризационные: фиксируют текущие ответы, включая особенности. Затем те же
-тесты прогоняются против новой системы.
+The layer's tests are written **against the system in operation** in Phase 0
+([TASK-0202](../backlog/EPIC-002-contract-inventory.md)) — as characterization
+tests: they pin the current responses, quirks included. The same tests are then
+run against the new system.
 
 ---
 
-# Часть IV. Карта эндпойнтов
+# Part IV. Endpoint map
 
-Заполняется в [EPIC-002](../backlog/EPIC-002-contract-inventory.md).
+Filled in in [EPIC-002](../backlog/EPIC-002-contract-inventory.md).
 
-| Источник | Метод | Путь | Живой | Решение | Целевой | Владелец |
+| Source | Method | Path | Live | Decision | Target | Owner |
 |---|---|---|---|---|---|---|
-| `werp_java_back_v2` | — | *(1 286 эндпойнтов)* | — | не принято | — | — |
-| `werp_crm` | — | *(не подсчитано)* | — | не принято | — | — |
-| `werp_call_center` | — | *(не подсчитано)* | — | не принято | — | — |
-| `bridge` → mobile | — | *(явный allowlist)* | да | **1:1** | `/api/mobile/**` | — |
+| `werp_java_back_v2` | — | *(1,286 endpoints)* | — | not taken | — | — |
+| `werp_crm` | — | *(not counted)* | — | not taken | — | — |
+| `werp_call_center` | — | *(not counted)* | — | not taken | — | — |
+| `bridge` → mobile | — | *(an explicit allowlist)* | yes | **1:1** | `/api/mobile/**` | — |
 
-Столбец «живой» заполняется по статистике обращений
-([TASK-0106](../backlog/EPIC-001-project-setup.md)), а не по памяти.
+The "live" column is filled in from access statistics
+([TASK-0106](../backlog/EPIC-001-project-setup.md)), not from memory.
 
-Образец заполненной карты — [map/D1-reference.md](map/D1-reference.md#эндпойнты).
+A sample of a filled-in map —
+[map/D1-reference.md](map/D1-reference.md#endpoints).
 
-## Критерий полноты
+## The completeness criterion
 
-Новая система полна по API, когда каждый эндпойнт источника имеет решение, и
-каждое решение «переносим» или «сводим» имеет реализованный целевой эндпойнт.
+The new system is complete with respect to the API when every source endpoint has
+a decision, and every "migrate" or "consolidate" decision has an implemented
+target endpoint.
 
-Это машинно-проверяемое условие и один из индикаторов готовности домена
-([plan/03-phase-2-domains.md](plan/03-phase-2-domains.md#индикаторы-прогресса)).
+This is a machine-checkable condition and one of the domain readiness indicators
+([plan/03-phase-2-domains.md](plan/03-phase-2-domains.md#progress-indicators)).

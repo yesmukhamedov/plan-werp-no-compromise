@@ -1,127 +1,138 @@
 ---
 id: ADR-0001
-title: Стратегия перехода — big bang
-status: Принято
+title: Transition strategy — big bang
+status: Accepted
 date: 2026-09-03
 supersedes: null
 superseded_by: null
 ---
 
-# ADR-0001. Стратегия перехода — big bang
+# ADR-0001. Transition strategy — big bang
 
-## Контекст
+## Context
 
-Требуется заменить систему из трёх поколений (JSF-монолит, Spring Boot 2.0,
-два сервиса на Spring Boot 2.4) общим объёмом ~990 тыс. строк, работающую в
-проде ежедневно. Способ перехода — самое дорогое решение проекта: оно
-определяет длительность, риск и то, увидит ли бизнес результат до финала.
+A system of three generations (the JSF monolith, Spring Boot 2.0, two services on
+Spring Boot 2.4) totalling ~990k lines and serving production every day has to be
+replaced. The transition method is the project's most expensive decision: it
+determines the duration, the risk and whether the business sees a result before
+the very end.
 
-Существенные входные данные:
+The material inputs:
 
-- **Тестов нет** ([P-01](../00-context/02-pain-points.md#p-01-тестов-практически-нет)) —
-  автоматической страховки при любой стратегии не существует, её нужно создавать.
-- **Границ между доменами нет** ([P-02](../00-context/02-pain-points.md#p-02-god-классы-и-полевая-инъекция)) —
-  один контроллер тянет семь чужих доменов, база общая, транзакции сквозные.
-- **Смена СУБД** ([ADR-0002](ADR-0002-database-postgresql.md)) — данные
-  переезжают целиком.
-- Попытки постепенного выделения доменов уже предпринимались дважды (`werp_crm`,
-  `werp_call_center`) и **не были доведены**: обе привели к дублированию домена,
-  а не к замещению ([P-04](../00-context/02-pain-points.md#p-04-домены-реализованы-дважды)).
+- **There are no tests**
+  ([P-01](../00-context/02-pain-points.md#p-01-practically-no-tests)) — no
+  automated safety net exists under any strategy; it has to be created.
+- **There are no boundaries between domains**
+  ([P-02](../00-context/02-pain-points.md#p-02-god-classes-and-field-injection))
+  — a single controller pulls in seven foreign domains, the database is shared,
+  transactions cut across everything.
+- **The DBMS changes** ([ADR-0002](ADR-0002-database-postgresql.md)) — the data
+  moves in its entirety.
+- Attempts at gradually extracting domains have already been made twice
+  (`werp_crm`, `werp_call_center`) and **were never finished**: both produced a
+  duplicate of the domain rather than its replacement
+  ([P-04](../00-context/02-pain-points.md#p-04-domains-implemented-twice)).
 
-## Варианты
+## Options
 
-### A. Strangler Fig — домен за доменом
+### A. Strangler Fig — domain by domain
 
-Новая система растёт рядом со старой; шлюз переключает маршруты по мере
-готовности; поколения сосуществуют месяцами.
+The new system grows next to the old one; a gateway switches routes as pieces
+become ready; the generations coexist for months.
 
-- **За:** ранняя обратная связь, возможность отката по маршруту, прод не
-  замирает, риск размазан.
-- **Против:** при смене СУБД требуются двусторонняя синхронизация данных или
-  распределённые транзакции между Oracle и PostgreSQL на весь переходный период;
-  сквозные транзакции текущего кода (`ContractController`, затрагивающий
-  `accounting` + `hr` + `logistics` в одном вызове) невозможно разрезать по
-  границе домена, не разрезав транзакцию; **этот путь в проекте уже пробовали
-  дважды и оба раза получили дубль, а не замещение**.
+- **For:** early feedback, the ability to roll back per route, production does
+  not stand still, the risk is spread out.
+- **Against:** with a change of DBMS this requires either two-way data
+  synchronization or distributed transactions between Oracle and PostgreSQL for
+  the entire transition period; the cross-cutting transactions of the current
+  code (`ContractController`, which touches `accounting` + `hr` + `logistics` in
+  one call) cannot be cut along a domain boundary without cutting the
+  transaction; **this path has already been tried twice in this project and both
+  times produced a duplicate, not a replacement**.
 
-### B. Big bang — параллельная разработка, один переезд
+### B. Big bang — parallel development, a single cutover
 
-Новая система пишется целиком, старая замораживается по функциональности, переезд
-происходит за одно окно.
+The new system is written in full, the old one is frozen feature-wise, and the
+cutover happens in a single window.
 
-- **За:** нет переходного двоемирия, нет синхронизации данных между двумя СУБД,
-  целевая архитектура не искажается ради совместимости с легаси, транзакции
-  проектируются заново и корректно, старый код можно не трогать вовсе.
-- **Против:** длительный период без выхода в прод; риск сконцентрирован в одной
-  точке; откат дороже; требования успевают устареть за время разработки.
+- **For:** no transitional two-world state, no data synchronization between two
+  DBMSs, the target architecture is not distorted for the sake of legacy
+  compatibility, transactions are designed anew and correctly, the old code need
+  not be touched at all.
+- **Against:** a long period with no production release; the risk is concentrated
+  in one point; rollback is more expensive; requirements have time to go stale
+  during development.
 
-### C. Гибрид — фронтенд заново, бэкенд постепенно
+### C. Hybrid — the frontend anew, the backend gradually
 
-- **За:** промежуточный результат виден.
-- **Против:** требует стабильного API-контракта поверх легаси-бэкенда — то есть
-  сначала нужно причесать бэкенд, что и есть основная работа. Даёт худшее от
-  обоих вариантов.
+- **For:** an intermediate result is visible.
+- **Against:** requires a stable API contract on top of the legacy backend —
+  that is, the backend has to be tidied up first, which is the main work anyway.
+  Gives the worst of both options.
 
-## Решение
+## Decision
 
-**Принят вариант B — big bang.**
+**Option B — big bang — is accepted.**
 
-Решающие соображения: смена СУБД делает вариант A не «постепенным», а
-«постепенным плюс постоянная синхронизация двух баз»; отсутствие границ доменов
-не позволяет разрезать транзакции; а главное — вариант A в этом проекте уже
-проверен на практике дважды и дал дублирование доменов вместо замещения.
+The deciding considerations: the change of DBMS turns option A from "gradual"
+into "gradual plus permanent synchronization of two databases"; the absence of
+domain boundaries makes it impossible to cut the transactions; and above all,
+option A has already been tested in practice twice in this project and produced
+duplicated domains instead of replacement.
 
-## Осознанная плата
+## Accepted cost
 
-Big bang — стратегия с самым высоким риском провала. Мы принимаем её сознательно
-и компенсируем **четырьмя обязательными механизмами**. Ни один из них не является
-опциональным; отказ от любого делает решение недействительным и требует нового ADR.
+Big bang is the strategy with the highest risk of failure. We accept it
+deliberately and compensate for it with **four mandatory mechanisms**. None of
+them is optional; dropping any one of them invalidates the decision and requires
+a new ADR.
 
-### 1. Теневой прогон вместо выхода в прод
+### 1. A shadow run instead of production releases
 
-Отсутствие ранних релизов компенсируется непрерывной сверкой на копии
-промышленных данных: новая система с первого готового домена получает
-реальный поток запросов в режиме «только чтение» и её ответы автоматически
-сравниваются с ответами легаси. Расхождение — дефект.
+The absence of early releases is compensated by continuous reconciliation
+against a copy of production data: from its first finished domain the new system
+receives the real request stream in read-only mode, and its responses are
+compared automatically with the legacy's. A divergence is a defect.
 → [transition/06-parity-verification.md](../../transition/06-parity-verification.md)
 
-### 2. Репетиции переезда
+### 2. Cutover rehearsals
 
-Переезд репетируется на полном объёме данных **не менее четырёх раз** до
-боевого. Каждая репетиция измеряется по времени и завершается отчётом о
-расхождениях. Боевой переезд разрешён только после двух подряд успешных
-репетиций.
+The cutover is rehearsed at full data volume **at least four times** before the
+live one. Each rehearsal is timed and ends with a divergence report. The live
+cutover is permitted only after two consecutive successful rehearsals.
 → [transition/07-cutover.md](../../transition/07-cutover.md)
 
-### 3. Политика заморозки легаси
+### 3. A legacy freeze policy
 
-Без ограничения изменений в легаси цель движется быстрее, чем к ней идут.
-Заморозка вводится с гейта G2, не запрещает изменения полностью, но переводит
-их в режим «дефекты и требования регулятора — да, новая функциональность — нет»,
-и каждое допущенное изменение попадает в delta backlog нового WERP.
+Without restricting changes to the legacy, the target moves faster than one can
+walk towards it. The freeze comes into force at gate G2; it does not forbid
+changes outright but puts them into the mode "defects and regulator requirements
+— yes, new functionality — no", and every change let through lands in the new
+WERP's delta backlog.
 → [transition/09-freeze-policy.md](../../transition/09-freeze-policy.md)
 
-### 4. Проверенный откат
+### 4. A verified rollback
 
-План отката пишется до переезда, репетируется вместе с ним и имеет измеренное
-время выполнения. Легаси-контур остаётся работоспособным в течение
-**согласованного срока стабилизации** после переезда и только затем выводится
-из эксплуатации.
+The rollback plan is written before the cutover, rehearsed together with it and
+has a measured execution time. The legacy environment stays operational for an
+**agreed stabilization period** after the cutover and only then is
+decommissioned.
 → [transition/08-rollback.md](../../transition/08-rollback.md)
 
-## Последствия
+## Consequences
 
-- Появляется [Фаза 4](../../transition/plan/05-phase-4-parity-and-cutover.md) — паритет и
-  переезд — как отдельная фаза сравнимой с разработкой стоимости.
-- Порядок разработки доменов определяется не бизнес-приоритетом, а зависимостями:
-  без выхода в прод нет смысла делать «сначала самое ценное».
+- [Phase 4](../../transition/plan/05-phase-4-parity-and-cutover.md) — parity and
+  cutover — appears as a separate phase whose cost is comparable to development.
+- The order in which domains are developed is determined not by business priority
+  but by dependencies: with no production releases there is no point in "doing
+  the most valuable thing first".
   → [transition/plan/03-phase-2-domains.md](../../transition/plan/03-phase-2-domains.md)
-- Требуется предпродуктивный контур с копией промышленных данных на весь срок
-  проекта.
-- Обратная связь от пользователей поступает через регулярные демонстрации на
-  предпродуктивном контуре, а не через прод. Ритм демонстраций — обязательство,
-  а не пожелание.
-- Риски [R-01](../../transition/11-risks.md#r-01) (растяжение сроков),
-  [R-02](../../transition/11-risks.md#r-02) (движущаяся цель) и
-  [R-03](../../transition/11-risks.md#r-03) (неудачный переезд) получают
-  максимальный вес в реестре рисков.
+- A pre-production environment with a copy of production data is required for the
+  whole duration of the project.
+- User feedback arrives through regular demonstrations on the pre-production
+  environment rather than through production. The demonstration cadence is an
+  obligation, not a wish.
+- The risks [R-01](../../transition/11-risks.md#r-01) (schedule stretching),
+  [R-02](../../transition/11-risks.md#r-02) (a moving target) and
+  [R-03](../../transition/11-risks.md#r-03) (a failed cutover) carry the maximum
+  weight in the risk register.

@@ -1,203 +1,243 @@
 ---
 id: CTX-01
-title: Инвентаризация текущей системы
+title: Inventory of the current system
 status: actual
 measured_at: 2026-09-03
 ---
 
-# Инвентаризация текущей системы
+# Inventory of the current system
 
-Все числа получены измерением рабочих копий репозиториев на дату `measured_at`.
-Это опорная точка: план оценивается относительно неё, и при расхождении
-пересчитываются оценки в [transition/10-estimates.md](../../transition/10-estimates.md).
+Every number was obtained by measuring working copies of the repositories on the
+`measured_at` date. This is the baseline: the plan is assessed relative to it,
+and if it diverges, the estimates in
+[transition/10-estimates.md](../../transition/10-estimates.md) are recalculated.
 
-Метод измерения зафиксирован в [приложении](#приложение-как-измерялось), чтобы
-цифры можно было воспроизвести и обновить.
+The measurement method is recorded in the
+[appendix](#appendix-how-this-was-measured) so that the figures can be
+reproduced and refreshed.
 
-## 1. Сводка по репозиториям
+## 1. Repository summary
 
-| Репозиторий | Роль | Стек | Файлов | Строк | Тестов | В проде |
+| Repository | Role | Stack | Files | Lines | Tests | In production |
 |---|---|---|---:|---:|---:|---|
-| `werp_jsf` | Легаси-монолит | JSF 2.2.8 + PrimeFaces 5.1, Hibernate 3.6.7, Spring 3.x, MySQL | 1 223 java + 472 xhtml | 233 913 | JUnit 3.8.1 (декларация) | **да** |
-| `werp_java_back_v2` | Основной бэкенд | Spring Boot 2.0.0, Java 11, Oracle, Gradle | 3 597 | 354 761 | **4 файла** | да |
-| `werp_react_front` | Фронтенд | React 16.11, Redux 3, CRA 3.4, JavaScript | 2 092 | 369 214 | 1 заглушка | да |
-| `werp_crm` | CRM (вторая реализация) | Spring Boot 2.4.4, PostgreSQL, Flyway | 320 | 19 584 | есть | да |
-| `werp_call_center` | Колл-центр | Spring Boot 2.4.5, PostgreSQL, Flyway | 217 | 8 969 | есть | да |
-| `bridge` | Внешний шлюз | Go 1.22, stdlib, 0 зависимостей | 27 | 3 769 | 8 файлов | внедряется |
-| `target-bridge` | Легаси-шлюз (Laravel 8) | PHP | — | — | — | выводится |
+| `werp_jsf` | Legacy monolith | JSF 2.2.8 + PrimeFaces 5.1, Hibernate 3.6.7, Spring 3.x, MySQL | 1,223 java + 472 xhtml | 233,913 | JUnit 3.8.1 (declared) | **yes** |
+| `werp_java_back_v2` | Main backend | Spring Boot 2.0.0, Java 11, Oracle, Gradle | 3,597 | 354,761 | **4 files** | yes |
+| `werp_react_front` | Frontend | React 16.11, Redux 3, CRA 3.4, JavaScript | 2,092 | 369,214 | 1 stub | yes |
+| `werp_crm` | CRM (second implementation) | Spring Boot 2.4.4, PostgreSQL, Flyway | 320 | 19,584 | present | yes |
+| `werp_call_center` | Call centre | Spring Boot 2.4.5, PostgreSQL, Flyway | 217 | 8,969 | present | yes |
+| `bridge` | External gateway | Go 1.22, stdlib, 0 dependencies | 27 | 3,769 | 8 files | being rolled out |
+| `target-bridge` | Legacy gateway (Laravel 8) | PHP | — | — | — | being retired |
 
-**Итого прикладного кода к замещению: ~990 тыс. строк** (без `bridge`, который
-уже переписан и остаётся).
+**Total application code to be replaced: ~990k lines** (excluding `bridge`,
+which has already been rewritten and stays).
 
-## 2. `werp_java_back_v2` — основной бэкенд
+## 2. `werp_java_back_v2` — the main backend
 
-Gradle multi-project, `rootProject.name = 'werp'`, group `kz.aura.werp`, версия
-`0.0.1` у всех модулей одновременно.
+A Gradle multi-project, `rootProject.name = 'werp'`, group `kz.aura.werp`,
+version `0.0.1` on all modules simultaneously.
 
-### 2.1. Модули
+### 2.1. Modules
 
-| Модуль | Артефакт | Файлов | Строк | Назначение |
+| Module | Artefact | Files | Lines | Purpose |
 |---|---|---:|---:|---|
-| `core` | `werp-core` | 2 225 | 230 446 | основной монолит: 14 предметных областей |
-| `service` | `werp-service` | 715 | 85 642 | сервисное обслуживание + частичное дублирование accounting |
-| `crm` | `werp-crm` | 327 | 20 257 | CRM на Oracle (дублирует репозиторий `werp_crm` на PostgreSQL) |
-| `main-module` | `werp-main-module` | 223 | 11 739 | общая библиотека: права, аудит, базовые сущности |
-| `util` | `werp-utils` | 70 | 4 020 | утилиты; собирается под Java 8, остальное под 11 |
-| `scheduler` | `werp-scheduler` | 23 | 1 625 | фоновые задачи |
-| `auth-server` | `werp-auth-server` | 14 | 1 032 | OAuth2-сервер выдачи токенов |
+| `core` | `werp-core` | 2,225 | 230,446 | the main monolith: 14 subject areas |
+| `service` | `werp-service` | 715 | 85,642 | field service + partial duplication of accounting |
+| `crm` | `werp-crm` | 327 | 20,257 | CRM on Oracle (duplicates the `werp_crm` repository on PostgreSQL) |
+| `main-module` | `werp-main-module` | 223 | 11,739 | shared library: permissions, audit, base entities |
+| `util` | `werp-utils` | 70 | 4,020 | utilities; built for Java 8, everything else for 11 |
+| `scheduler` | `werp-scheduler` | 23 | 1,625 | background jobs |
+| `auth-server` | `werp-auth-server` | 14 | 1,032 | OAuth2 token-issuing server |
 
-Из семи модулей в CI собирается и деплоится **один** (`service`) — остальные
-разворачиваются вручную.
+Of the seven modules, CI builds and deploys **one** (`service`) — the rest are
+deployed by hand.
 
-### 2.2. Предметные области внутри `core`
+### 2.2. Subject areas inside `core`
 
-| Область | Файлов | Строк | Что это |
+| Area | Files | Lines | What it is |
 |---|---:|---:|---|
-| `accounting` | 292 | 62 776 | учёт, финансы, расчёт зарплаты |
-| `hr` | 321 | 34 988 | персонал, штат, оклады, обучение |
-| `marketing` | 272 | 34 228 | договоры, прайс-листы, продажи |
-| `logistics` | 418 | 29 018 | склад, накладные, материалы, подотчёт |
-| `dit` | 162 | 13 255 | внутренние задачи, сообщения, SMS, ABAC |
-| `general` | 187 | 12 141 | платформа: авторизация, меню, экспорт, вложения |
-| `service` | 71 | 10 970 | сервисное обслуживание (дублируется отдельным модулем `service`) |
-| `reference` | 176 | 10 670 | справочники |
-| `crm` | 102 | 8 905 | CRM и колл-центр (дублируется модулем `crm` и двумя репозиториями) |
-| `mreference` | 78 | 4 140 | вторая реализация справочников: адреса, клиенты, телефоны |
-| `aes` | 40 | 3 909 | учётный модуль (назначение требует уточнения — см. OQ-004) |
-| `documents` | 37 | 2 584 | внутренний документооборот, маршруты согласования |
-| `newdev` | 53 | 1 869 | заявки (назначение требует уточнения — см. OQ-004) |
-| `law_department` | 15 | 989 | юридический отдел: суды, взыскания |
+| `accounting` | 292 | 62,776 | accounting, finance, payroll calculation |
+| `hr` | 321 | 34,988 | personnel, headcount, salaries, training |
+| `marketing` | 272 | 34,228 | contracts, price lists, sales |
+| `logistics` | 418 | 29,018 | warehouse, delivery notes, materials, items on account |
+| `dit` | 162 | 13,255 | internal tasks, messages, SMS, ABAC |
+| `general` | 187 | 12,141 | platform: authorization, menu, export, attachments |
+| `service` | 71 | 10,970 | field service (duplicated by the separate `service` module) |
+| `reference` | 176 | 10,670 | reference data |
+| `crm` | 102 | 8,905 | CRM and call centre (duplicated by the `crm` module and two repositories) |
+| `mreference` | 78 | 4,140 | a second implementation of reference data: addresses, customers, phone numbers |
+| `aes` | 40 | 3,909 | an accounting module (purpose needs clarification — see OQ-004) |
+| `documents` | 37 | 2,584 | internal document workflow, approval routes |
+| `newdev` | 53 | 1,869 | requests (purpose needs clarification — see OQ-004) |
+| `law_department` | 15 | 989 | legal department: court cases, debt recovery |
 
-### 2.3. Поверхность API и модель
+### 2.3. API surface and model
 
-| Метрика | Значение |
+| Metric | Value |
 |---|---:|
-| HTTP-эндпойнтов (`@Get/Post/Put/Delete/PatchMapping`) | **1 286** |
+| HTTP endpoints (`@Get/Post/Put/Delete/PatchMapping`) | **1,286** |
 | — GET | 708 |
 | — POST | 336 |
 | — PUT | 138 |
 | — DELETE | 91 |
 | — PATCH | 13 |
-| `@RequestMapping` (в т. ч. на классах) | 410 |
-| Контроллеров | 243 |
+| `@RequestMapping` (including on classes) | 410 |
+| Controllers | 243 |
 | `@Service` | 418 |
-| JPA-сущностей (`@Entity`) | **523** |
-| Spring Data репозиториев | 165 |
+| JPA entities (`@Entity`) | **523** |
+| Spring Data repositories | 165 |
 | `@Query` | 451 |
-| из них `nativeQuery = true` | 43 |
+| of those with `nativeQuery = true` | 43 |
 | `EntityManager.createQuery` | 837 |
 | `EntityManager.createNativeQuery` | 289 |
-| Использований `JdbcTemplate` | 20 |
-| `@Transactional` | 1 084 |
+| Uses of `JdbcTemplate` | 20 |
+| `@Transactional` | 1,084 |
 
-Три конкурирующих способа доступа к данным (Spring Data, JPQL через
-`EntityManager`, нативный SQL и `JdbcTemplate`) сосуществуют в одном модуле.
+Three competing ways of accessing data (Spring Data, JPQL through
+`EntityManager`, native SQL and `JdbcTemplate`) coexist within a single module.
 
-### 2.4. Зависимости
+### 2.4. Dependencies
 
-- Spring Boot **2.0.0.RELEASE** — первый релиз ветки 2.0, вышел в феврале 2018,
-  вне поддержки с 2019 года.
-- Spring Cloud **Finchley.M9** — *milestone*, а не релиз.
-- Hibernate 5.4.31 поднят вручную поверх версии, управляемой Boot 2.0;
-  зависимости `spring-cloud-starter-oauth2:2.2.4` и
-  `spring-cloud-starter-bootstrap:3.0.1` относятся к другим поколениям Boot.
-- Oracle JDBC — `ojdbc6-11.2.0.3` из локальной папки `libs/` через `flatDir`.
-  Собрать проект без этого файла нельзя.
+- Spring Boot **2.0.0.RELEASE** — the first release of the 2.0 branch, shipped in
+  February 2018, out of support since 2019.
+- Spring Cloud **Finchley.M9** — a *milestone*, not a release.
+- Hibernate 5.4.31 was raised by hand on top of the version managed by Boot 2.0;
+  the dependencies `spring-cloud-starter-oauth2:2.2.4` and
+  `spring-cloud-starter-bootstrap:3.0.1` belong to other Boot generations.
+- Oracle JDBC — `ojdbc6-11.2.0.3` from the local `libs/` folder via `flatDir`.
+  The project cannot be built without that file.
 - springfox-swagger 2.9.2, Guava 20.0, jjwt 0.7.0, ModelMapper, Redisson 3.12.4.
-- Joda-Time используется параллельно с `java.time`.
-- Модуль `util` компилируется под `sourceCompatibility = 1.8`, остальные — под 11.
+- Joda-Time is used in parallel with `java.time`.
+- The `util` module compiles with `sourceCompatibility = 1.8`, the rest with 11.
 
-## 3. `werp_react_front` — фронтенд
+## 3. `werp_react_front` — the frontend
 
-| Метрика | Значение |
+| Metric | Value |
 |---|---:|
-| Файлов `.js`/`.jsx` | 2 092 |
-| Строк | 369 214 |
-| Файлов TypeScript | **0** |
-| Классовых компонентов | 273 |
-| Использований `useState` | 2 185 |
-| Устаревших методов жизненного цикла (`componentWill*`) | 189 |
-| Ссылок на легаси-JSF из React | 33 |
-| Языков локализации | 3 (ru / en / tr) |
-| Строк в `routes/routes.js` | 2 695 |
+| `.js`/`.jsx` files | 2,092 |
+| Lines | 369,214 |
+| TypeScript files | **0** |
+| Class components | 273 |
+| Uses of `useState` | 2,185 |
+| Deprecated lifecycle methods (`componentWill*`) | 189 |
+| Links to the legacy JSF from React | 33 |
+| Localization languages | 3 (ru / en / tr) |
+| Lines in `routes/routes.js` | 2,695 |
 
-Разделы по числу строк: `service` 55 884, `hr` 41 945, `logistics` 39 406,
-`finance` 39 309, `crm2021` 35 830, `dit` 30 626, `callcenter` 28 160,
-`marketing` 26 673, `crm` 20 068, `reference` 8 391, `accounting` 7 569,
-`edu` 7 024, `aes` 6 791, `utils` 4 789, `components` 3 581, `lawyer` 3 437,
-`admin` 2 606, прочее — меньше.
+Sections by line count: `service` 55,884, `hr` 41,945, `logistics` 39,406,
+`finance` 39,309, `crm2021` 35,830, `dit` 30,626, `callcenter` 28,160,
+`marketing` 26,673, `crm` 20,068, `reference` 8,391, `accounting` 7,569,
+`edu` 7,024, `aes` 6,791, `utils` 4,789, `components` 3,581, `lawyer` 3,437,
+`admin` 2,606, the rest smaller.
 
-`crm` и `crm2021` — две параллельные реализации одного раздела; `finance` и
-`accounting` разделены не так, как на бэкенде.
+`crm` and `crm2021` are two parallel implementations of the same section;
+`finance` and `accounting` are split differently than on the backend.
 
-### Стек фронтенда
+### The frontend stack
 
-- React 16.11 (актуальная ветка — 19), `react-scripts` 3.4.0 (Create React App
-  снят с поддержки), Babel-конфигурация от `babel-preset-react-app` 3.1.1.
-- Redux 3.7 + `react-redux` 5.1 + `redux-form` 7.2 — все три поколения назад.
+- React 16.11 (the current branch is 19), `react-scripts` 3.4.0 (Create React
+  App is out of support), Babel configuration from `babel-preset-react-app`
+  3.1.1.
+- Redux 3.7 + `react-redux` 5.1 + `redux-form` 7.2 — all three generations
+  behind.
 - `react-router` 4.
-- Три библиотеки деревьев: `react-sortable-tree`, `react-treebeard`, `react-treeview`.
-- Три способа выгрузки в Excel: `xlsx`, `react-export-excel`, `react-data-export`.
-- Два стека графиков: `chart.js` + `react-chartjs-2` и `recharts`.
-- Две библиотеки дат: `moment` и `date-fns`.
-- Две библиотеки произвольной точности: `bigdecimal` и `bignumber.js`.
-- `faker` и `@faker-js/faker` — генераторы тестовых данных — в
-  **производственных** зависимостях.
-- `axios` 0.21, `react-table` 6.10.3, `semantic-ui-react` 0.72 — вне поддержки.
+- Three tree libraries: `react-sortable-tree`, `react-treebeard`,
+  `react-treeview`.
+- Three ways of exporting to Excel: `xlsx`, `react-export-excel`,
+  `react-data-export`.
+- Two charting stacks: `chart.js` + `react-chartjs-2`, and `recharts`.
+- Two date libraries: `moment` and `date-fns`.
+- Two arbitrary-precision libraries: `bigdecimal` and `bignumber.js`.
+- `faker` and `@faker-js/faker` — test-data generators — in the **production**
+  dependencies.
+- `axios` 0.21, `react-table` 6.10.3, `semantic-ui-react` 0.72 — out of support.
 
-## 4. Отдельные сервисы
+## 4. The separate services
 
-`werp_crm` (Spring Boot 2.4.4) и `werp_call_center` (Spring Boot 2.4.5) —
-попытка выделения доменов, начатая и не доведённая. Обе на PostgreSQL с Flyway,
-структура пакетов заметно чище (`domain/model`, `domain/repository`,
-`domain/spec`, `converter`, `dto/{form,grid,detail,report,search}`), тесты есть.
+`werp_crm` (Spring Boot 2.4.4) and `werp_call_center` (Spring Boot 2.4.5) are an
+attempt at extracting domains that was started and never finished. Both are on
+PostgreSQL with Flyway, the package structure is noticeably cleaner
+(`domain/model`, `domain/repository`, `domain/spec`, `converter`,
+`dto/{form,grid,detail,report,search}`), and tests exist.
 
-При этом `werp_crm` (320 файлов) сосуществует с модулем `crm` внутри
-`werp_java_back_v2` (327 файлов) — **CRM реализован дважды, на двух разных
-СУБД**. Какая из реализаций является источником истины для каких сценариев —
+At the same time `werp_crm` (320 files) coexists with the `crm` module inside
+`werp_java_back_v2` (327 files) — **CRM is implemented twice, on two different
+DBMSs**. Which implementation is the source of truth for which scenarios —
 [OQ-002](../../transition/12-open-questions.md).
 
-В `werp_call_center` в репозиторий закоммичены журналы приложения и аварийные
-дампы JVM (`hs_err_pid*.log`).
+Application logs and JVM crash dumps (`hs_err_pid*.log`) are committed into the
+`werp_call_center` repository.
 
-## 5. `bridge` — эталон
+## 5. `bridge` — the reference sample
 
-Внешний шлюз, переписанный с Laravel-версии на Go (stdlib, ноль внешних
-зависимостей, 3 769 строк, 8 тестовых файлов). Единственная часть системы, уже
-приведённая к целевому качеству: явный allowlist маршрутов, один деплой = одно
-окружение, доверие заголовкам только от доверенных прокси, дублирующие тесты,
-фиксирующие легаси-контракты 1:1.
+The external gateway, rewritten from the Laravel version in Go (stdlib, zero
+external dependencies, 3,769 lines, 8 test files). The only part of the system
+already brought up to target quality: an explicit route allowlist, one
+deployment = one environment, headers trusted only from trusted proxies,
+duplicating tests that pin the legacy contracts 1:1.
 
-**`bridge` из области переписывания исключён** и остаётся как есть. Его README —
-образец того, как должна выглядеть документация модуля нового WERP (см.
+**`bridge` is excluded from the rewrite scope** and stays as it is. Its README is
+the model for what a module's documentation in the new WERP should look like (see
 [01-principles/03-engineering-standards.md](../01-principles/03-engineering-standards.md)).
 
-## 6. Инфраструктура
+## 6. Infrastructure
 
-- Kubernetes, самоуправляемый GitHub Actions runner, реестр образов в Docker Hub.
-- Три контура: dev, stage, prod. Адреса контуров **захардкожены в `package.json`**
-  фронтенда (`build:dev` / `build:stage` / `build:prod`) и попадают в собранный
-  бандл.
-- Базовые образы: `openjdk:11` (архивный, обновления не выпускаются) в четырёх
-  из пяти Dockerfile; `eclipse-temurin:11-jre` в одном.
-- Сборка в CI выполняется с `-x test`.
-- Рядом лежит неработающий `bitbucket-pipelines.yml` с образом `maven:3.3.9-jdk-8`
-  — артефакт эпохи, когда проект собирался Maven.
+- Kubernetes, a self-hosted GitHub Actions runner, an image registry on Docker
+  Hub.
+- Three environments: dev, stage, prod. The environment addresses are
+  **hardcoded into the frontend's `package.json`** (`build:dev` / `build:stage` /
+  `build:prod`) and end up in the built bundle.
+- Base images: `openjdk:11` (archived, no updates are published) in four of the
+  five Dockerfiles; `eclipse-temurin:11-jre` in one.
+- The CI build runs with `-x test`.
+- Alongside it sits a non-working `bitbucket-pipelines.yml` with the image
+  `maven:3.3.9-jdk-8` — an artefact of the era when the project was built with
+  Maven.
 
-## Приложение: как измерялось
+## 7. The main database
+
+Read from the Oracle data dictionary on 2026-09-03. The object-by-object list,
+with the decision taken for each, is in
+[transition/map/00-source-inventory.md](../../transition/map/00-source-inventory.md).
+
+| | Value |
+|---|---:|
+| Tables | 449 (+ 3 views) |
+| Columns | 4,855 |
+| Rows | ~148,000,000 |
+| Table segments | ~12.3 GB |
+| Indexes, excluding LOB | 437 |
+| — of them non-unique | **73**, over 37 tables |
+| Tables with no index at all | 111 |
+| Foreign keys | 57, of which **47 are declared on empty shadow copies** |
+| Value check constraints | **6** of 1,441 (the rest are `NOT NULL`) |
+| Sequences / triggers / procedures / functions / packages | 342 / 43 / 6 / 2 / 0 |
+| Tables with a modification timestamp | 109 (24%) |
+| Tables with optimistic locking | 21 (5%) |
+
+Two figures set the tone of the whole transition. **Seventy-three secondary
+indexes** serve 148 million rows — `BSEG` with 27.7 million rows has one, and
+`SERV_CRMHISTORY` with 7.9 million has none and no primary key either. And
+**forty-nine of 452 objects** map one to one onto a target table: the rest merge,
+split, collapse into enumerations or are not carried over at all.
+
+The database also drifts while it is being described: between the reading on
+2026-07-11 and the one on 2026-09-03, 26 tables gained columns and 2 tables
+appeared.
+
+## Appendix: how this was measured
 
 ```sh
-# файлы и строки по модулю
+# files and lines per module
 find <module> -name '*.java' | wc -l
 find <module> -name '*.java' -exec cat {} + | wc -l
 
-# эндпойнты
+# endpoints
 grep -rE '@(Get|Post|Put|Delete|Patch)Mapping' --include=*.java . | wc -l
 
-# сущности, сервисы, репозитории
+# entities, services, repositories
 grep -rl '@Entity' --include=*.java . | wc -l
 grep -rl '@Service' --include=*.java . | wc -l
 grep -rl 'extends JpaRepository\|extends CrudRepository' --include=*.java . | wc -l
 ```
 
-Полный скрипт пересчёта — [tools/measure.sh](../../tools/measure.sh).
+The full recomputation script — [tools/measure.sh](../../tools/measure.sh).

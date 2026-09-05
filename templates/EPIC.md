@@ -1,49 +1,50 @@
 ---
 id: EPIC-NNN
-title: <название>
-phase: <номер фазы>
-owner: <человек, не роль>
+title: <name>
+phase: <phase number>
+owner: <a person, not a role>
 status: todo | in-progress | done | cancelled
-gate: <гейт, который закрывает; или ->
+gate: <the gate it closes; or ->
 depends_on: []
 blocks: []
 ---
 
-# EPIC-NNN. <Название>
+# EPIC-NNN. <Name>
 
-## Зачем
+## Why
 
-Какую проблему решает. Ссылка на [точки боли](../docs/00-context/02-pain-points.md),
-[риск](../transition/11-risks.md) или [открытый
-вопрос](../transition/12-open-questions.md), если применимо.
+Which problem it solves. A link to the
+[pain points](../docs/00-context/02-pain-points.md), a
+[risk](../transition/11-risks.md) or an
+[open question](../transition/12-open-questions.md), where applicable.
 
-Что сломается или станет дороже, если этого не сделать.
+What breaks or becomes more expensive if it is not done.
 
-## Результат
+## Result
 
-Один-два абзаца: что существует по завершении эпика, чего не существовало до.
-Результат — артефакт или изменённое состояние системы, а не «проведена работа
-по…».
+One or two paragraphs: what exists once the epic is finished that did not exist
+before. The result is an artefact or a changed state of the system, not "work was
+carried out on…".
 
-## Задачи
+## Tasks
 
-### TASK-NNNN. <Название>
+### TASK-NNNN. <Name>
 
-Что делается.
+What gets done.
 
-**Приёмка:** наблюдаемый признак выполнения. Формулировка, по которой можно
-вынести вердикт да/нет без обсуждения.
+**Acceptance:** an observable sign of completion. A statement on which a yes/no
+verdict can be reached without discussion.
 
-> Пояснение, если есть неочевидная тонкость или типичная ошибка.
+> An explanation, if there is a non-obvious subtlety or a typical mistake.
 
-### TASK-NNNN. <Название>
+### TASK-NNNN. <Name>
 
 …
 
-## Критерии закрытия эпика
+## Epic closure criteria
 
 - [ ] …
 - [ ] …
 
-Эпик закрыт, когда закрыты все задачи **и** достигнут результат из раздела
-«Результат», а не когда «в основном сделано».
+The epic is closed when all the tasks are closed **and** the result from the
+"Result" section is achieved, not when it is "mostly done".

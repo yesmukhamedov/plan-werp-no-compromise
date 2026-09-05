@@ -1,140 +1,153 @@
 ---
 id: TRANS-PLAN-02
-title: Фаза 1 — Платформа
+title: Phase 1 — Platform
 status: draft
 gate: G1
 depends_on: ADR-0003
 ---
 
-# Фаза 1 — Платформа
+# Phase 1 — Platform
 
-**Цель:** построить каркас, на котором 13 доменов пишутся единообразно и быстро.
+**Goal:** build the skeleton on which 13 domains are written uniformly and
+quickly.
 
-**Блокировка:** фаза не начинается, пока не принят
-[ADR-0003](../../docs/02-decisions/ADR-0003-backend-stack.md). Это жёсткий гейт: писать
-платформу на невыбранном стеке нельзя.
+**The block:** the phase does not begin until
+[ADR-0003](../../docs/02-decisions/ADR-0003-backend-stack.md) is accepted. That
+is a hard gate: the platform cannot be written on an unchosen stack.
 
-**Почему платформа идёт до доменов.** Если платформы нет, каждый домен построит
-свою — так появились нынешние `util` и `main-module`, а за ними три способа
-доступа к данным, три схемы авторизации и три библиотеки на задачу. Порядок
-«сначала платформа» — это не архитектурная эстетика, а прямое предотвращение
-[P-03](../../docs/00-context/02-pain-points.md#p-03-четыре-способа-ходить-в-базу-одновременно),
-[P-09](../../docs/00-context/02-pain-points.md#p-09-авторизация-склеена-из-трёх-схем) и
-[P-11](../../docs/00-context/02-pain-points.md#p-11-фронтенд--три-библиотеки-на-каждую-задачу).
+**Why the platform comes before the domains.** If there is no platform, every
+domain will build its own — that is how today's `util` and `main-module`
+appeared, and behind them three ways of accessing data, three authorization
+schemes and three libraries per job. The "platform first" order is not
+architectural aesthetics but a direct prevention of
+[P-03](../../docs/00-context/02-pain-points.md#p-03-four-ways-to-reach-the-database-at-once),
+[P-09](../../docs/00-context/02-pain-points.md#p-09-authorization-is-glued-together-from-three-schemes)
+and
+[P-11](../../docs/00-context/02-pain-points.md#p-11-the-frontend--three-libraries-for-every-job).
 
-## Состав
+## Contents
 
-### 1. Каркас разработки
+### 1. The development skeleton
 
-- Монорепозиторий по [ADR-0007](../../docs/02-decisions/ADR-0007-repo-layout.md).
-- Сборка на чистой машине одной командой ([NC-08](../../docs/01-principles/01-no-compromise.md#nc-08)).
-- Локальный запуск всей системы одной командой, включая PostgreSQL в контейнере.
-- Линтеры, форматтеры, единый стиль — настроены и обязательны `[STACK]`.
-- **Тест архитектурных правил** — падает при нарушении границ доменов
-  ([NC-02](../../docs/01-principles/01-no-compromise.md#nc-02)). Пишется здесь, до
-  доменного кода, иначе не будет написан никогда.
-- Реестр разрешённых библиотек с проверкой в CI ([NC-14](../../docs/01-principles/01-no-compromise.md#nc-14)).
+- A monorepo per
+  [ADR-0007](../../docs/02-decisions/ADR-0007-repo-layout.md).
+- A build on a clean machine with one command
+  ([NC-08](../../docs/01-principles/01-no-compromise.md#nc-08)).
+- Starting the whole system locally with one command, PostgreSQL in a container
+  included.
+- Linters, formatters, a uniform style — configured and mandatory `[STACK]`.
+- **The architecture-rule test** — it fails on a violation of domain boundaries
+  ([NC-02](../../docs/01-principles/01-no-compromise.md#nc-02)). Written here,
+  before any domain code, otherwise it will never be written at all.
+- The registry of allowed libraries with a check in CI
+  ([NC-14](../../docs/01-principles/01-no-compromise.md#nc-14)).
 
-### 2. Платформенные подсистемы
+### 2. The platform subsystems
 
-По [product/01-architecture.md](../../product/01-architecture.md#платформа):
+Per
+[product/01-architecture.md](../../product/01-architecture.md#platform):
 
-| Подсистема | Готово, когда |
+| Subsystem | Done when |
 |---|---|
-| Доступ | вход, права, область данных работают; эндпойнт без права не проходит CI |
-| Аудит | изменение сущности порождает неизменяемую запись с полным контекстом |
-| Ошибки и валидация | единый формат ошибки, локализованные сообщения, `traceId` |
-| Отчёты и выгрузки | шаблон → Excel и PDF; синхронный и асинхронный режимы |
-| Файлы | загрузка, хранение, выдача с проверкой прав, срок жизни |
-| Уведомления | почта, SMS, интерфейс; единая точка отправки |
-| Фоновые задачи | расписание, очередь, повторы, идемпотентность |
-| Наблюдаемость | структурированные журналы, метрики, трассировка сквозь все слои |
-| Справочная инфраструктура | общий механизм справочника, поиска, кэша |
-| Многоязычность | [ADR-0010](../../docs/02-decisions/ADR-0010-i18n.md); отсутствующий перевод ломает CI |
-| **Журнал операций для отката** | все изменяющие операции записываются в форме, пригодной для воспроизведения ([transition/08-rollback.md](../08-rollback.md#о2-поздний-откат)) |
+| Access | login, permissions and data scope work; an endpoint without a permission does not pass CI |
+| Audit | a change to an entity produces an immutable record with the full context |
+| Errors and validation | a single error format, localized messages, a `traceId` |
+| Reports and exports | template → Excel and PDF; synchronous and asynchronous modes |
+| Files | upload, storage, delivery with a permission check, lifetime |
+| Notifications | email, SMS, in-app; a single sending point |
+| Background jobs | scheduling, queue, retries, idempotency |
+| Observability | structured logs, metrics, tracing through all the layers |
+| Reference infrastructure | the shared mechanism for reference lists, search, cache |
+| Multilingual support | [ADR-0010](../../docs/02-decisions/ADR-0010-i18n.md); a missing translation breaks CI |
+| **The operation log for rollback** | all mutating operations are recorded in a form suitable for replay ([transition/08-rollback.md](../08-rollback.md#o2-late-rollback)) |
 
-Последний пункт легко забыть — он не нужен ни одному домену и нужен только один
-раз, в ночь переезда. Именно поэтому он в списке платформы.
+The last item is easy to forget — no domain needs it and it is needed only once,
+on the night of the cutover. That is precisely why it is on the platform's list.
 
-### 3. Данные
+### 3. Data
 
-- Схема на домен, инструмент миграций, порядок именования
-  ([product/03-database.md](../../product/03-database.md)).
-- Денежный тип и правила округления — реализованы и покрыты тестами на
-  эталонных значениях.
-- Работа со временем в UTC.
-- Тестовая инфраструктура: настоящая PostgreSQL в контейнере, наборы данных,
-  быстрый прогон `[STACK]`.
+- A schema per domain, the migration tool, the naming conventions
+  ([product/03-database/](../../product/03-database/README.md)).
+- The money type and the rounding rules — implemented and covered by tests
+  against reference values.
+- Handling time in UTC.
+- The test infrastructure: a real PostgreSQL in a container, data sets, a fast
+  run `[STACK]`.
 
-### 4. Контракт API
+### 4. The API contract
 
-- Спецификация как источник истины, генерация кода
+- The specification as the source of truth, code generation
   ([ADR-0005](../../docs/02-decisions/ADR-0005-contract-first-api.md)).
-- Линтер спецификации с правилами из [product/05-api.md](../../product/05-api.md).
-- Проверка обратной совместимости в CI.
-- Генерация заглушки для фронтенда — **без неё Фаза 3 не может идти параллельно
-  с Фазой 2**.
+- A specification linter with the rules from
+  [05-api/](../../product/05-api/README.md).
+- A backward-compatibility check in CI.
+- Generation of the stub for the frontend — **without it Phase 3 cannot run in
+  parallel with Phase 2**.
 
 ### 5. CI/CD
 
-По [product/13-cicd.md](../../product/13-cicd.md): сборка, тесты, покрытие, статический
-анализ, сканирование уязвимостей, сборка образа, развёртывание во все контуры,
-ручной деплой невозможен технически ([NC-13](../../docs/01-principles/01-no-compromise.md#nc-13)).
+Per [product/13-cicd.md](../../product/13-cicd.md): build, tests, coverage,
+static analysis, vulnerability scanning, image build, deployment to all
+environments, with manual deployment technically impossible
+([NC-13](../../docs/01-principles/01-no-compromise.md#nc-13)).
 
-### 6. Контуры
+### 6. Environments
 
-- Dev, stage (предпродуктивный, с копией промышленных данных), prod.
-- Обезличивание данных при копировании в предпродуктивный контур.
-- Наблюдаемость во всех контурах.
+- Dev, stage (pre-production, with a copy of production data), prod.
+- Anonymization of the data when it is copied into the pre-production
+  environment.
+- Observability in all environments.
 
-### 7. Эталонный домен
+### 7. The reference domain
 
-Один домен, реализованный **полностью** — от миграции схемы до экрана и теста:
-D1 «Справочники» (не самый простой, но самый используемый другими).
+One domain implemented **in full** — from the schema migration to the screen and
+the test: D1 "Reference data" (not the simplest, but the one most used by the
+others).
 
-Эталонный домен — это:
+The reference domain is:
 
-- проверка того, что платформа пригодна к работе;
-- образец, по которому пишутся остальные 12;
-- основа для оценки трудоёмкости ([07-estimates.md](../10-estimates.md));
-- первый вход в теневой прогон.
+- the check that the platform is fit for work;
+- the model the other 12 are written after;
+- the basis for the effort estimate
+  ([07-estimates.md](../10-estimates.md));
+- the first entry into the shadow run.
 
-**Без эталонного домена Фаза 1 не завершена**, даже если все подсистемы
-написаны. Платформа проверяется использованием, а не осмотром.
+**Without the reference domain Phase 1 is not finished**, even if all the
+subsystems are written. A platform is verified by use, not by inspection.
 
-### 8. Дизайн-система
+### 8. The design system
 
-Начинается здесь, завершается в начале Фазы 3
-([ADR-0004](../../docs/02-decisions/ADR-0004-frontend-stack.md)): палитра, типографика,
-компоненты, таблица, форма, работа с клавиатуры, доступность. Без неё 1 300
-экранов будут выглядеть как 1 300 приложений.
+It begins here and is finished at the start of Phase 3
+([ADR-0004](../../docs/02-decisions/ADR-0004-frontend-stack.md)): the palette,
+the typography, the components, the table, the form, keyboard operation,
+accessibility. Without it, 1,300 screens will look like 1,300 applications.
 
-### 9. Теневой прогон
+### 9. The shadow run
 
-Технически запускается здесь, на эталонном домене
-([transition/06-parity-verification.md](../06-parity-verification.md)).
-Механизм должен работать задолго до того, как станет критичным.
+Technically started here, on the reference domain
+([transition/06-parity-verification.md](../06-parity-verification.md)). The
+mechanism must be working long before it becomes critical.
 
-## Порядок
+## Order
 
 ```
-каркас + CI/CD ─► контракт API ─┬─► платформенные подсистемы ─┐
-                                │                             ├─► эталонный домен ─► G1
-        данные и миграции ──────┘                             │
-        дизайн-система (начало) ──────────────────────────────┘
-                                                              │
-                                          теневой прогон ─────┘
+skeleton + CI/CD ─► the API contract ─┬─► the platform subsystems ─┐
+                                      │                            ├─► the reference domain ─► G1
+        data and migrations ──────────┘                            │
+        the design system (start) ─────────────────────────────────┘
+                                                                   │
+                                             the shadow run ───────┘
 ```
 
-## Риск фазы
+## The phase's risk
 
-**Платформа может расти бесконечно.** Соблазн «доделать ещё одну удобную вещь»
-силён, а обратной связи от доменов ещё нет.
+**The platform can grow forever.** The temptation to "add one more convenient
+thing" is strong, and there is no feedback from the domains yet.
 
-Противоядие: платформа считается готовой, когда на ней **работает эталонный
-домен**, а не когда она «полная». Всё остальное добавляется по запросу из Фазы 2,
-как обычная задача с обоснованием.
+The antidote: the platform counts as ready when the **reference domain runs on
+it**, not when it is "complete". Everything else is added on request from Phase 2,
+as an ordinary work item with a rationale.
 
-## Критерии завершения
+## Completion criteria
 
-Гейт [G1](00-roadmap.md#g1--конец-фазы-1).
+Gate [G1](00-roadmap.md#g1--end-of-phase-1).

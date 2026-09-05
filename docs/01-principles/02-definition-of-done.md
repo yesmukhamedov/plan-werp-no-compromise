@@ -6,79 +6,88 @@ status: draft
 
 # Definition of Done
 
-Три уровня готовности. Каждый уровень включает предыдущий целиком.
+Three levels of doneness. Each level includes the previous one in full.
 
 ---
 
-## DoD задачи
+## Task DoD
 
-Задача закрыта, когда выполнено **всё**:
+A task is closed when **all** of the following hold:
 
-- [ ] Реализовано ровно то, что описано в задаче; выход за рамки оформлен
-      отдельной задачей, а не сделан «заодно».
-- [ ] Автоматические тесты написаны и проходят; покрытие ветвлений нового
-      доменного кода — не ниже порога (NC-01).
-- [ ] Ни одно из правил [NC-01…NC-15](01-no-compromise.md) не нарушено; CI зелёный.
-- [ ] Критерии приёмки из карточки задачи проверены явно и отмечены.
-- [ ] Публичное поведение отражено в спецификации API (contract-first —
+- [ ] Exactly what the task describes is implemented; anything beyond its scope
+      is filed as a separate task rather than done "along the way".
+- [ ] Automated tests are written and pass; branch coverage of the new domain
+      code is at or above the threshold (NC-01).
+- [ ] None of the rules [NC-01…NC-15](01-no-compromise.md) is violated; CI is
+      green.
+- [ ] The acceptance criteria from the task card are verified explicitly and
+      ticked off.
+- [ ] Public behaviour is reflected in the API specification (contract-first —
       [ADR-0005](../02-decisions/ADR-0005-contract-first-api.md)).
-- [ ] Изменения схемы данных оформлены версионированной миграцией с проверенным
-      откатом.
-- [ ] Код прошёл ревью человеком, не являющимся автором.
-- [ ] Новые журнальные события, метрики и трассировки добавлены там, где
-      операция значима для эксплуатации.
-- [ ] Документация модуля обновлена, если изменился его контракт или поведение.
+- [ ] Data-schema changes are delivered as a versioned migration with a verified
+      rollback.
+- [ ] The code has been reviewed by a person who is not its author.
+- [ ] New log events, metrics and traces are added wherever the operation
+      matters for operations.
+- [ ] The module's documentation is updated if its contract or behaviour changed.
 
-## DoD домена
+## Domain DoD
 
-Домен считается перенесённым, когда:
+A domain counts as migrated when:
 
-- [ ] Выполнен DoD всех его задач.
-- [ ] Все сценарии домена из [реестра сценариев](../../product/09-quality.md#реестр-сценариев)
-      покрыты сквозными тестами.
-- [ ] Все эндпойнты домена из [инвентаризации контрактов](../../backlog/EPIC-002-contract-inventory.md)
-      реализованы либо явно помечены как исключённые с обоснованием.
-- [ ] Пройден **теневой прогон**: на копии промышленных данных ответы нового и
-      старого домена сверены; расхождения либо отсутствуют, либо объяснены и
-      приняты письменно ([transition/06-parity-verification.md](../../transition/06-parity-verification.md)).
-- [ ] Для финансовых доменов расхождение расчётов — **ноль**, без допуска.
-- [ ] Миграция данных домена отработана на полном объёме и укладывается в
-      бюджет времени переезда.
-- [ ] Нагрузочный профиль домена снят и соответствует НФТ
+- [ ] The Task DoD is satisfied for all of its tasks.
+- [ ] All of the domain's scenarios from the
+      [scenario registry](../../product/09-quality.md#scenario-registry) are
+      covered by end-to-end tests.
+- [ ] All of the domain's endpoints from the
+      [contract inventory](../../backlog/EPIC-002-contract-inventory.md) are
+      implemented or explicitly marked as excluded with a rationale.
+- [ ] A **shadow run** has been passed: against a copy of production data the
+      responses of the new and the old domain have been compared; divergences are
+      either absent or explained and accepted in writing
+      ([transition/06-parity-verification.md](../../transition/06-parity-verification.md)).
+- [ ] For financial domains the divergence in calculations is **zero**, with no
+      tolerance.
+- [ ] The domain's data migration has been exercised at full volume and fits
+      within the cutover time budget.
+- [ ] The domain's load profile has been measured and meets the NFRs
       ([product/07-nfr.md](../../product/07-nfr.md)).
-- [ ] Права доступа домена описаны декларативно и покрыты тестами (NC-12).
-- [ ] Ранбук домена написан: типовые сбои и действия дежурного.
-- [ ] Пользователи домена провели приёмку на предпродуктивном контуре и
-      подтвердили готовность письменно.
+- [ ] The domain's access permissions are described declaratively and covered by
+      tests (NC-12).
+- [ ] The domain's runbook is written: typical failures and the on-call actions.
+- [ ] The domain's users have carried out acceptance on the pre-production
+      environment and confirmed readiness in writing.
 
-## DoD проекта
+## Project DoD
 
-Проект завершён, когда:
+The project is finished when:
 
-- [ ] Выполнен DoD всех доменов.
-- [ ] Переезд выполнен, новая система обслуживает всех пользователей.
-- [ ] **Легаси-контур остановлен и удалён** (NC-07) — не «отключён на всякий
-      случай», а выведен из эксплуатации по расписанию из
-      [Фазы 5](../../transition/plan/06-phase-5-decommission.md).
-- [ ] Oracle выведен из эксплуатации, лицензии не продлеваются
+- [ ] The Domain DoD is satisfied for all domains.
+- [ ] The cutover is done and the new system serves all users.
+- [ ] **The legacy environment is stopped and deleted** (NC-07) — not "switched
+      off just in case" but decommissioned on the schedule from
+      [Phase 5](../../transition/plan/06-phase-5-decommission.md).
+- [ ] Oracle is decommissioned and the licences are not renewed
       ([ADR-0002](../02-decisions/ADR-0002-database-postgresql.md)).
-- [ ] Ни один из пунктов [P-01…P-12](../00-context/02-pain-points.md) не
-      воспроизводится в новой системе; проверено по сводной таблице.
-- [ ] Эксплуатация ведётся дежурной командой по ранбукам без участия
-      разработчиков переезда.
-- [ ] План (этот репозиторий) переведён в статус `completed` с ретроспективой.
+- [ ] Not one of the items [P-01…P-12](../00-context/02-pain-points.md) is
+      reproduced in the new system; verified against the summary table.
+- [ ] Operations are run by the on-call team from the runbooks, without the
+      involvement of the migration developers.
+- [ ] The plan (this repository) is moved to the `completed` status with a
+      retrospective.
 
 ---
 
-## Что не является Definition of Done
+## What Definition of Done is not
 
-Формулировки, которые **не** закрывают задачу:
+Phrasings that do **not** close a task:
 
-- «работает у меня локально»;
-- «тесты допишем потом»;
-- «пока сделал как в старой системе, потом отрефакторим»;
-- «покрытие просело, но это временно»;
-- «данные сверим на проде».
+- "works on my machine";
+- "we will write the tests later";
+- "for now I did it the way the old system does, we will refactor later";
+- "coverage dropped, but that is temporary";
+- "we will reconcile the data in production".
 
-Каждая из этих фраз — точный механизм, которым текущая система пришла к
-состоянию из [02-pain-points.md](../00-context/02-pain-points.md).
+Each of these phrases is the exact mechanism by which the current system arrived
+at the state described in
+[02-pain-points.md](../00-context/02-pain-points.md).

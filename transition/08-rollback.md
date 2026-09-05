@@ -1,106 +1,114 @@
 ---
 id: TRANS-08
-title: Откат
+title: Rollback
 status: draft
 ---
 
-# Откат
+# Rollback
 
-План возврата к легаси, если переезд пошёл не так. Пишется **до** переезда,
-репетируется вместе с миграцией, имеет измеренное время выполнения.
+The plan for returning to the legacy if the cutover goes wrong. Written
+**before** the cutover, rehearsed together with the migration, with a measured
+execution time.
 
-Требование [ADR-0001](../docs/02-decisions/ADR-0001-strategy-big-bang.md#осознанная-плата).
-План отката, написанный после переезда, — не план.
+Required by
+[ADR-0001](../docs/02-decisions/ADR-0001-strategy-big-bang.md#accepted-cost). A
+rollback plan written after the cutover is not a plan.
 
-## Три сценария, три стоимости
+## Three scenarios, three costs
 
-| Сценарий | Когда | Стоимость | Потеря данных |
+| Scenario | When | Cost | Data loss |
 |---|---|---|---|
-| **О1. Ранний откат** | до точки принятия решения, в окне переезда | низкая | нет |
-| **О2. Поздний откат** | после переключения, в окне переезда | средняя | данные, введённые после переключения |
-| **О3. Откат в период стабилизации** | дни или недели после переезда | **очень высокая** | требует обратной миграции |
+| **O1. Early rollback** | before the decision point, inside the cutover window | low | none |
+| **O2. Late rollback** | after the switchover, inside the cutover window | medium | the data entered after the switchover |
+| **O3. Rollback during stabilization** | days or weeks after the cutover | **very high** | requires a reverse migration |
 
-## О1. Ранний откат
+## O1. Early rollback
 
-Пользователи ещё не работают в новой системе; легаси не изменялся, только
-переведён в режим только чтения.
+The users are not working in the new system yet; the legacy has not changed and
+is merely switched to read-only mode.
 
-**Процедура:** остановить миграцию → снять режим только чтения с легаси →
-уведомить пользователей → провести разбор.
+**The procedure:** stop the migration → lift read-only mode on the legacy →
+notify the users → hold a post-mortem.
 
-**Норматив: ≤ 15 минут.** Проверяется на репетиции Р3.
+**The norm: ≤ 15 minutes.** Verified at rehearsal R3.
 
-Ранний откат — **не провал, а штатный исход**. Его дешевизна и есть причина,
-по которой точка принятия решения расположена именно там. Решение «откатываемся»
-в этой точке принимается легко и без обсуждения — обсуждение проводится потом.
+An early rollback is **not a failure but a normal outcome**. Its cheapness is
+precisely why the decision point is placed exactly there. The "we roll back"
+decision at that point is taken easily and without discussion — the discussion
+happens afterwards.
 
-## О2. Поздний откат
+## O2. Late rollback
 
-Пользователи уже работают в новой системе; в ней появились данные, которых нет
-в легаси.
+The users are already working in the new system; data has appeared in it that
+does not exist in the legacy.
 
-**Процедура:** закрыть доступ пользователям → зафиксировать объём введённых
-данных → вернуть маршрутизацию на легаси → снять режим только чтения → перенести
-данные, введённые в новую систему, в легаси **вручную по журналу операций** →
-открыть доступ.
+**The procedure:** close access to the users → record the volume of data entered
+→ return the routing to the legacy → lift read-only mode → transfer the data
+entered into the new system back into the legacy **by hand, from the operation
+log** → open access.
 
-**Норматив: ≤ 1 час** до восстановления работы (без учёта ручного переноса
-данных).
+**The norm: ≤ 1 hour** to restoring service (excluding the manual data transfer).
 
-Ключевое условие выполнимости: **новая система с первой минуты ведёт журнал всех
-изменяющих операций в форме, пригодной для ручного воспроизведения в легаси.**
-Это требование к платформе, а не к процедуре отката, и оно должно быть выполнено
-в Фазе 1, а не вспомнено в ночь переезда.
+The key feasibility condition: **from its first minute the new system keeps a log
+of all mutating operations in a form suitable for manual replay in the legacy.**
+That is a requirement on the platform, not on the rollback procedure, and it must
+be satisfied in Phase 1 rather than remembered on the night of the cutover.
 
-Именно поэтому окно переезда выбирается в период минимальной активности: чем
-меньше операций введено до момента отката, тем дешевле О2.
+That is precisely why the cutover window is chosen in a period of minimal
+activity: the fewer operations entered before the moment of rollback, the cheaper
+O2 is.
 
-## О3. Откат в период стабилизации
+## O3. Rollback during stabilization
 
-Самый дорогой сценарий: за дни работы в новой системе накоплен объём данных,
-который вручную не переносится.
+The most expensive scenario: over days of work in the new system a volume of data
+accumulates that cannot be transferred by hand.
 
-**Требует обратной миграции** — инструмента переноса из PostgreSQL обратно в
-Oracle/MySQL. Такой инструмент:
+**It requires a reverse migration** — a tool for transferring from PostgreSQL
+back into Oracle/MySQL. Such a tool:
 
-- в общем случае невозможно сделать полным (новая схема богаче старой);
-- стоит сравнимо с прямой миграцией;
-- в этом плане **не разрабатывается**.
+- cannot in the general case be made complete (the new schema is richer than the
+  old one);
+- costs about as much as the forward migration;
+- is **not developed** in this plan.
 
-Вместо него — три меры, снижающие вероятность необходимости О3:
+Instead there are three measures that reduce the probability of needing O3:
 
-1. **Планка допуска к переезду** ([01-cutover-strategy.md](07-cutover.md#условия-допуска-к-переезду))
-   — ошибки такого масштаба должны быть найдены до, а не после.
-2. **Определённый заранее порог отката.** Что именно считается основанием для
-   О3 — записывается до переезда. Без этого решение будет приниматься на эмоциях.
-3. **Легаси остаётся работоспособным** весь срок стабилизации: если О3 всё же
-   потребуется, есть куда возвращаться, пусть и с ручным переносом.
+1. **The bar for admission to the cutover**
+   ([01-cutover-strategy.md](07-cutover.md#conditions-for-admission-to-the-cutover))
+   — mistakes on that scale must be found before, not after.
+2. **A predefined rollback threshold.** What exactly counts as grounds for O3 is
+   written down before the cutover. Without that, the decision will be taken on
+   emotion.
+3. **The legacy stays operational** for the whole stabilization period: if O3 is
+   needed after all, there is somewhere to return to, even if with a manual
+   transfer.
 
-**Это принятый риск [R-03](11-risks.md#r-03).** Он записан
-явно, а не спрятан.
+**This is accepted risk [R-03](11-risks.md#r-03).** It is written down
+explicitly, not hidden.
 
-## Критерии принятия решения об откате
+## Criteria for the rollback decision
 
-Определяются **до** переезда и не смягчаются в процессе.
+Defined **before** the cutover and not softened during it.
 
-| Признак | Действие |
+| Sign | Action |
 |---|---|
-| Миграция не завершилась в отведённое время | О1 |
-| Сверка данных выявила расхождение в финансовых таблицах | О1 |
-| Дымовые тесты не прошли | О1 |
-| Владелец домена не подписал приёмку | О1 |
-| Массовые ошибки у пользователей после открытия доступа | О2 |
-| Показатели производительности хуже допустимых | О2 при невозможности быстро исправить |
-| Обнаружена потеря или искажение данных | немедленно О2, независимо от стадии |
-| Единичные дефекты, есть обходной путь | не откатываемся, исправляем |
+| The migration did not finish in the time allotted | O1 |
+| The data reconciliation revealed a divergence in the financial tables | O1 |
+| The smoke tests failed | O1 |
+| A domain owner did not sign off acceptance | O1 |
+| Mass errors for users after access is opened | O2 |
+| Performance figures worse than acceptable | O2 if a quick fix is impossible |
+| Data loss or corruption discovered | O2 immediately, regardless of the stage |
+| Isolated defects with a workaround available | we do not roll back, we fix |
 
-Решение принимает **руководитель переезда единолично**. Это не про иерархию —
-это про то, что коллективное решение в три часа ночи не принимается.
+The decision is taken by the **cutover lead alone**. This is not about hierarchy
+— it is about the fact that a collective decision at three in the morning is not
+taken.
 
-## Что репетируется
+## What is rehearsed
 
-На репетиции Р3 отрабатывается О1 и измеряется время. О2 отрабатывается на
-предпродуктивном контуре: переключение туда и обратно с проверкой
-работоспособности легаси.
+At rehearsal R3, O1 is exercised and its time measured. O2 is exercised on the
+pre-production environment: switching over and back, with a check that the legacy
+is operational.
 
-Непроверенный план отката равносилен его отсутствию.
+An unverified rollback plan is equivalent to no plan at all.

@@ -1,387 +1,150 @@
 ---
 id: PROD-SPEC-D1
-title: D1 Справочники — полная спецификация
-status: спроектирован
+title: D1 Reference data — full specification
+status: designed
 domain: D1
-owner: не назначен
+owner: not assigned
 ---
 
-# D1. Справочники
+# D1. Reference data
 
-Эталонная спецификация: задаёт обязательную глубину для остальных доменов
-([spec/README.md](README.md#d1--эталон)).
+The reference specification: it sets the mandatory depth for the other domains
+([spec/README.md](README.md#d1--the-reference-sample)).
 
-Схема БД: `reference` · Модуль: `reference` · API: `/api/v1/reference` ·
-Раздел интерфейса: `pages/reference`
+DB schema: `reference` · Module: `reference` · API: `/api/v1/reference` ·
+Interface section: `pages/reference`
 
 ---
 
-## Назначение и границы
+## Purpose and boundaries
 
-Справочные данные, общие для всей системы: организационная структура, география,
-валюты, номенклатура, типовые перечисления.
+Reference data shared across the whole system: the organizational structure,
+geography, currencies, the product catalogue, standard enumerations.
 
-**Входит:** компании, филиалы, склады, страны, регионы, города, валюты, курсы
-валют, единицы измерения, категории и позиции номенклатуры, типовые причины,
-должности, направления деятельности.
+**In scope:** companies, branches, warehouses, countries, regions, cities,
+currencies, exchange rates, units of measure, product categories and product
+items, standard reasons, positions, lines of business.
 
-**Не входит:**
+**Out of scope:**
 
-| Что | Где | Почему не здесь |
+| What | Where | Why not here |
 |---|---|---|
-| Клиенты, адреса, телефоны | D2 Контрагенты | контрагент — не справочник, у него жизненный цикл |
-| Сотрудники, штат | D3 Персонал | то же |
-| Прайс-листы, условия договора | D4 Договоры | зависят от договора, меняются часто |
-| Пользователи, роли, права | D0 Платформа | это доступ, не справочник |
-| Остатки на складах | D7 Склад | склад — справочник, остаток — операционные данные |
+| Customers, addresses, phone numbers | D2 Counterparties | a counterparty is not reference data; it has a life cycle |
+| Employees, headcount | D3 Personnel | likewise |
+| Price lists, contract terms | D4 Contracts | they depend on the contract and change often |
+| Users, roles, permissions | D0 Platform | that is access, not reference data |
+| Warehouse stock balances | D7 Warehouse | a warehouse is reference data, a balance is operational data |
 
-**Ключевое свойство домена:** от него зависят все остальные, он не зависит ни
-от одного (кроме платформы). Поэтому он проектируется и реализуется первым, и
-поэтому его публичный интерфейс должен быть особенно узким — его будут
-использовать двенадцать модулей.
+**The domain's key property:** all the others depend on it, while it depends on
+none (apart from the platform). That is why it is designed and implemented first,
+and why its public interface must be especially narrow — twelve modules will be
+using it.
 
-## Модель
+## Model
 
-Пять агрегатов:
+Five aggregates:
 
-| Агрегат | Корень | Состав | Инварианты |
+| Aggregate | Root | Composition | Invariants |
 |---|---|---|---|
-| Организация | `Company` | `Branch` (дерево), `Warehouse` | филиал принадлежит одной компании; дерево филиалов без циклов; у компании ровно один головной филиал |
-| География | `Country` | `Region`, `City` | город принадлежит региону, регион — стране; код страны уникален |
-| Валюты | `Currency` | `ExchangeRate` | код валюты уникален; курс на дату уникален для пары валют |
-| Номенклатура | `ProductCategory` | `Product`, `UnitOfMeasure` | позиция принадлежит одной категории; артикул уникален в компании |
-| Перечисления | `ReferenceList` | `ReferenceItem` | код элемента уникален внутри списка |
+| Organization | `Company` | `Branch` (a tree), `Warehouse` | a branch belongs to one company; the branch tree has no cycles; a company has exactly one head branch |
+| Geography | `Country` | `Region`, `City` | a city belongs to a region, a region to a country; the country code is unique |
+| Currencies | `Currency` | `ExchangeRate` | the currency code is unique; a rate on a date is unique per currency pair |
+| Product catalogue | `ProductCategory` | `Product`, `UnitOfMeasure` | an item belongs to one category; the article number is unique within a company |
+| Enumerations | `ReferenceList` | `ReferenceItem` | an item's code is unique within its list |
 
-Агрегат — граница транзакции и граница загрузки. Ссылка между агрегатами — по
-идентификатору.
+An aggregate is the transaction boundary and the loading boundary. A reference
+between aggregates is by identifier.
 
-### Общий механизм перечислений
+### The shared enumeration mechanism
 
-Мелкие справочники (причины увольнения, типы адресов, статусы проблем, виды
-операций) **не получают собственных таблиц**. Они хранятся как элементы
-поименованных списков в двух таблицах `reference_list` / `reference_item`.
+Small reference lists (termination reasons, address types, issue statuses,
+operation kinds) **do not get tables of their own**. They are stored as items of
+named lists in two tables, `reference_list` / `reference_item`.
 
-Причина: каждый такой справочник — это 3–5 колонок и один экран. Пятнадцать
-отдельных таблиц с пятнадцатью контроллерами и пятнадцатью экранами — это
-пятнадцатикратное дублирование одного и того же кода.
+The reason: each such list is 3–5 columns and one screen. Fifteen separate tables
+with fifteen controllers and fifteen screens mean fifteenfold duplication of the
+same code.
 
-Справочник получает **собственную** таблицу, если выполнено хотя бы одно:
-у него больше трёх содержательных атрибутов; на него ссылаются с ограничением
-целостности; у него есть собственные бизнес-правила; он редактируется
-отдельной ролью.
+A reference list gets **its own** table if at least one of the following holds: it
+has more than three meaningful attributes; it is referenced with an integrity
+constraint; it has business rules of its own; it is edited by a separate role.
 
 ---
 
-## Таблицы
+## Tables
 
-Схема `reference`. Все таблицы имеют
-[обязательные столбцы](../03-database.md#обязательные-столбцы) — `id`,
-`created_at`, `created_by`, `updated_at`, `updated_by`, `version` — они не
-повторяются в перечнях ниже.
+Schema `reference` — **20 tables in 6 groups**, with every column, its type, its
+constraints and its indexes:
+**[03-database/schemas/reference.md](../03-database/schemas/reference.md)**.
 
-### `company` — компания
+The physical model lives at one level and is not repeated here
+([how to read a schema file](../03-database/README.md#how-to-read-a-schema-file)).
+What belongs to this document is the model above — the aggregates and their
+invariants — and everything below it: the classes that implement them, the
+endpoints that expose them, the permissions that guard them and the pages that
+use them.
 
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `code` | `text` | нет | `ck` длина 1–10 | краткий код компании |
-| `name` | `text` | нет | `ck` длина 1–255 | наименование |
-| `full_name` | `text` | да | | полное юридическое наименование |
-| `tax_number` | `text` | да | `ck` длина 1–20 | налоговый номер |
-| `country_id` | `uuid` | нет | → `country.id` | страна регистрации |
-| `default_currency_id` | `uuid` | нет | → `currency.id` | валюта учёта |
-| `is_active` | `boolean` | нет | по умолчанию `true` | действующая |
 
-Индексы: `ux_company__code`, `ix_company__country_id`.
+## Reference data
 
-### `branch` — филиал
+Loaded by the schema migration, versioned together with it, not editable in the
+interface:
 
-Дерево подразделений компании.
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `company_id` | `uuid` | нет | → `company.id` | владелец |
-| `parent_id` | `uuid` | да | → `branch.id` | родитель в дереве; `null` — корень |
-| `code` | `text` | нет | `ck` длина 1–20 | код филиала |
-| `name` | `text` | нет | | наименование |
-| `kind` | `text` | нет | `ck IN (HEAD, REGION, BRANCH, POINT)` | уровень в структуре |
-| `city_id` | `uuid` | да | → `city.id` | город расположения |
-| `address_text` | `text` | да | | адрес одной строкой |
-| `latitude` | `numeric(9,6)` | да | `ck` −90…90 | широта |
-| `longitude` | `numeric(9,6)` | да | `ck` −180…180 | долгота |
-| `is_active` | `boolean` | нет | по умолчанию `true` | действующий |
-| `path` | `ltree` | нет | | материализованный путь для запросов по дереву |
-| `depth` | `integer` | нет | `ck` ≥ 0 | глубина, денормализация от `path` |
-
-Индексы: `ux_branch__company_id__code`, `ix_branch__parent_id`,
-`ix_branch__path` (GiST), `ix_branch__city_id`,
-`ix_branch__company_id` частичный `WHERE is_active`.
-
-Ограничения: `ck_branch__no_self_parent` (`parent_id <> id`); отсутствие циклов
-проверяется прикладным правилом `BranchTreeRule` — в БД это невыразимо.
-
-> `path` и `depth` хранятся, потому что дерево филиалов читается почти на каждом
-> экране системы (фильтр «по филиалу»), а рекурсивный запрос на каждом чтении
-> измеримо дороже. Поддерживаются триггером и покрыты тестом.
-
-### `warehouse` — склад
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `company_id` | `uuid` | нет | → `company.id` | владелец |
-| `branch_id` | `uuid` | нет | → `branch.id` | привязка к филиалу |
-| `code` | `text` | нет | `ck` длина 1–20 | код склада |
-| `name` | `text` | нет | | наименование |
-| `kind` | `text` | нет | `ck IN (MAIN, TRANSIT, SERVICE, RETURN)` | тип |
-| `is_main` | `boolean` | нет | по умолчанию `false` | основной для филиала |
-| `is_active` | `boolean` | нет | по умолчанию `true` | действующий |
-
-Индексы: `ux_warehouse__company_id__code`, `ix_warehouse__branch_id`,
-`ux_warehouse__branch_id__is_main` частичный `WHERE is_main` — гарантирует не
-более одного основного склада на филиал.
-
-### `country` — страна
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `code` | `text` | нет | `ck` длина 2, верхний регистр | ISO 3166-1 alpha-2 |
-| `code3` | `text` | да | `ck` длина 3 | ISO 3166-1 alpha-3 |
-| `currency_id` | `uuid` | да | → `currency.id` | валюта страны |
-| `phone_prefix` | `text` | да | `ck` длина 1–6 | телефонный префикс |
-| `phone_pattern` | `text` | да | | шаблон проверки номера |
-
-Индексы: `ux_country__code`, `ux_country__code3`.
-
-Наименования — в `country_name` (см. [локализацию](#локализация-справочников)).
-
-### `region` — регион
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `country_id` | `uuid` | нет | → `country.id` | страна |
-| `code` | `text` | да | | код региона |
-
-Индексы: `ix_region__country_id`, `ux_region__country_id__code` частичный
-`WHERE code IS NOT NULL`.
-
-### `city` — город
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `region_id` | `uuid` | нет | → `region.id` | регион |
-| `code` | `text` | да | | код города |
-| `phone_prefix` | `text` | да | | телефонный код |
-| `timezone` | `text` | нет | по умолчанию `Asia/Almaty` | часовой пояс |
-
-Индексы: `ix_city__region_id`.
-
-> `country_id` в городе **отсутствует намеренно**: он выводится через регион.
-> Денормализация здесь порождает возможность рассогласования, а выигрыш
-> отсутствует — выборка городов всегда идёт по региону.
-
-### `currency` — валюта
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `code` | `text` | нет | `ck` длина 3, верхний регистр | ISO 4217 |
-| `numeric_code` | `text` | да | `ck` длина 3 | числовой код ISO |
-| `symbol` | `text` | да | | символ |
-| `minor_units` | `smallint` | нет | `ck` 0–4, по умолчанию 2 | знаков после запятой при отображении |
-
-Индексы: `ux_currency__code`.
-
-### `exchange_rate` — курс валюты
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `from_currency_id` | `uuid` | нет | → `currency.id` | из валюты |
-| `to_currency_id` | `uuid` | нет | → `currency.id` | в валюту |
-| `rate_date` | `date` | нет | | дата действия |
-| `rate` | `numeric(19,8)` | нет | `ck` > 0 | курс |
-| `source` | `text` | нет | `ck IN (NATIONAL_BANK, MANUAL, PARTNER)` | источник |
-
-Индексы: `ux_exchange_rate__from__to__date`,
-`ix_exchange_rate__rate_date`.
-
-Ограничение: `ck_exchange_rate__different_currencies`
-(`from_currency_id <> to_currency_id`).
-
-> Курс — **исторические данные, не справочник**: строки не изменяются и не
-> удаляются. Пересчёт задним числом меняет финансовую отчётность, поэтому
-> исправление оформляется новой строкой с другим `source`, а не правкой
-> существующей.
-
-### `unit_of_measure` — единица измерения
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `code` | `text` | нет | `ck` длина 1–10 | код |
-| `precision` | `smallint` | нет | `ck` 0–6, по умолчанию 0 | допустимых знаков после запятой |
-
-Индексы: `ux_unit_of_measure__code`.
-
-### `product_category` — категория номенклатуры
-
-Дерево категорий.
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `parent_id` | `uuid` | да | → `product_category.id` | родитель |
-| `code` | `text` | нет | | код категории |
-| `path` | `ltree` | нет | | материализованный путь |
-| `is_active` | `boolean` | нет | по умолчанию `true` | действующая |
-
-Индексы: `ux_product_category__code`, `ix_product_category__parent_id`,
-`ix_product_category__path` (GiST).
-
-### `product` — позиция номенклатуры
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `company_id` | `uuid` | нет | → `company.id` | владелец |
-| `category_id` | `uuid` | нет | → `product_category.id` | категория |
-| `article` | `text` | нет | `ck` длина 1–40 | артикул |
-| `name` | `text` | нет | | наименование |
-| `unit_id` | `uuid` | нет | → `unit_of_measure.id` | базовая единица |
-| `barcode` | `text` | да | `ck` длина 8–14 | штрихкод |
-| `is_serial_tracked` | `boolean` | нет | по умолчанию `false` | учёт по серийным номерам |
-| `warranty_months` | `smallint` | да | `ck` ≥ 0 | гарантия |
-| `is_active` | `boolean` | нет | по умолчанию `true` | действующая |
-
-Индексы: `ux_product__company_id__article`, `ix_product__category_id`,
-`ix_product__barcode` частичный `WHERE barcode IS NOT NULL`,
-`ix_product__name_trgm` (GIN, триграммы) — для поиска по части наименования.
-
-### `reference_list` / `reference_item` — типовые перечисления
-
-`reference_list`:
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `code` | `text` | нет | `ck` `^[A-Z_]+$` | код списка, например `LEAVE_REASON` |
-| `is_system` | `boolean` | нет | по умолчанию `false` | системный — не редактируется из интерфейса |
-
-Индексы: `ux_reference_list__code`.
-
-`reference_item`:
-
-| Колонка | Тип | Null | Ограничения | Смысл |
-|---|---|---|---|---|
-| `list_id` | `uuid` | нет | → `reference_list.id` | список |
-| `code` | `text` | нет | | код элемента |
-| `sort_order` | `integer` | нет | по умолчанию 0 | порядок отображения |
-| `is_active` | `boolean` | нет | по умолчанию `true` | действующий |
-| `attributes` | `jsonb` | да | | дополнительные атрибуты списка |
-
-Индексы: `ux_reference_item__list_id__code`,
-`ix_reference_item__list_id` частичный `WHERE is_active`.
-
-> `attributes` — единственное применение `jsonb` в домене, и оно обосновано:
-> набор атрибутов различается от списка к списку и не участвует в выборках.
-> Как только по атрибуту требуется фильтровать — список получает собственную
-> таблицу.
-
-### Локализация справочников
-
-Переводимые наименования вынесены в парные таблицы. Добавление языка не требует
-миграции схемы ([03-database.md](../03-database.md#локализация-в-данных)).
-
-| Таблица | Колонки |
-|---|---|
-| `country_name` | `country_id` → `country.id`, `locale`, `name` |
-| `region_name` | `region_id`, `locale`, `name` |
-| `city_name` | `city_id`, `locale`, `name` |
-| `currency_name` | `currency_id`, `locale`, `name` |
-| `unit_of_measure_name` | `unit_id`, `locale`, `name` |
-| `product_category_name` | `category_id`, `locale`, `name` |
-| `reference_item_name` | `item_id`, `locale`, `name` |
-
-У каждой: `ux_<таблица>__<родитель>_id__locale`,
-`ck` на `locale IN (ru, en, tr)`.
-
-Наименования компаний, филиалов, складов и позиций номенклатуры **не
-переводятся** — это собственные имена, они одинаковы на всех языках.
-
-### Сводка
-
-| Таблица | Оценка строк | Изменяемость |
-|---|---:|---|
-| `company` | десятки | редко |
-| `branch` | сотни | редко |
-| `warehouse` | сотни | редко |
-| `country` | ~250 | почти никогда |
-| `region` | тысячи | почти никогда |
-| `city` | десятки тысяч | редко |
-| `currency` | десятки | почти никогда |
-| `exchange_rate` | сотни тысяч, растёт | только вставка |
-| `unit_of_measure` | десятки | почти никогда |
-| `product_category` | сотни | редко |
-| `product` | десятки тысяч | регулярно |
-| `reference_list` | десятки | почти никогда |
-| `reference_item` | тысячи | регулярно |
-| таблицы наименований (7) | ×3 к родителю | вместе с родителем |
-
-Итого **20 таблиц**. Кэшируются на уровне приложения все, кроме `exchange_rate`
-и `product`; инвалидация — по событию изменения.
-
-## Справочные данные
-
-Загружаются миграцией схемы, версионируются вместе с ней, в интерфейсе не
-редактируются:
-
-- `country`, `region` — по ISO 3166 с наименованиями на трёх языках;
-- `currency` — по ISO 4217;
-- `unit_of_measure` — базовый набор;
-- `reference_list` — системные списки с `is_system = true`.
+- `country`, `region` — per ISO 3166 with names in three languages;
+- `currency` — per ISO 4217;
+- `unit_of_measure` — the base set;
+- `reference_list` — the system lists with `is_system = true`.
 
 ---
 
-## Классы
+## Classes
 
-Модуль `reference`. Структура — [04-backend.md](../04-backend.md#структура-модуля).
+The `reference` module. The structure —
+[backend rule 2](../04-backend/rules/02-module-structure.md).
 
-### `api/` — публичный интерфейс
+### `api/` — the public interface
 
-Всё, что видят другие двенадцать модулей. Намеренно узкий.
+Everything the other twelve modules see. Deliberately narrow.
 
-| Класс | Операции |
+| Class | Operations |
 |---|---|
 | `ReferenceFacade` | `getCompany(id)`, `getBranch(id)`, `getBranchSubtree(id)`, `getWarehouse(id)`, `getProduct(id)`, `getCurrency(id)`, `getRate(from, to, date)`, `getItem(list, code)`, `resolveNames(ids, locale)` |
-| `ReferenceQuery` | пакетное чтение: `getCompanies(ids)`, `getBranches(ids)`, `getProducts(ids)` — чтобы вызывающий не делал N обращений |
+| `ReferenceQuery` | batch reads: `getCompanies(ids)`, `getBranches(ids)`, `getProducts(ids)` — so that the caller does not make N calls |
 | dto | `CompanyDto`, `BranchDto`, `BranchTreeDto`, `WarehouseDto`, `CountryDto`, `CityDto`, `CurrencyDto`, `ExchangeRateDto`, `ProductDto`, `ProductCategoryDto`, `UnitOfMeasureDto`, `ReferenceItemDto` |
 | events | `CompanyChanged`, `BranchChanged`, `BranchDeactivated`, `WarehouseChanged`, `ProductChanged`, `ProductDeactivated`, `ExchangeRateAdded`, `ReferenceItemChanged` |
 
-`resolveNames` существует, чтобы другие домены не тянули справочник целиком
-ради отображения наименования рядом с идентификатором.
+`resolveNames` exists so that other domains do not pull a whole reference list
+just to display a name next to an identifier.
 
-События деактивации отдельны от событий изменения: деактивация филиала или
-позиции затрагивает открытые документы в других доменах, и они должны на неё
-реагировать.
+The deactivation events are separate from the change events: deactivating a
+branch or an item affects open documents in other domains, and they must react to
+it.
 
-### `domain/` — бизнес-логика
+### `domain/` — business logic
 
-| Класс | Тип | Ответственность |
+| Class | Type | Responsibility |
 |---|---|---|
-| `Company` | сущность | компания, её инварианты |
-| `Branch` | сущность | филиал, положение в дереве |
-| `BranchTree` | объект-значение | операции над деревом: поддерево, предки, путь |
-| `Warehouse` | сущность | склад |
-| `Country`, `Region`, `City` | сущности | география |
-| `Currency` | сущность | валюта |
-| `ExchangeRate` | сущность | курс на дату, неизменяемый |
-| `Product`, `ProductCategory` | сущности | номенклатура |
-| `UnitOfMeasure` | сущность | единица измерения |
-| `ReferenceList`, `ReferenceItem` | сущности | перечисления |
-| `LocalizedName` | объект-значение | наименование на языке |
-| `BranchTreeRule` | правило | отсутствие циклов, корректность уровней |
-| `SingleMainWarehouseRule` | правило | один основной склад на филиал |
-| `RateChronologyRule` | правило | корректность даты курса |
-| `DeactivationRule` | правило | что нельзя деактивировать при наличии зависимых |
-| `BranchService` | доменный сервис | перемещение узла дерева, пересчёт `path` |
-| `ExchangeRateService` | доменный сервис | подбор курса на дату; при отсутствии — ближайший предшествующий |
+| `Company` | entity | a company and its invariants |
+| `Branch` | entity | a branch, its position in the tree |
+| `BranchTree` | value object | operations over the tree: subtree, ancestors, path |
+| `Warehouse` | entity | a warehouse |
+| `Country`, `Region`, `City` | entities | geography |
+| `Currency` | entity | a currency |
+| `ExchangeRate` | entity | a rate on a date, immutable |
+| `Product`, `ProductCategory` | entities | the product catalogue |
+| `UnitOfMeasure` | entity | a unit of measure |
+| `ReferenceList`, `ReferenceItem` | entities | enumerations |
+| `LocalizedName` | value object | a name in a language |
+| `BranchTreeRule` | rule | the absence of cycles, the correctness of levels |
+| `SingleMainWarehouseRule` | rule | one main warehouse per branch |
+| `RateChronologyRule` | rule | the correctness of a rate's date |
+| `DeactivationRule` | rule | what cannot be deactivated while dependents exist |
+| `BranchService` | domain service | moving a tree node, recomputing `path` |
+| `ExchangeRateService` | domain service | picking the rate for a date; if absent, the nearest preceding one |
 
-### `application/` — сценарии
+### `application/` — scenarios
 
-По обработчику на сценарий; каждый — граница транзакции.
+One handler per scenario; each is a transaction boundary.
 
 `CreateCompanyHandler`, `UpdateCompanyHandler`, `CreateBranchHandler`,
 `UpdateBranchHandler`, `MoveBranchHandler`, `DeactivateBranchHandler`,
@@ -392,12 +155,13 @@ owner: не назначен
 `CreateReferenceItemHandler`, `UpdateReferenceItemHandler`,
 `ReorderReferenceItemsHandler`.
 
-Запросы чтения: `BranchTreeQuery`, `ProductSearchQuery`, `CityLookupQuery`,
-`ExchangeRateQuery` — отдельно от обработчиков команд, без транзакции записи.
+Read queries: `BranchTreeQuery`, `ProductSearchQuery`, `CityLookupQuery`,
+`ExchangeRateQuery` — separate from the command handlers, without a write
+transaction.
 
-### `adapter/web/` — контроллеры
+### `adapter/web/` — controllers
 
-Генерируются из спецификации; логики не содержат.
+Generated from the specification; they contain no logic.
 
 `CompanyController`, `BranchController`, `WarehouseController`,
 `CountryController`, `RegionController`, `CityController`,
@@ -405,10 +169,10 @@ owner: не назначен
 `ProductCategoryController`, `UnitOfMeasureController`,
 `ReferenceItemController`.
 
-**Двенадцать контроллеров, по одному на ресурс.** Ни один не превышает 200
-строк, ни один не обращается к чужому домену.
+**Twelve controllers, one per resource.** None exceeds 200 lines, and none
+reaches into another domain.
 
-### `adapter/persistence/` — хранилище
+### `adapter/persistence/` — storage
 
 `CompanyRepository`, `BranchRepository`, `WarehouseRepository`,
 `CountryRepository`, `RegionRepository`, `CityRepository`,
@@ -416,47 +180,47 @@ owner: не назначен
 `ProductCategoryRepository`, `UnitOfMeasureRepository`,
 `ReferenceListRepository`, `LocalizedNameRepository`.
 
-Плюс `ReferenceCache` — кэш редко меняющихся справочников с инвалидацией по
-доменным событиям.
+Plus `ReferenceCache` — a cache of the rarely changing reference lists with
+invalidation on domain events.
 
-### Оценка объёма
+### Volume estimate
 
-~90 классов: 12 контроллеров, 13 репозиториев, 19 обработчиков, 4 запроса
-чтения, ~14 сущностей и объектов-значений, 4 правила, 2 доменных сервиса,
-2 фасада, ~12 DTO, 8 событий, преобразователи.
+~90 classes: 12 controllers, 13 repositories, 19 handlers, 4 read queries, ~14
+entities and value objects, 4 rules, 2 domain services, 2 facades, ~12 DTOs, 8
+events, mappers.
 
 ---
 
-## Эндпойнты
+## Endpoints
 
-`/api/v1/reference`. Полное описание — в спецификации OpenAPI; здесь состав и
-права.
+`/api/v1/reference`. The full description is in the OpenAPI specification; here —
+the composition and the permissions.
 
-### Компании
+### Companies
 
-| Метод | Путь | Право | Примечание |
+| Method | Path | Permission | Note |
 |---|---|---|---|
-| GET | `/companies` | `reference.company.read` | список, пагинация |
+| GET | `/companies` | `reference.company.read` | list, paginated |
 | GET | `/companies/{id}` | `reference.company.read` | |
 | POST | `/companies` | `reference.company.write` | |
 | PUT | `/companies/{id}` | `reference.company.write` | |
-| POST | `/companies/{id}/deactivation` | `reference.company.write` | вместо DELETE |
+| POST | `/companies/{id}/deactivation` | `reference.company.write` | instead of DELETE |
 
-### Филиалы
+### Branches
 
-| Метод | Путь | Право | Примечание |
+| Method | Path | Permission | Note |
 |---|---|---|---|
-| GET | `/branches` | `reference.branch.read` | список; фильтры `companyId`, `kind`, `cityId`, `isActive` |
-| GET | `/branches/tree` | `reference.branch.read` | дерево; параметр `rootId` |
+| GET | `/branches` | `reference.branch.read` | list; filters `companyId`, `kind`, `cityId`, `isActive` |
+| GET | `/branches/tree` | `reference.branch.read` | the tree; parameter `rootId` |
 | GET | `/branches/{id}` | `reference.branch.read` | |
 | POST | `/branches` | `reference.branch.write` | |
 | PUT | `/branches/{id}` | `reference.branch.write` | |
-| POST | `/branches/{id}/move` | `reference.branch.write` | смена родителя |
+| POST | `/branches/{id}/move` | `reference.branch.write` | changing the parent |
 | POST | `/branches/{id}/deactivation` | `reference.branch.write` | |
 
-### Склады
+### Warehouses
 
-| Метод | Путь | Право |
+| Method | Path | Permission |
 |---|---|---|
 | GET | `/warehouses` | `reference.warehouse.read` |
 | GET | `/warehouses/{id}` | `reference.warehouse.read` |
@@ -464,9 +228,9 @@ owner: не назначен
 | PUT | `/warehouses/{id}` | `reference.warehouse.write` |
 | POST | `/warehouses/{id}/deactivation` | `reference.warehouse.write` |
 
-### География
+### Geography
 
-| Метод | Путь | Право |
+| Method | Path | Permission |
 |---|---|---|
 | GET | `/countries` | `reference.geo.read` |
 | GET | `/countries/{id}` | `reference.geo.read` |
@@ -475,13 +239,13 @@ owner: не назначен
 | GET | `/cities/{id}` | `reference.geo.read` |
 | POST / PUT | `/countries`, `/regions`, `/cities` | `reference.geo.write` |
 
-Списки регионов и городов фильтруются через `countryId` / `regionId` —
-**отдельных путей вида `/regions/{countryId}` не существует**: фильтр не меняет
-ресурс.
+The lists of regions and cities are filtered through `countryId` / `regionId` —
+**separate paths of the form `/regions/{countryId}` do not exist**: a filter does
+not change the resource.
 
-### Валюты и курсы
+### Currencies and rates
 
-| Метод | Путь | Право |
+| Method | Path | Permission |
 |---|---|---|
 | GET | `/currencies` | `reference.currency.read` |
 | GET | `/exchange-rates` | `reference.currency.read` |
@@ -489,11 +253,11 @@ owner: не назначен
 | POST | `/exchange-rates` | `reference.currency.write` |
 | POST | `/exchange-rates/import` | `reference.currency.write` |
 
-`POST /exchange-rates` не имеет парного PUT: курс неизменяем.
+`POST /exchange-rates` has no matching PUT: a rate is immutable.
 
-### Номенклатура
+### Product catalogue
 
-| Метод | Путь | Право |
+| Method | Path | Permission |
 |---|---|---|
 | GET | `/products` | `reference.product.read` |
 | GET | `/products/{id}` | `reference.product.read` |
@@ -507,9 +271,9 @@ owner: не назначен
 | GET | `/units` | `reference.unit.read` |
 | POST / PUT | `/units` | `reference.unit.write` |
 
-### Перечисления
+### Enumerations
 
-| Метод | Путь | Право |
+| Method | Path | Permission |
 |---|---|---|
 | GET | `/lists` | `reference.list.read` |
 | GET | `/lists/{code}/items` | `reference.list.read` |
@@ -517,9 +281,9 @@ owner: не назначен
 | PUT | `/lists/{code}/items/{id}` | `reference.list.write` |
 | POST | `/lists/{code}/items/reorder` | `reference.list.write` |
 
-**Итого 48 эндпойнтов на 12 ресурсов.**
+**48 endpoints over 12 resources in total.**
 
-### Коды ошибок домена
+### The domain's error codes
 
 `reference.company.not_found`, `reference.company.code_taken`,
 `reference.branch.not_found`, `reference.branch.cycle_detected`,
@@ -530,102 +294,107 @@ owner: не назначен
 
 ---
 
-## Права
+## Permissions
 
-| Право | Что разрешает |
+| Permission | What it allows |
 |---|---|
-| `reference.company.read` / `.write` | компании |
-| `reference.branch.read` / `.write` | филиалы |
-| `reference.warehouse.read` / `.write` | склады |
-| `reference.geo.read` / `.write` | география |
-| `reference.currency.read` / `.write` | валюты и курсы |
-| `reference.product.read` / `.write` / `.import` | номенклатура |
-| `reference.unit.read` / `.write` | единицы измерения |
-| `reference.list.read` / `.write` | перечисления |
+| `reference.company.read` / `.write` | companies |
+| `reference.branch.read` / `.write` | branches |
+| `reference.warehouse.read` / `.write` | warehouses |
+| `reference.geo.read` / `.write` | geography |
+| `reference.currency.read` / `.write` | currencies and rates |
+| `reference.product.read` / `.write` / `.import` | the product catalogue |
+| `reference.unit.read` / `.write` | units of measure |
+| `reference.list.read` / `.write` | enumerations |
 
-**Ограничение по области данных:** пользователь видит компании и филиалы своей
-области видимости. Применяется в `adapter/persistence`, а не в контроллере
-([ADR-0006](../../docs/02-decisions/ADR-0006-auth-model.md)).
+**The data-scope restriction:** a user sees the companies and branches within
+their scope of visibility. It is applied in `adapter/persistence`, not in the
+controller ([ADR-0006](../../docs/02-decisions/ADR-0006-auth-model.md)).
 
-География, валюты и единицы измерения областью не ограничиваются — они общие.
+Geography, currencies and units of measure are not scope-restricted — they are
+shared.
 
 ---
 
-## Страницы
+## Pages
 
-`pages/reference`. Типы — [06-frontend.md](../06-frontend.md#пять-типов-страниц).
+`pages/reference`. The types —
+[frontend rule 2](../06-frontend/rules/02-page-types.md).
 
-| Код | Маршрут | Тип | Право | Назначение |
+| Code | Route | Type | Permission | Purpose |
 |---|---|---|---|---|
-| `REF-COM-L` | `/reference/companies` | L | `reference.company.read` | список компаний |
-| `REF-COM-F` | `/reference/companies/:id` | F | `reference.company.write` | карточка-форма компании |
-| `REF-BRN-T` | `/reference/branches` | L | `reference.branch.read` | дерево филиалов с боковой панелью |
-| `REF-BRN-F` | `/reference/branches/:id` | F | `reference.branch.write` | форма филиала |
-| `REF-WHS-L` | `/reference/warehouses` | L | `reference.warehouse.read` | список складов |
-| `REF-WHS-F` | `/reference/warehouses/:id` | F | `reference.warehouse.write` | форма склада |
-| `REF-GEO-L` | `/reference/geo` | L | `reference.geo.read` | география: страны → регионы → города |
-| `REF-CUR-L` | `/reference/currencies` | L | `reference.currency.read` | валюты |
-| `REF-RAT-L` | `/reference/exchange-rates` | L | `reference.currency.read` | курсы с фильтром по датам |
-| `REF-PRD-L` | `/reference/products` | L | `reference.product.read` | номенклатура: дерево категорий + таблица |
-| `REF-PRD-F` | `/reference/products/:id` | F | `reference.product.write` | форма позиции |
-| `REF-PRD-I` | `/reference/products/import` | F | `reference.product.import` | загрузка номенклатуры файлом |
-| `REF-UOM-L` | `/reference/units` | L | `reference.unit.read` | единицы измерения |
-| `REF-LST-L` | `/reference/lists/:code?` | L | `reference.list.read` | **все** типовые перечисления, один экран |
+| `REF-COM-L` | `/reference/companies` | L | `reference.company.read` | the list of companies |
+| `REF-COM-F` | `/reference/companies/:id` | F | `reference.company.write` | the company card-form |
+| `REF-BRN-T` | `/reference/branches` | L | `reference.branch.read` | the branch tree with a side panel |
+| `REF-BRN-F` | `/reference/branches/:id` | F | `reference.branch.write` | the branch form |
+| `REF-WHS-L` | `/reference/warehouses` | L | `reference.warehouse.read` | the list of warehouses |
+| `REF-WHS-F` | `/reference/warehouses/:id` | F | `reference.warehouse.write` | the warehouse form |
+| `REF-GEO-L` | `/reference/geo` | L | `reference.geo.read` | geography: countries → regions → cities |
+| `REF-CUR-L` | `/reference/currencies` | L | `reference.currency.read` | currencies |
+| `REF-RAT-L` | `/reference/exchange-rates` | L | `reference.currency.read` | rates with a date filter |
+| `REF-PRD-L` | `/reference/products` | L | `reference.product.read` | the catalogue: the category tree + a table |
+| `REF-PRD-F` | `/reference/products/:id` | F | `reference.product.write` | the item form |
+| `REF-PRD-I` | `/reference/products/import` | F | `reference.product.import` | uploading the catalogue from a file |
+| `REF-UOM-L` | `/reference/units` | L | `reference.unit.read` | units of measure |
+| `REF-LST-L` | `/reference/lists/:code?` | L | `reference.list.read` | **all** standard enumerations, one screen |
 
-**14 страниц.** Последняя обслуживает все перечисления сразу: слева список
-справочников, справа элементы выбранного. Пятнадцать отдельных экранов для
-пятнадцати мелких справочников не создаются — это и есть практический результат
-[общего механизма перечислений](#общий-механизм-перечислений).
+**14 pages.** The last one serves all the enumerations at once: the list of
+reference lists on the left, the items of the selected one on the right. Fifteen
+separate screens for fifteen small reference lists are not created — that is the
+practical result of
+[the shared enumeration mechanism](#the-shared-enumeration-mechanism).
 
-### Компоненты домена
+### The domain's components
 
-Помимо дизайн-системы, домен добавляет три переиспользуемых компонента —
-их используют **все остальные** разделы приложения:
+Besides the design system, the domain adds three reusable components — used by
+**all the other** sections of the application:
 
-| Компонент | Где используется | Поведение |
+| Component | Where it is used | Behaviour |
 |---|---|---|
-| `BranchLookup` | почти каждый фильтр в системе | дерево с поиском, множественный выбор, «включая подчинённые» |
-| `ProductLookup` | договоры, склад, сервис | поиск по артикулу, наименованию, штрихкоду; ленивая загрузка |
-| `CurrencyAmountInput` | везде, где вводится сумма | сумма + валюта, точность по валюте |
+| `BranchLookup` | almost every filter in the system | a tree with search, multiple selection, "including subordinates" |
+| `ProductLookup` | contracts, warehouse, service | search by article number, name, barcode; lazy loading |
+| `CurrencyAmountInput` | everywhere an amount is entered | amount + currency, precision per currency |
 
-Они живут в `features/`, а не в `pages/reference`: страница ими не владеет.
+They live in `features/`, not in `pages/reference`: the page does not own them.
 
-### Состояния страниц
+### Page states
 
-Каждая страница обязана определять: загрузка (`Skeleton`), пусто
-(`EmptyState` с подсказкой), ошибка (`ErrorState` с кодом и `traceId`), нет
-права (`PermissionGate`).
+Every page must define: loading (`Skeleton`), empty (`EmptyState` with a hint),
+error (`ErrorState` with the code and the `traceId`), no permission
+(`PermissionGate`).
 
 ---
 
-## Аудит
+## Audit
 
-Решение владельца домена — что именно аудируется
-([03-database.md](../03-database.md#аудит)):
+The domain owner's decision on what exactly is audited
+([rule 11](../03-database/rules/11-audit.md)):
 
-| Таблица | Аудируется | Почему |
+| Table | Audited | Why |
 |---|---|---|
-| `company` | все изменения | влияет на всю финансовую отчётность |
-| `branch` | все изменения, особенно `parent_id` и `is_active` | перемещение узла меняет отчётность по подразделениям |
-| `warehouse` | все изменения | влияет на складской учёт |
-| `product` | изменения `article`, `unit_id`, `is_serial_tracked`, `is_active` | влияет на документы |
-| `exchange_rate` | только вставка | строки неизменяемы |
-| `reference_item` | изменения `code`, `is_active` | код используется в документах |
-| `country`, `region`, `city`, `currency`, `unit_of_measure` | **не аудируются** | меняются раз в годы, изменения безобидны |
+| `company` | all changes | affects all financial reporting |
+| `branch` | all changes, `parent_id` and `is_active` especially | moving a node changes the reporting by unit |
+| `warehouse` | all changes | affects warehouse accounting |
+| `product` | changes to `article`, `unit_id`, `is_serial_tracked`, `is_active` | affects documents |
+| `exchange_rate` | inserts only | the rows are immutable |
+| `reference_item` | changes to `code`, `is_active` | the code is used in documents |
+| `country`, `region`, `city`, `currency`, `unit_of_measure` | **not audited** | they change once in years, and the changes are harmless |
 
-Наименования (`*_name`) не аудируются: правка перевода не меняет смысла данных.
+The names (`*_name`) are not audited: editing a translation does not change the
+meaning of the data.
 
 ---
 
-## Открытые вопросы
+## Open questions
 
-| # | Вопрос | Влияет на |
+| # | Question | Affects |
 |---|---|---|
-| D1-Q1 | Нужен ли уровень «регион» в дереве филиалов как отдельный `kind`, или структура произвольной глубины? | `branch.kind`, `BranchTreeRule` |
-| D1-Q2 | Откуда берутся курсы валют — автоматическая загрузка из внешнего источника или ручной ввод? | `exchange_rate.source`, `ImportExchangeRatesHandler` |
-| D1-Q3 | Уникален ли артикул в пределах компании или всей системы? | `ux_product__company_id__article` |
-| D1-Q4 | Какие из мелких справочников действительно требуют собственных таблиц? | состав `reference_list` |
-| D1-Q5 | Нужен ли перевод наименований позиций номенклатуры? | `product_name` |
+| D1-Q1 | Is a "region" level needed in the branch tree as a separate `kind`, or is the structure of arbitrary depth? | `branch.kind`, `BranchTreeRule` |
+| D1-Q2 | Where do the exchange rates come from — automated loading from an external source or manual entry? | `exchange_rate.source`, `ImportExchangeRatesHandler` |
+| D1-Q3 | Is the article number unique within a company or across the whole system? | `ux_product__company_id__article` |
+| D1-Q4 | Which of the small reference lists genuinely require tables of their own? | the composition of `reference_list` |
+| D1-Q5 | Are translations of product item names needed? | `product_name` |
 
-Вопросы закрываются владельцем домена до начала реализации (Фаза 1). Каждый
-меняет схему, поэтому они закрываются **до** первой миграции, а не после.
+The questions are closed by the domain owner before implementation begins
+(Phase 1). Each of them changes the schema, so they are closed **before** the
+first migration, not after.

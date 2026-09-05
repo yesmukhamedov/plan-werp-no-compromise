@@ -1,106 +1,109 @@
 ---
 id: EPIC-005
-title: Инструмент миграции данных
-phase: 0 (подготовка) → 4 (исполнение)
-owner: не назначен
+title: The data migration tool
+phase: 0 (preparation) → 4 (execution)
+owner: not assigned
 status: todo
 depends_on: [EPIC-003]
 ---
 
-# EPIC-005. Инструмент миграции данных
+# EPIC-005. The data migration tool
 
-## Зачем
+## Why
 
-Код можно переписать заново, данные — нет. Перенос из Oracle и MySQL в
-PostgreSQL — самая рискованная техническая часть проекта
+Code can be rewritten from scratch, data cannot. Transferring from Oracle and
+MySQL into PostgreSQL is the project's riskiest technical part
 ([transition/05-data-migration.md](../transition/05-data-migration.md)).
 
-Инструмент — **код в репозитории**, а не разовый скрипт: он ревьюится, покрыт
-тестами, запускается одной командой и выполняется пять раз (четыре репетиции и
-боевой прогон).
+The tool is **code in the repository**, not a one-off script: it is reviewed,
+covered by tests, run with one command and executed five times (four rehearsals
+and the live run).
 
-## Когда
+## When
 
-Правила преобразования проектируются в Фазе 0 (на результатах
-[EPIC-003](EPIC-003-schema-inventory.md)); сам инструмент пишется после G1, когда
-известен стек и существует целевая схема; исполняется в Фазе 4.
+The transformation rules are designed in Phase 0 (on the results of
+[EPIC-003](EPIC-003-schema-inventory.md)); the tool itself is written after G1,
+once the stack is known and the target schema exists; it is executed in Phase 4.
 
-## Задачи
+## Tasks
 
-### TASK-0501. Спроектировать правила преобразования
+### TASK-0501. Design the transformation rules
 
-На основе таблицы соответствий из TASK-0308. Отдельно проработать:
+Based on the mapping table from TASK-0308. To be worked out separately:
 
-- пустая строка против `NULL` (Oracle не различает, PostgreSQL различает) — по
-  каждому текстовому столбцу;
-- даты и время → UTC с явным указанием исходной зоны;
-- деньги: точность и округление, с проверкой до копейки;
-- логические значения: `char(1)` / `number(1)` → `boolean`;
-- идентификаторы: сохранить или перевыпустить (по умолчанию — сохранить).
+- empty string versus `NULL` (Oracle does not distinguish them, PostgreSQL does)
+  — for every text column;
+- dates and times → UTC with the source zone stated explicitly;
+- money: precision and rounding, verified to the cent;
+- boolean values: `char(1)` / `number(1)` → `boolean`;
+- identifiers: preserve or reissue (the default is to preserve).
 
-**Приёмка:** по каждому столбцу целевой схемы есть правило и способ проверки.
+**Acceptance:** every column of the target schema has a rule and a verification
+method.
 
-### TASK-0502. Написать инструмент
+### TASK-0502. Write the tool
 
-Порядок переноса по графу зависимостей доменов, пакетная обработка, контрольные
-точки, подробное журналирование, измерение времени по шагам.
+The transfer order follows the domain dependency graph, with batch processing,
+checkpoints, detailed logging and per-step timing.
 
-**Приёмка:** запускается одной командой; идемпотентен; **не имеет прав записи в
-источник**; повторный запуск даёт тот же результат.
+**Acceptance:** it runs with one command; it is idempotent; it **has no write
+permission on the source**; a repeat run produces the same result.
 
-### TASK-0503. Реализовать сверку
+### TASK-0503. Implement the reconciliation
 
-Все уровни из [02-data-migration.md](../transition/05-data-migration.md#сверка):
-количественный, контрольные суммы, финансовый (нулевой допуск), ссылочный,
-выборочный, сценарный.
+All the levels from
+[02-data-migration.md](../transition/05-data-migration.md#reconciliation):
+counts, checksums, financial (zero tolerance), referential, sampled, scenario.
 
-**Приёмка:** сверка — часть прогона, а не отдельный шаг; отчёт формируется
-автоматически.
+**Acceptance:** the reconciliation is part of the run rather than a separate
+step; the report is produced automatically.
 
-> Инструмент, который перенёс данные и не проверил их, работу не выполнил.
+> A tool that moved the data and did not verify it has not done its job.
 
-### TASK-0504. Реализовать журнал отбраковки
+### TASK-0504. Implement the rejection log
 
-Каждая непереносимая строка — с причиной.
+Every row that cannot be transferred, with a reason.
 
-**Приёмка:** журнал формируется; пустой журнал тоже требует объяснения.
+**Acceptance:** the log is produced; an empty log also requires an explanation.
 
-### TASK-0505. Перенос файлов и вложений
+### TASK-0505. Transfer of files and attachments
 
-Отдельный трек: копирование заранее + до-синхронизация дельты в окно переезда;
-проверка целостности по контрольным суммам.
+A separate track: copying in advance + re-synchronizing the delta inside the
+cutover window; integrity verified by checksums.
 
-**Приёмка:** объём измерен; время копирования измерено; в окно переезда попадает
-только дельта.
+**Acceptance:** the volume is measured; the copying time is measured; only the
+delta falls inside the cutover window.
 
-### TASK-0506. Миграция учётных записей
+### TASK-0506. Migration of accounts
 
-Пароли не переносятся в открытом виде ни при каких условиях
+Passwords are never carried over in plaintext under any circumstances
 ([ADR-0006](../docs/02-decisions/ADR-0006-auth-model.md)).
 
-**Приёмка:** решение о схеме хеширования или принудительной смене паролей
-принято и реализовано.
+**Acceptance:** the decision on the hashing scheme or on a forced password change
+is taken and implemented.
 
-### TASK-0507. Пайплайн репетиции
+### TASK-0507. The rehearsal pipeline
 
-Развернуть чистый контур → восстановить копию промышленных данных → прогнать
-миграцию → сверить → опубликовать отчёт. По кнопке и по расписанию.
+Stand up a clean environment → restore a copy of production data → run the
+migration → reconcile → publish the report. By a button and on a schedule.
 
-**Приёмка:** пайплайн работает; отчёт публикуется автоматически.
+**Acceptance:** the pipeline works; the report is published automatically.
 
-### TASK-0508. Репетиции Р1–Р4
+### TASK-0508. Rehearsals R1–R4
 
-По [02-data-migration.md](../transition/05-data-migration.md#э5-репетиции).
+Per
+[02-data-migration.md](../transition/05-data-migration.md#s5-rehearsals).
 
-**Приёмка:** четыре репетиции проведены, каждая с отчётом; Р3 и Р4 успешны
-подряд; Р3 включала репетицию отката; время укладывается в окно с запасом ×2.
+**Acceptance:** four rehearsals carried out, each with a report; R3 and R4
+successful consecutively; R3 included a rollback rehearsal; the time fits inside
+the window with ×2 headroom.
 
-## Критерии закрытия эпика
+## Epic closure criteria
 
-- [ ] Правила преобразования покрывают все столбцы целевой схемы
-- [ ] Инструмент идемпотентен и не пишет в источник
-- [ ] Сверка встроена в прогон
-- [ ] Файлы и учётные записи мигрируют
-- [ ] Пайплайн репетиции работает
-- [ ] Р3 и Р4 пройдены подряд успешно
-- [ ] Время миграции укладывается в окно с запасом ×2
+- [ ] The transformation rules cover every column of the target schema
+- [ ] The tool is idempotent and does not write to the source
+- [ ] The reconciliation is built into the run
+- [ ] Files and accounts migrate
+- [ ] The rehearsal pipeline works
+- [ ] R3 and R4 have passed consecutively and successfully
+- [ ] The migration time fits inside the window with ×2 headroom

@@ -1,116 +1,155 @@
 ---
 id: EPIC-003
-title: Инвентаризация схемы БД
+title: Database schema inventory
 phase: 0
-owner: не назначен
+owner: not assigned
 status: todo
 gate: G0
 closes: [OQ-007]
 ---
 
-# EPIC-003. Инвентаризация схемы БД
+# EPIC-003. Database schema inventory
 
-## Зачем
+## Why
 
-523 сущности в Oracle, неизвестное число таблиц в MySQL легаси, две базы
-PostgreSQL. 289 нативных запросов и 43 `nativeQuery` привязывают код к диалекту
-Oracle. Переход на PostgreSQL ([ADR-0002](../docs/02-decisions/ADR-0002-database-postgresql.md))
-требует знать, что именно переезжает.
+523 entities in Oracle, an unknown number of tables in the legacy MySQL, two
+PostgreSQL databases. 289 native queries and 43 `nativeQuery` tie the code to the
+Oracle dialect. Moving to PostgreSQL
+([ADR-0002](../docs/02-decisions/ADR-0002-database-postgresql.md)) requires
+knowing exactly what is moving.
 
-Отдельно: **в Oracle может быть бизнес-логика, не видимая из кода приложения** —
-пакеты PL/SQL, триггеры, задания планировщика. Это потенциально крупный
-неоценённый объём ([R-05](../transition/11-risks.md#r-05)).
+Separately: **Oracle may hold business logic invisible from the application
+code** — PL/SQL packages, triggers, scheduler jobs. That is a potentially large
+unestimated volume ([R-05](../transition/11-risks.md#r-05)).
 
-## Результат
+## Result
 
-Каталог всех объектов данных с решением по каждому и правилами преобразования.
+A catalogue of all the data objects with a decision on each and with the
+transformation rules.
 
-## Задачи
+## State, 2026-09-03
 
-### TASK-0301. Каталогизировать таблицы
+The main database has been read object by object; the result is
+[transition/map/00-source-inventory.md](../transition/map/00-source-inventory.md).
 
-Для каждой: число строк, объём, годовой прирост, столбцы с типами, ключи,
-индексы, ограничения, домен-владелец по [карте](../product/02-domains.md).
+| Task | State |
+|---|---|
+| TASK-0301 catalogue the tables | **done** for Oracle: 449 tables, 3 views, 4,855 columns, 437 indexes, 57 foreign keys, ~148M rows. Annual growth is not yet measured |
+| TASK-0302 determine liveness | **half done**: the code side is measured — 119 of 449 tables are named in no Java repository ([map/01-schema-in-code.md](../transition/map/01-schema-in-code.md#1-table-coverage)). The access-statistics side is not started, and it is the half that turns a candidate into a verdict |
+| TASK-0303 objects other than tables | **done**; [OQ-007](../transition/12-open-questions.md#oq-007) is closed: 8 logic objects in total |
+| TASK-0304 assess data quality | started: the branch tree, the branch type values, the country/currency pair and the city names have been checked; the rest is not started |
+| TASK-0305 work through the native queries | not started |
+| TASK-0306 overlap with the first-generation monolith | **not started, and it is the blocker**: that database has no inventory at all |
+| TASK-0307 a decision on every table | done for 433 of 452 as a **proposal by the designer**; 19 have no decision because nobody knows what the tables are; every decision needs the owner's confirmation |
+| TASK-0308 design the target schema | table level done for all fourteen schemas ([the schema registry](../product/03-database/schemas/README.md)); column level done for D1 only |
+| TASK-0302a column liveness | **done for the mapped tables**: 120 of 3,626 columns are touched by nothing, plus 1,229 columns in tables no entity maps |
+| TASK-0309 decode the names | **done** for the decodable ones ([GLOSSARY.md](../GLOSSARY.md#inherited-names)); 8 names remain that need a person who knows |
 
-**Приёмка:** каталог полон; суммы сходятся с размером базы.
+Three facts change the plan:
 
-### TASK-0302. Определить живость таблиц
+- the risk of hidden logic in the database ([R-05](../transition/11-risks.md#r-05))
+  did not materialize — there is nearly nothing to move;
+- only **49 of 452 objects** map one-to-one onto a target table. The migration
+  is a transformation, not a transfer, and the effort belongs in the estimate as
+  such ([10-estimates.md](../transition/10-estimates.md));
+- the mapping tables that TASK-0308 needs — number to readable value, per column
+  — **already exist as 572 constants inside the entity classes** and have been
+  extracted. They need confirming against the data, not inventing. The same scan
+  found 119 hardcoded production row identifiers and 22 budget tables that no
+  repository mentions
+  ([map/01-schema-in-code.md](../transition/map/01-schema-in-code.md)).
 
-По статистике обращений (данные из TASK-0106) и по анализу кода.
+## Tasks
 
-**Приёмка:** каждая таблица помечена как читаемая / записываемая / мёртвая, с
-указанием периода наблюдения.
+### TASK-0301. Catalogue the tables
 
-> Мёртвые таблицы за 12 лет есть наверняка. Их отсев — самый дешёвый способ
-> сократить объём миграции.
+For each: the row count, the size, the annual growth, the columns with their
+types, the keys, the indexes, the constraints, and the owning domain per the
+[map](../product/02-domains.md).
 
-### TASK-0303. Инвентаризовать объекты БД, кроме таблиц
+**Acceptance:** the catalogue is complete; the totals match the database's size.
 
-Представления, триггеры, последовательности, хранимые процедуры и пакеты,
-задания планировщика БД, права доступа, синонимы.
+### TASK-0302. Determine which tables are live
 
-**Приёмка:** [OQ-007](../transition/12-open-questions.md#oq-007) закрыт.
-Если бизнес-логика в БД найдена — её объём оценён, и оценка Фазы 2 пересчитана.
+From access statistics (the data from TASK-0106) and from code analysis.
 
-### TASK-0304. Оценить качество данных
+**Acceptance:** every table is marked read / written / dead, stating the
+observation period.
 
-По каждой значимой таблице: доля `NULL`, нарушения ссылочной целостности,
-дубликаты, значения вне допустимого диапазона, «магические» значения вместо
-`NULL`, некорректные даты.
+> After 12 years there are certainly dead tables. Weeding them out is the
+> cheapest way to reduce the migration's volume.
 
-**Приёмка:** отчёт о качестве данных; классы проблем перечислены с оценкой
-масштаба.
+### TASK-0303. Inventory the database objects other than tables
 
-> Этот отчёт определяет объём работ по очистке. Чем раньше он получен, тем
-> раньше очистка начинается **в легаси** — где у неё есть время и владелец.
+Views, triggers, sequences, stored procedures and packages, DB scheduler jobs,
+access permissions, synonyms.
 
-### TASK-0305. Разобрать нативные запросы
+**Acceptance:** [OQ-007](../transition/12-open-questions.md#oq-007) is closed. If
+business logic is found in the database, its volume is estimated and the Phase 2
+estimate is recalculated.
 
-Все 289 `createNativeQuery` и 43 `nativeQuery = true`: что делают, какие
-возможности Oracle используют, как переносятся на PostgreSQL.
+### TASK-0304. Assess data quality
 
-**Приёмка:** по каждому запросу — решение: переписать средствами нового слоя
-доступа, переписать на SQL PostgreSQL, отказаться.
+For every significant table: the share of `NULL`, referential integrity
+violations, duplicates, values outside the acceptable range, "magic" values
+instead of `NULL`, invalid dates.
 
-### TASK-0306. Выяснить пересечение с MySQL легаси
+**Acceptance:** a data-quality report; the classes of problem are listed with an
+estimate of their scale.
 
-Какие данные хранятся только в MySQL, какие дублируются в Oracle, как они
-согласованы.
+> This report determines the volume of cleansing work. The earlier it is
+> obtained, the earlier the cleansing starts **in the legacy** — where it has
+> time and an owner.
 
-**Приёмка:** [OQ-012](../transition/12-open-questions.md#oq-012) закрыт
-в части данных; объём дополнительной миграции оценён.
+### TASK-0305. Work through the native queries
 
-### TASK-0307. Принять решение по каждой таблице
+All 289 `createNativeQuery` and 43 `nativeQuery = true`: what they do, which
+Oracle features they use, and how they carry over to PostgreSQL.
 
-Перенести / свести с другой / не переносить.
+**Acceptance:** for every query a decision: rewrite it using the new data-access
+layer, rewrite it in PostgreSQL SQL, or drop it.
 
-**Приёмка:** ноль таблиц без решения. «Перенесём на всякий случай» решением не
-считается.
+### TASK-0306. Establish the overlap with the legacy MySQL
 
-### TASK-0308. Спроектировать целевую схему
+Which data is stored only in MySQL, which is duplicated in Oracle, and how they
+are kept consistent.
 
-По правилам [product/03-database.md](../product/03-database.md):
-схема на домен, именование без транслитерации, обязательные столбцы, типы.
+**Acceptance:** [OQ-012](../transition/12-open-questions.md#oq-012) is closed as
+far as the data is concerned; the volume of the additional migration is
+estimated.
 
-**Приёмка:** таблица соответствий «источник → цель» на уровне столбца, с
-правилом преобразования и способом проверки. Она же — вход для
+### TASK-0307. Take a decision on every table
+
+Migrate / consolidate with another / do not migrate.
+
+**Acceptance:** zero tables without a decision. "Let us carry it over just in
+case" does not count as a decision.
+
+### TASK-0308. Design the target schema
+
+Per the rules of [product/03-database/](../product/03-database/README.md): a schema
+per domain, naming without transliteration, the mandatory columns, the types.
+
+**Acceptance:** a "source → target" mapping table at the column level, with the
+transformation rule and the verification method. It is also the input for
 [EPIC-005](EPIC-005-data-migration.md).
 
-### TASK-0309. Расшифровать унаследованные имена
+### TASK-0309. Decode the inherited names
 
-`bukrs`, `matnr`, `lifnr`, `werks` и прочие сокращения — в
-[GLOSSARY.md](../GLOSSARY.md) с осмысленными заменами.
+`bukrs`, `matnr`, `lifnr`, `werks` and the other abbreviations — into
+[GLOSSARY.md](../GLOSSARY.md) with meaningful replacements.
 
-**Приёмка:** ни одного непонятного имени в целевой схеме; глоссарий пополнен.
+**Acceptance:** not a single unintelligible name in the target schema; the
+glossary is extended.
 
-## Критерии закрытия эпика
+## Epic closure criteria
 
-- [ ] Каталог таблиц полон
-- [ ] Живость определена по данным
-- [ ] OQ-007 закрыт, объём логики в БД оценён
-- [ ] Отчёт о качестве данных получен
-- [ ] Все нативные запросы разобраны
-- [ ] OQ-012 закрыт в части данных
-- [ ] По каждой таблице принято решение
-- [ ] Целевая схема спроектирована, соответствия описаны
-- [ ] Унаследованные имена расшифрованы
+- [ ] The table catalogue is complete
+- [ ] Liveness is determined from data
+- [ ] OQ-007 is closed and the volume of logic in the database is estimated
+- [ ] The data-quality report has been obtained
+- [ ] All the native queries have been worked through
+- [ ] OQ-012 is closed as far as the data is concerned
+- [ ] A decision has been taken on every table
+- [ ] The target schema is designed and the mappings are described
+- [ ] The inherited names are decoded

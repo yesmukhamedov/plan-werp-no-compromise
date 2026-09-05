@@ -1,79 +1,84 @@
 ---
 id: ADR-0007
-title: Структура репозиториев
-status: Предложено
+title: Repository layout
+status: Proposed
 date: 2026-09-03
-deadline: гейт G0
+deadline: gate G0
 ---
 
-# ADR-0007. Структура репозиториев
+# ADR-0007. Repository layout
 
-## Контекст
+## Context
 
-Сейчас код разнесён по семи репозиториям без общего принципа: главный бэкенд
-(семь модулей Gradle), фронтенд, два отдельных сервиса (один из которых
-дублирует модуль главного бэкенда), легаси-монолит, шлюз и его предшественник.
-Общей версии у системы нет — все модули главного бэкенда имеют версию `0.0.1`
-одновременно. Изменение, затрагивающее бэкенд и фронтенд, требует двух PR без
-связи между ними.
+Today the code is spread across seven repositories with no common principle: the
+main backend (seven Gradle modules), the frontend, two separate services (one of
+which duplicates a module of the main backend), the legacy monolith, the gateway
+and its predecessor. The system has no common version — all modules of the main
+backend carry version `0.0.1` at the same time. A change touching the backend and
+the frontend requires two PRs with no link between them.
 
-## Варианты
+## Options
 
-### A. Монорепозиторий на весь новый WERP
+### A. A monorepo for the whole new WERP
 
-Бэкенд, фронтенд, спецификация API, инфраструктура как код, инструменты — в
-одном репозитории.
+The backend, the frontend, the API specification, infrastructure as code and the
+tooling in one repository.
 
-- **За:** атомарное изменение контракта вместе с обеими сторонами; одна версия
-  системы; общий CI и общие правила; невозможно рассинхронизировать
-  спецификацию и реализацию; при big bang, где вся система выходит одним
-  релизом, единая версия соответствует реальности.
-- **Против:** нужен инструмент сборки, понимающий зависимости между частями;
-  права доступа гранулярнее настраиваются; репозиторий крупный.
+- **For:** an atomic change to the contract together with both sides; one system
+  version; shared CI and shared rules; it is impossible for the specification and
+  the implementation to drift apart; under a big bang, where the whole system
+  ships as one release, a single version matches reality.
+- **Against:** a build tool that understands the dependencies between the parts
+  is needed; access rights are configured at a coarser granularity; the
+  repository is large.
 
-### B. Репозиторий на компонент
+### B. A repository per component
 
-- **За:** привычно, независимые циклы выпуска.
-- **Против:** независимые циклы выпуска при big bang не нужны — выпуск один;
-  контракт неизбежно расходится с реализацией; повторяется ровно та ситуация,
-  из которой выбираемся.
+- **For:** familiar, independent release cycles.
+- **Against:** independent release cycles are not needed under a big bang — there
+  is one release; the contract inevitably drifts from the implementation; it
+  reproduces exactly the situation we are climbing out of.
 
-## Решение (предлагается)
+## Decision (proposed)
 
-**Вариант A — монорепозиторий**, со следующей структурой:
+**Option A — a monorepo**, with the following structure:
 
 ```
 werp/
-  api/                 спецификация API — источник истины (ADR-0005)
-  backend/             [STACK] модули по доменам (ADR-0008)
-  frontend/            веб-приложение (ADR-0004)
-  db/                  миграции схемы, эталонные наборы данных
-  migration/           инструменты переноса данных из легаси (Фаза 4)
-  ops/                 инфраструктура как код, манифесты, конфигурация контуров
-  tools/               скрипты разработчика, генераторы, проверки
-  docs/                ADR и документация новой системы
+  api/                 the API specification — the source of truth (ADR-0005)
+  backend/             [STACK] modules by domain (ADR-0008)
+  frontend/            the web application (ADR-0004)
+  db/                  schema migrations, reference data sets
+  migration/           tools for moving data out of the legacy (Phase 4)
+  ops/                 infrastructure as code, manifests, environment configuration
+  tools/               developer scripts, generators, checks
+  docs/                ADRs and documentation of the new system
 ```
 
-`bridge` остаётся отдельным репозиторием: он не переписывается, живёт по своему
-циклу и намеренно изолирован от внутренностей ([CTX-04](../00-context/04-current-integrations.md)).
+`bridge` stays a separate repository: it is not rewritten, lives on its own cycle
+and is deliberately isolated from the internals
+([CTX-04](../00-context/04-current-integrations.md)).
 
-Легаси-репозитории не трогаются и после Фазы 5 архивируются (не удаляются) —
-они остаются источником ответов на вопрос «а как это работало раньше».
+The legacy repositories are left untouched and, after Phase 5, archived (not
+deleted) — they remain the source of answers to the question "how did this work
+before?".
 
-## Правила
+## Rules
 
-- Одна версия на всю систему; тег ставится один раз на весь монорепозиторий.
-- CI строит только затронутое изменением, но проверка правил — общая для всего.
-- Владение частями закрепляется файлом владельцев кода; ревью от владельца
-  затронутой области обязательно.
-- Ветка `main` защищена, прямой push невозможен технически.
+- One version for the whole system; a tag is applied once to the whole monorepo.
+- CI builds only what the change touched, but the rule checks are common to
+  everything.
+- Ownership of the parts is recorded in a code-owners file; a review from the
+  owner of the affected area is mandatory.
+- The `main` branch is protected; a direct push is technically impossible.
 
-## Последствия
+## Consequences
 
-- Требуется инструмент сборки монорепозитория и настройка кэширования, иначе CI
-  станет медленным и его начнут обходить — а обойдённый CI не выполняет
+- A monorepo build tool and cache configuration are required, otherwise CI
+  becomes slow and people start bypassing it — and a bypassed CI does not satisfy
   [NC-13](../01-principles/01-no-compromise.md#nc-13).
-- Порог входа для нового разработчика ниже: одна инструкция «как запустить всё».
-- План (этот репозиторий) остаётся отдельным: он про то, как строить систему, а
-  не часть системы. После завершения проекта он архивируется вместе с
-  ретроспективой.
+- The barrier to entry for a new developer is lower: a single instruction for
+  "how to run everything".
+- The plan (this repository) stays separate: it is about how to build the system,
+  not a part of the system. Once the project is finished it is archived together
+  with the retrospective.

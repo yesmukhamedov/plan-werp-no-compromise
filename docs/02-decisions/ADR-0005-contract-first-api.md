@@ -1,78 +1,85 @@
 ---
 id: ADR-0005
 title: Contract-first API
-status: Предложено
+status: Proposed
 date: 2026-09-03
-deadline: гейт G0
+deadline: gate G0
 ---
 
 # ADR-0005. Contract-first API
 
-## Контекст
+## Context
 
-Сейчас спецификация API порождается из кода (springfox-swagger 2.9.2) — то есть
-описание всегда следует за реализацией и не может быть источником истины.
-Следствия видны в текущей системе: 410 `@RequestMapping` вперемешку с 1 286
-типизированными аннотациями, неединообразные форматы ответов и ошибок, набор
-путей, часть из которых вынесена в конфигурацию (`routes:` в `application.yml`),
-а часть — зашита в аннотациях.
+Today the API specification is generated from the code (springfox-swagger
+2.9.2) — meaning the description always trails the implementation and cannot be
+the source of truth. The consequences are visible in the current system: 410
+`@RequestMapping` mixed in with 1,286 typed annotations, non-uniform response and
+error formats, a set of paths some of which are moved into the configuration
+(`routes:` in `application.yml`) while others are hardcoded in annotations.
 
-При стратегии big bang контракт особенно важен: фронтенд и бэкенд пишутся
-параллельно, но встречаются только в конце. Без общего контракта они встретятся
-плохо.
+Under a big bang strategy the contract matters especially: the frontend and the
+backend are written in parallel but meet only at the end. Without a shared
+contract they will meet badly.
 
-Отдельно: мобильное приложение обязано получить контракт **1:1** с текущим
-([C-06](../00-context/03-constraints.md#c-06-мобильное-приложение--отдельный-клиент-вне-этого-плана)).
-Это невозможно проверить без формального описания того, что есть сейчас.
+Separately: the mobile app must receive a contract that is **1:1** with the
+current one
+([C-06](../00-context/03-constraints.md#c-06-the-mobile-app--a-separate-client-outside-this-plan)).
+That is impossible to verify without a formal description of what exists today.
 
-## Решение (предлагается)
+## Decision (proposed)
 
-**Спецификация — источник истины. Код порождается из неё, а не наоборот.**
+**The specification is the source of truth. The code is generated from it, not
+the other way round.**
 
-1. Контракт описывается в машиночитаемом формате (OpenAPI для HTTP) и живёт в
-   отдельном репозитории или каталоге, версионируется независимо от реализации.
-2. Из спецификации генерируются: серверные интерфейсы/модели `[STACK]`,
-   клиент для фронтенда, клиент для тестов контракта.
-3. Ручное написание HTTP-обёрток и DTO запрещено — они генерируются.
-4. Изменение контракта — отдельный PR, который ревьюят обе стороны.
-   Ломающее изменение требует новой версии, а не правки существующей.
-5. Единый формат ошибки на всю систему; коды ошибок — часть контракта.
-6. Единый формат пагинации, сортировки и фильтрации для всех списков.
+1. The contract is described in a machine-readable format (OpenAPI for HTTP) and
+   lives in a separate repository or directory, versioned independently of the
+   implementation.
+2. Generated from the specification: server interfaces/models `[STACK]`, the
+   client for the frontend, the client for contract tests.
+3. Writing HTTP wrappers and DTOs by hand is forbidden — they are generated.
+4. A contract change is a separate PR reviewed by both sides. A breaking change
+   requires a new version rather than an edit to the existing one.
+5. A single error format for the whole system; the error codes are part of the
+   contract.
+6. A single pagination, sorting and filtering format for all lists.
 
-## Что это даёт при big bang
+## What this gives under a big bang
 
-- Фронтенд начинает работу против сгенерированной заглушки, не дожидаясь
-  бэкенда. Это единственный способ вести Фазы 2 и 3 параллельно.
-- Контракт мобильного приложения фиксируется формально и проверяется тестом, а
-  не «мы вроде ничего не меняли».
-- Инвентаризация текущих 1 286 эндпойнтов ([EPIC-002](../../backlog/EPIC-002-contract-inventory.md))
-  даёт не список, а исполняемую спецификацию — она же становится критерием
-  полноты новой системы.
+- The frontend starts working against a generated stub without waiting for the
+  backend. That is the only way to run Phases 2 and 3 in parallel.
+- The mobile app's contract is fixed formally and verified by a test, rather than
+  by "we do not think we changed anything".
+- The inventory of the current 1,286 endpoints
+  ([EPIC-002](../../backlog/EPIC-002-contract-inventory.md)) yields not a list
+  but an executable specification — which then becomes the completeness criterion
+  for the new system.
 
-## Правила именования и формы
+## Naming and shape rules
 
-Фиксируются один раз и проверяются линтером спецификации:
+Fixed once and checked by a specification linter:
 
-- Ресурсы — существительные во множественном числе; действия — HTTP-методы, а не
-  глаголы в пути. Текущие пути вида `.../FETCH_USERS`, `.../dmulstAll`,
-  `.../checkAccess` не воспроизводятся.
-- Идентификаторы в пути; фильтры в строке запроса; тело — только для изменения
-  состояния.
-- Списки всегда постраничные; эндпойнта, возвращающего всё, не существует
-  ([01-principles/03-engineering-standards.md](../01-principles/03-engineering-standards.md#производительность)).
-- Даты и время — ISO 8601 в UTC.
-- Деньги — строка с десятичным представлением и код валюты рядом; никогда не
-  число с плавающей точкой.
-- Каждый эндпойнт объявляет требуемое право (NC-12) прямо в спецификации.
+- Resources are plural nouns; actions are HTTP methods, not verbs in the path.
+  Current paths of the form `.../FETCH_USERS`, `.../dmulstAll`,
+  `.../checkAccess` are not reproduced.
+- Identifiers in the path; filters in the query string; a body only for changing
+  state.
+- Lists are always paginated; an endpoint that returns everything does not exist
+  ([01-principles/03-engineering-standards.md](../01-principles/03-engineering-standards.md#performance)).
+- Dates and times — ISO 8601 in UTC.
+- Money — a string with a decimal representation plus the currency code next to
+  it; never a floating-point number.
+- Every endpoint declares the permission it requires (NC-12) right in the
+  specification.
 
-## Последствия
+## Consequences
 
-- Появляется работа Фазы 0: описать существующий контракт формально
-  ([EPIC-002](../../backlog/EPIC-002-contract-inventory.md)). Это не бюрократия —
-  это единственный способ узнать, что именно мы обязаны сохранить.
-- В CI появляется проверка совместимости контракта: ломающее изменение
-  обнаруживается автоматически.
-- Тесты контракта становятся отдельным слоем в
-  [стратегии тестирования](../../product/09-quality.md).
-- Требуется линтер спецификации с правилами из этого ADR, иначе через год
-  контракт станет таким же разнородным, как текущий.
+- Phase 0 work appears: describe the existing contract formally
+  ([EPIC-002](../../backlog/EPIC-002-contract-inventory.md)). This is not
+  bureaucracy — it is the only way to learn what exactly we are obliged to
+  preserve.
+- A contract-compatibility check appears in CI: a breaking change is detected
+  automatically.
+- Contract tests become a separate layer in the
+  [testing strategy](../../product/09-quality.md).
+- A specification linter with the rules from this ADR is required, otherwise in a
+  year's time the contract will be as heterogeneous as the current one.

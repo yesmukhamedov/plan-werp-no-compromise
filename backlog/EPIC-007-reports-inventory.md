@@ -1,99 +1,103 @@
 ---
 id: EPIC-007
-title: Инвентаризация отчётов
+title: Report inventory
 phase: 0
-owner: не назначен
+owner: not assigned
 status: todo
 gate: G0
 ---
 
-# EPIC-007. Инвентаризация отчётов
+# EPIC-007. Report inventory
 
-## Зачем
+## Why
 
-Отчёты — самая недооценённая часть объёма. Они рассеяны по god-классам
-(`FinanceReportRestController` — 5 366 строк) и по отчётным методам внутри
-доменных сервисов; часть формируется **в браузере** тремя разными библиотеками.
-Сколько их всего и какими пользуются — неизвестно.
+Reports are the most underestimated part of the volume. They are scattered across
+god classes (`FinanceReportRestController` — 5,366 lines) and across reporting
+methods inside domain services; some are produced **in the browser** by three
+different libraries. How many there are in total and which of them are used is
+unknown.
 
-Отчёты одновременно:
+Reports are simultaneously:
 
-- самая заметная для пользователя часть системы;
-- самая чувствительная к расхождениям при сверке;
-- самая вероятная область мёртвого кода (за 12 лет отчёты создаются и
-  забываются).
+- the part of the system most visible to the user;
+- the part most sensitive to divergences during the reconciliation;
+- the most likely area of dead code (over 12 years reports get created and
+  forgotten).
 
-## Результат
+## Result
 
-Реестр отчётов с решением по каждому и оценкой трудоёмкости.
+A registry of reports with a decision on each and an effort estimate.
 
-## Задачи
+## Tasks
 
-### TASK-0701. Собрать перечень отчётов
+### TASK-0701. Compile the list of reports
 
-Все источники: отчётные контроллеры, отчётные методы доменных сервисов,
-формирование в браузере, печатные формы, регулярные выгрузки.
+All the sources: reporting controllers, reporting methods of domain services,
+generation in the browser, printable forms, regular exports.
 
-**Приёмка:** перечень с указанием источника, параметров, формата вывода,
-предполагаемых потребителей.
+**Acceptance:** a list stating the source, the parameters, the output format and
+the presumed consumers.
 
-### TASK-0702. Определить живость
+### TASK-0702. Determine liveness
 
-По данным сбора из TASK-0106: какие отчёты запускались за период наблюдения,
-кем, как часто.
+From the data collected in TASK-0106: which reports were run during the
+observation period, by whom, how often.
 
-**Приёмка:** каждый отчёт помечен как живой / мёртвый / сезонный, с указанием
-периода наблюдения.
+**Acceptance:** every report is marked live / dead / seasonal, stating the
+observation period.
 
-> Сезонные отчёты (годовые, квартальные) не попадут в короткое окно наблюдения.
-> Их нужно выявлять отдельно, опросом, а не по статистике, — иначе живой
-> годовой отчёт будет отмечен мёртвым.
+> Seasonal reports (annual, quarterly) will not fall inside a short observation
+> window. They have to be identified separately, by interview rather than from
+> statistics — otherwise a live annual report will be marked dead.
 
-### TASK-0703. Принять решение по каждому отчёту
+### TASK-0703. Take a decision on every report
 
-Переносим / сводим с другим / не переносим.
+Migrate / consolidate with another / do not migrate.
 
-**Приёмка:** ноль отчётов без решения, подписанного владельцем домена.
+**Acceptance:** zero reports without a decision signed off by the domain owner.
 
-> Отсев мёртвых отчётов — один из самых дешёвых способов сократить объём
-> проекта. Делается один раз, здесь.
+> Weeding out the dead reports is one of the cheapest ways to reduce the
+> project's volume. It is done once, here.
 
-### TASK-0704. Классифицировать по сложности
+### TASK-0704. Classify by complexity
 
-Простой список / отчёт с расчётом / сводный / печатная форма; синхронный или
-асинхронный по времени выполнения.
+A simple list / a report with calculations / a summary report / a printable form;
+synchronous or asynchronous by execution time.
 
-**Приёмка:** классификация полна; для каждого класса определён подход к
-реализации.
+**Acceptance:** the classification is complete; for every class the
+implementation approach is defined.
 
-### TASK-0705. Оценить трудоёмкость на выборке
+### TASK-0705. Estimate the effort on a sample
 
-Оценить пять отчётов разных классов детально; экстраполировать на реестр.
+Estimate five reports of different classes in detail; extrapolate to the
+registry.
 
-**Приёмка:** оценка Фазы 2 в части отчётов уточнена в
-[07-estimates.md](../transition/10-estimates.md); [R-14](../transition/11-risks.md#r-14)
-переоценён.
+**Acceptance:** the Phase 2 estimate for reports is refined in
+[07-estimates.md](../transition/10-estimates.md);
+[R-14](../transition/11-risks.md#r-14) is reassessed.
 
-### TASK-0706. Зафиксировать эталоны для сверки
+### TASK-0706. Pin down the reference values for the reconciliation
 
-Для каждого переносимого отчёта — эталонный результат на фиксированных данных,
-для сверки паритета с нулевым допуском.
+For every report being carried over — the reference result on fixed data, for the
+parity reconciliation with zero tolerance.
 
-**Приёмка:** эталоны сохранены и версионированы.
+**Acceptance:** the reference values are stored and versioned.
 
-### TASK-0707. Собрать требования к отчётной подсистеме
+### TASK-0707. Collect the requirements on the reporting subsystem
 
-Что должна уметь платформа ([ADR-0009](../docs/02-decisions/ADR-0009-reporting-and-exports.md)):
-форматы, шаблоны, локализация, асинхронность, доставка, права.
+What the platform must be able to do
+([ADR-0009](../docs/02-decisions/ADR-0009-reporting-and-exports.md)): formats,
+templates, localization, asynchrony, delivery, permissions.
 
-**Приёмка:** требования переданы в [Фазу 1](../transition/plan/02-phase-1-platform.md).
+**Acceptance:** the requirements are handed over to
+[Phase 1](../transition/plan/02-phase-1-platform.md).
 
-## Критерии закрытия эпика
+## Epic closure criteria
 
-- [ ] Перечень отчётов полон, включая формируемые в браузере
-- [ ] Живость определена, сезонные выявлены опросом
-- [ ] По каждому отчёту принято решение
-- [ ] Классификация выполнена
-- [ ] Оценка трудоёмкости уточнена на выборке
-- [ ] Эталоны для сверки зафиксированы
-- [ ] Требования к отчётной подсистеме переданы в Фазу 1
+- [ ] The list of reports is complete, those produced in the browser included
+- [ ] Liveness is determined and the seasonal ones identified by interview
+- [ ] A decision has been taken on every report
+- [ ] The classification is done
+- [ ] The effort estimate is refined on a sample
+- [ ] The reference values for the reconciliation are pinned down
+- [ ] The requirements on the reporting subsystem are handed over to Phase 1

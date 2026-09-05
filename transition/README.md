@@ -1,115 +1,117 @@
 ---
 id: TRANS
-title: Переход — от существующего к продукту
+title: Transition — from what exists to the product
 status: draft
 ---
 
-# Переход
+# Transition
 
-**Здесь описано только движение.** Что во что превращается: какая существующая
-таблица как изменится, какой класс чем заменяется, какой эндпойнт на какой,
-какая страница на какую. И как это движение организовано: фазы, миграция
-данных, переезд, откат, риски.
+**Only the movement is described here.** What turns into what: how a given
+existing table changes, which class is replaced by which, which endpoint by which,
+which page by which. And how that movement is organized: phases, data migration,
+cutover, rollback, risks.
 
-Целевое состояние здесь **не описывается** — оно в
-[product/](../product/README.md). Этот раздел на него ссылается.
+The target state is **not described** here — it is in
+[product/](../product/README.md). This section links to it.
 
-Разделение проверяется просто: если из документа убрать все упоминания легаси и
-он останется осмысленным — он в неправильном разделе.
+The split is easy to check: if you remove every mention of legacy from a document
+and it still makes sense — it is in the wrong section.
 
-После завершения проекта `transition/` архивируется, `product/` остаётся
-документацией системы.
+Once the project is finished, `transition/` is archived and `product/` remains
+the system's documentation.
 
 ---
 
-## Читательский маршрут
+## Reading route
 
-| Кто | Что читать |
+| Who | What to read |
 |---|---|
-| Впервые о проекте | [plan/00-roadmap.md](plan/00-roadmap.md) → [10-estimates.md](10-estimates.md) → [11-risks.md](11-risks.md) |
-| Проектировщик данных | [01-database-mapping.md](01-database-mapping.md) → [05-data-migration.md](05-data-migration.md) |
-| Разработчик домена | [02-backend-mapping.md](02-backend-mapping.md) → [03-api-mapping.md](03-api-mapping.md) → [map/](map/README.md) |
-| Разработчик фронтенда | [04-frontend-mapping.md](04-frontend-mapping.md) |
-| Руководитель переезда | [07-cutover.md](07-cutover.md) → [08-rollback.md](08-rollback.md) → [06-parity-verification.md](06-parity-verification.md) |
+| New to the project | [plan/00-roadmap.md](plan/00-roadmap.md) → [10-estimates.md](10-estimates.md) → [11-risks.md](11-risks.md) |
+| Data designer | [01-database-mapping.md](01-database-mapping.md) → [05-data-migration.md](05-data-migration.md) |
+| Domain developer | [02-backend-mapping.md](02-backend-mapping.md) → [03-api-mapping.md](03-api-mapping.md) → [map/](map/README.md) |
+| Frontend developer | [04-frontend-mapping.md](04-frontend-mapping.md) |
+| Cutover lead | [07-cutover.md](07-cutover.md) → [08-rollback.md](08-rollback.md) → [06-parity-verification.md](06-parity-verification.md) |
 
-## Состав
+## Contents
 
-### Карты соответствий
+### Mappings
 
-Четыре документа, связывающие существующее с целевым. Каждый состоит из
-**правил** (как выполняется соответствие этого типа) и **карты** (что во что
-переходит).
+Four documents linking what exists to what is targeted. Each consists of
+**rules** (how a mapping of this type is performed) and the **map** (what turns
+into what).
 
-| Документ | Связывает | С чем в продукте |
+| Document | Links | To what in the product |
 |---|---|---|
-| [01-database-mapping.md](01-database-mapping.md) | таблица → таблица, колонка → колонка | [product/03-database.md](../product/03-database.md) |
-| [02-backend-mapping.md](02-backend-mapping.md) | класс → модуль и класс | [product/04-backend.md](../product/04-backend.md) |
-| [03-api-mapping.md](03-api-mapping.md) | эндпойнт → эндпойнт | [product/05-api.md](../product/05-api.md) |
-| [04-frontend-mapping.md](04-frontend-mapping.md) | страница → страница | [product/06-frontend.md](../product/06-frontend.md) |
+| [01-database-mapping.md](01-database-mapping.md) | table → table, column → column | [product/03-database/](../product/03-database/README.md) |
+| [02-backend-mapping.md](02-backend-mapping.md) | class → module and class | [04-backend/](../product/04-backend/README.md) |
+| [03-api-mapping.md](03-api-mapping.md) | endpoint → endpoint | [05-api/](../product/05-api/README.md) |
+| [04-frontend-mapping.md](04-frontend-mapping.md) | page → page | [06-frontend/](../product/06-frontend/README.md) |
 
-Полные карты по доменам — [map/](map/README.md), по файлу на домен, парно к
+The full maps per domain — [map/](map/README.md), one file per domain, paired with
 [product/spec/](../product/spec/README.md).
 
-### Миграция и переезд
+### Migration and cutover
 
-| Документ | О чём |
+| Document | About |
 |---|---|
-| [05-data-migration.md](05-data-migration.md) | инструмент переноса данных, репетиции, сверка |
-| [06-parity-verification.md](06-parity-verification.md) | теневой прогон, доказательство эквивалентности |
-| [07-cutover.md](07-cutover.md) | процедура переезда |
-| [08-rollback.md](08-rollback.md) | откат |
-| [09-freeze-policy.md](09-freeze-policy.md) | заморозка легаси, delta backlog |
+| [05-data-migration.md](05-data-migration.md) | the data transfer tool, rehearsals, reconciliation |
+| [06-parity-verification.md](06-parity-verification.md) | the shadow run, proving equivalence |
+| [07-cutover.md](07-cutover.md) | the cutover procedure |
+| [08-rollback.md](08-rollback.md) | rollback |
+| [09-freeze-policy.md](09-freeze-policy.md) | the legacy freeze, the delta backlog |
 
-### Организация
+### Organization
 
-| Документ | О чём |
+| Document | About |
 |---|---|
-| [plan/00-roadmap.md](plan/00-roadmap.md) | фазы и гейты |
-| [plan/](plan/00-roadmap.md) | шесть фаз подробно |
-| [10-estimates.md](10-estimates.md) | оценка трудоёмкости |
-| [11-risks.md](11-risks.md) | реестр рисков |
-| [12-open-questions.md](12-open-questions.md) | открытые вопросы |
+| [plan/00-roadmap.md](plan/00-roadmap.md) | phases and gates |
+| [plan/](plan/00-roadmap.md) | the six phases in detail |
+| [10-estimates.md](10-estimates.md) | the effort estimate |
+| [11-risks.md](11-risks.md) | the risk register |
+| [12-open-questions.md](12-open-questions.md) | open questions |
 
-## Четыре решения по каждому элементу
+## Four decisions per element
 
-Любой элемент существующей системы — таблица, класс, эндпойнт, страница —
-получает **ровно одно** решение. Оно принимается один раз, в Фазе 0, и
-записывается в карту.
+Every element of the existing system — a table, a class, an endpoint, a page —
+gets **exactly one** decision. It is taken once, in Phase 0, and written into the
+map.
 
-| Решение | Что означает | Кто принимает |
+| Decision | What it means | Who takes it |
 |---|---|---|
-| **Переносим** | элемент имеет соответствие в продукте | владелец домена |
-| **Сводим** | несколько элементов схлопываются в один | владелец домена |
-| **Не переносим** | элемент мёртв или не нужен | владелец домена, письменно |
-| **Появляется** | элемент есть в продукте, но не имеет предшественника | проектировщик |
+| **Migrate** | the element has a counterpart in the product | the domain owner |
+| **Consolidate** | several elements collapse into one | the domain owner |
+| **Do not migrate** | the element is dead or not needed | the domain owner, in writing |
+| **New** | the element exists in the product but has no predecessor | the designer |
 
-**Элемент без решения — незакрытая работа Фазы 0.** «Разберёмся по ходу» не
-является решением: так мёртвый код переезжает в новую систему вместе с живым.
+**An element without a decision is unfinished Phase 0 work.** "We will figure it
+out along the way" is not a decision: that is how dead code moves into the new
+system together with the live code.
 
-Категория «появляется» так же важна, как остальные: она показывает, сколько в
-продукте нового, а не перенесённого, — и это часть оценки, которую обычно
-забывают.
+The "new" category matters just as much as the others: it shows how much of the
+product is new rather than carried over — and that is the part of the estimate
+usually forgotten.
 
-## Как читать карту
+## How to read the map
 
-Каждая строка карты — соответствие с указанием способа преобразования:
+Every row of the map is a mapping stating the transformation method:
 
 ```
-источник  →  цель  |  способ  |  решение  |  владелец  |  проверка
+source  →  target  |  method  |  decision  |  owner  |  verification
 ```
 
-Строка без способа преобразования или без проверки не считается заполненной:
-именно способ и проверка отличают карту от списка.
+A row without a transformation method or without a verification does not count as
+filled in: it is precisely the method and the verification that distinguish a map
+from a list.
 
-## Состояние
+## State
 
-Карты наполняются в Фазе 0. Сейчас:
+The maps are populated in Phase 0. Right now:
 
-| Карта | Заполнена | Чем наполняется |
+| Map | Filled in | What populates it |
 |---|---|---|
-| База данных | правила + образец D1 | [EPIC-003](../backlog/EPIC-003-schema-inventory.md) |
-| Бэкенд | правила + образец D1 | [EPIC-002](../backlog/EPIC-002-contract-inventory.md) |
-| API | правила + образец D1 | [EPIC-002](../backlog/EPIC-002-contract-inventory.md) |
-| Фронтенд | правила + образец D1 | [EPIC-011](../backlog/EPIC-011-scenario-registry.md) |
+| Database | the rules + the D1 sample | [EPIC-003](../backlog/EPIC-003-schema-inventory.md) |
+| Backend | the rules + the D1 sample | [EPIC-002](../backlog/EPIC-002-contract-inventory.md) |
+| API | the rules + the D1 sample | [EPIC-002](../backlog/EPIC-002-contract-inventory.md) |
+| Frontend | the rules + the D1 sample | [EPIC-011](../backlog/EPIC-011-scenario-registry.md) |
 
-Образец полной глубины — [map/D1-reference.md](map/D1-reference.md).
+The sample of full depth — [map/D1-reference.md](map/D1-reference.md).

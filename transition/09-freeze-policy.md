@@ -1,92 +1,98 @@
 ---
 id: TRANS-09
-title: Политика заморозки легаси
+title: Legacy freeze policy
 status: draft
 ---
 
-# Политика заморозки легаси
+# Legacy freeze policy
 
-Требование [ADR-0001](../docs/02-decisions/ADR-0001-strategy-big-bang.md#осознанная-плата).
+Required by
+[ADR-0001](../docs/02-decisions/ADR-0001-strategy-big-bang.md#accepted-cost).
 
-## Проблема
+## The problem
 
-При big bang новая система догоняет старую. Если старая продолжает развиваться в
-прежнем темпе, догнать её невозможно — цель движется. Это главная причина, по
-которой большие переписывания не заканчиваются: не техническая сложность, а
-непрерывно растущий объём того, что нужно повторить.
+Under a big bang the new system is catching up with the old one. If the old one
+keeps developing at its former pace, catching up is impossible — the target
+moves. That is the main reason large rewrites do not finish: not technical
+complexity but the continuously growing volume of what has to be reproduced.
 
-Одновременно полностью заморозить систему, обслуживающую операционную
-деятельность, нельзя ([C-01](../docs/00-context/03-constraints.md#c-01-прод-не-останавливается)):
-дефекты нужно исправлять, требования регуляторов — выполнять.
+At the same time, a system serving day-to-day operations cannot be frozen
+completely
+([C-01](../docs/00-context/03-constraints.md#c-01-production-does-not-stop)):
+defects have to be fixed and regulators' requirements have to be met.
 
-Политика заморозки — компромисс между этими двумя реальностями, зафиксированный
-письменно до того, как начнётся давление.
+The freeze policy is a compromise between those two realities, put in writing
+before the pressure begins.
 
-## Уровни
+## Levels
 
-| Уровень | Когда | Разрешено | Запрещено |
+| Level | When | Allowed | Forbidden |
 |---|---|---|---|
-| **З0. Свободно** | Фаза 0 | всё | — |
-| **З1. Мягкая** | Фазы 1–2 | дефекты, требования регуляторов, мелкие улучшения | новые модули, новые интеграции, изменения схемы БД |
-| **З2. Жёсткая** | с гейта G2 | блокирующие дефекты, требования регуляторов | всё остальное |
-| **З3. Полная** | T−14д до переезда | только аварийные исправления, по решению руководителя переезда | всё остальное |
+| **F0. Free** | Phase 0 | everything | — |
+| **F1. Soft** | Phases 1–2 | defects, regulators' requirements, small improvements | new modules, new integrations, database schema changes |
+| **F2. Hard** | from gate G2 | blocking defects, regulators' requirements | everything else |
+| **F3. Full** | T−14d before the cutover | emergency fixes only, by the cutover lead's decision | everything else |
 
-## Правило дельты
+## The delta rule
 
-**Любое изменение легаси, допущенное после З1, немедленно порождает задачу в
-delta backlog нового WERP.** Правило действует без исключений.
+**Any change to the legacy allowed after F1 immediately creates a work item in
+the new WERP's delta backlog.** The rule applies without exception.
 
-Задача создаётся автором изменения в легаси в момент слияния, а не «потом».
-Изменение легаси не считается завершённым, пока соответствующая задача не
-создана.
+The work item is created by the author of the legacy change at the moment of the
+merge, not "later". A legacy change does not count as finished until the
+corresponding work item has been created.
 
 ```
-изменение в легаси → задача в delta backlog → реализация в новом WERP → закрытие
+a change in the legacy → a work item in the delta backlog → implementation in the new WERP → closure
 ```
 
-**Условие допуска к переезду: delta backlog пуст**
-([01-cutover-strategy.md](07-cutover.md#условия-допуска-к-переезду)).
-Это делает стоимость каждого изменения в легаси видимой: оно не бесплатно, оно
-откладывает переезд.
+**A condition for admission to the cutover: the delta backlog is empty**
+([01-cutover-strategy.md](07-cutover.md#conditions-for-admission-to-the-cutover)).
+That makes the cost of every legacy change visible: it is not free, it postpones
+the cutover.
 
-## Процедура исключения
+## The exception procedure
 
-Изменение, не проходящее по уровню заморозки, может быть допущено только так:
+A change that does not pass the current freeze level can be allowed only like
+this:
 
-1. Инициатор описывает: что, зачем, что будет, если не делать до переезда.
-2. Оценивается стоимость реализации того же в новом WERP.
-3. Решение принимает руководитель проекта совместно с владельцем домена.
-4. Решение и обоснование записываются в реестр исключений.
-5. Задача в delta backlog создаётся автоматически вместе с исключением.
+1. The initiator describes: what, why, and what happens if it is not done before
+   the cutover.
+2. The cost of implementing the same thing in the new WERP is estimated.
+3. The decision is taken by the project lead together with the domain owner.
+4. The decision and its rationale are recorded in the exception register.
+5. The delta backlog work item is created automatically together with the
+   exception.
 
-Реестр исключений публичен внутри команды. **Если исключений становится много —
-это сигнал не о плохой дисциплине, а о том, что либо заморозка введена слишком
-рано, либо проект идёт слишком долго.** Оба вывода требуют пересмотра плана, а
-не ужесточения запретов.
+The exception register is public within the team. **If the exceptions become
+numerous, that is a signal not of poor discipline but that either the freeze was
+introduced too early or the project is running too long.** Both conclusions call
+for revising the plan, not for tightening the prohibitions.
 
-## Что заморозка не запрещает никогда
+## What the freeze never forbids
 
-- Исправление дефектов, влияющих на деньги, данные или безопасность.
-- Изменения, требуемые регулятором или законом.
-- Изменения, необходимые для работы внешних интеграций по требованию
-  контрагента.
-- Операционные действия эксплуатации.
+- Fixing defects that affect money, data or security.
+- Changes required by a regulator or by law.
+- Changes needed for the external integrations to work, at a counterparty's
+  request.
+- Operational actions by the operations team.
 
-Эти категории проходят вне очереди на любом уровне заморозки — и так же
-безусловно порождают задачу в delta backlog.
+These categories jump the queue at any freeze level — and just as
+unconditionally create a work item in the delta backlog.
 
-## Коммуникация
+## Communication
 
-Заморозка вводится **объявлением с датой**, а не явочным порядком. Пользователи
-и бизнес должны понимать: новых возможностей в старой системе не будет, потому
-что они появятся в новой, и вот когда.
+The freeze is introduced **by an announcement with a date**, not as a fait
+accompli. Users and the business must understand: there will be no new
+capabilities in the old system, because they will appear in the new one, and here
+is when.
 
-Без явного объявления заморозка воспринимается как саботаж со стороны
-разработки — а с объявлением становится общим планом.
+Without an explicit announcement the freeze is perceived as sabotage on
+development's part — with an announcement it becomes a shared plan.
 
-## Ретроспектива по дельте
+## The delta retrospective
 
-Ежемесячно фиксируется: сколько изменений допущено, сколько задач в delta
-backlog создано, сколько закрыто. Растущий незакрытый delta backlog — ранний и
-самый надёжный признак того, что проект не сходится
+Recorded monthly: how many changes were allowed, how many delta backlog items
+were created, how many were closed. A growing unclosed delta backlog is the
+earliest and most reliable sign that the project is not converging
 ([R-02](11-risks.md#r-02)).

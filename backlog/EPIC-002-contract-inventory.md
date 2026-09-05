@@ -1,97 +1,104 @@
 ---
 id: EPIC-002
-title: Инвентаризация контрактов API
+title: API contract inventory
 phase: 0
-owner: не назначен
+owner: not assigned
 status: todo
 gate: G0
 ---
 
-# EPIC-002. Инвентаризация контрактов API
+# EPIC-002. API contract inventory
 
-## Зачем
+## Why
 
-1 286 эндпойнтов в основном бэкенде плюс эндпойнты двух отдельных сервисов и
-легаси-JSF. Формального описания нет — спецификация порождается из кода
-(springfox 2.9.2), то есть всегда следует за реализацией.
+1,286 endpoints in the main backend plus the endpoints of the two separate
+services and of the legacy JSF. There is no formal description — the
+specification is generated from the code (springfox 2.9.2), meaning it always
+trails the implementation.
 
-Без формального контракта:
+Without a formal contract:
 
-- невозможно гарантировать совместимость с мобильным приложением
-  ([C-06](../docs/00-context/03-constraints.md#c-06-мобильное-приложение--отдельный-клиент-вне-этого-плана));
-- невозможно вести Фазы 2 и 3 параллельно ([ADR-0005](../docs/02-decisions/ADR-0005-contract-first-api.md));
-- невозможно определить полноту новой системы;
-- невозможно построить автоматическое сравнение в теневом прогоне.
+- compatibility with the mobile app cannot be guaranteed
+  ([C-06](../docs/00-context/03-constraints.md#c-06-the-mobile-app--a-separate-client-outside-this-plan));
+- Phases 2 and 3 cannot be run in parallel
+  ([ADR-0005](../docs/02-decisions/ADR-0005-contract-first-api.md));
+- the completeness of the new system cannot be determined;
+- an automated comparison in the shadow run cannot be built.
 
-## Результат
+## Result
 
-Машиночитаемая спецификация текущего API с решением по каждому эндпойнту:
-**переносим / сводим с другим / не переносим**.
+A machine-readable specification of the current API with a decision on every
+endpoint: **migrate / consolidate with another / do not migrate**.
 
-## Задачи
+## Tasks
 
-### TASK-0201. Собрать полный перечень эндпойнтов
+### TASK-0201. Collect the full list of endpoints
 
-Все источники: `werp_java_back_v2` (1 286 + 410 `@RequestMapping`), `werp_crm`,
-`werp_call_center`, легаси-JSF, пути, объявленные в `routes:` конфигурации.
+All the sources: `werp_java_back_v2` (1,286 + 410 `@RequestMapping`),
+`werp_crm`, `werp_call_center`, the legacy JSF, and the paths declared in the
+`routes:` configuration.
 
-**Приёмка:** перечень с указанием источника, метода, пути, параметров, формы
-ответа. Число совпадает с измеренным в [инвентаризации](../docs/00-context/01-inventory.md#23-поверхность-api-и-модель).
+**Acceptance:** a list stating the source, the method, the path, the parameters
+and the response shape. The count matches the one measured in the
+[inventory](../docs/00-context/01-inventory.md#23-api-surface-and-model).
 
-### TASK-0202. Зафиксировать мобильный контракт
+### TASK-0202. Pin down the mobile contract
 
-Извлечь список путей, открытых мобильному приложению, из `bridge`
-(`internal/routes/mobile.go`) — готовый, проверенный перечень.
+Extract the list of paths opened to the mobile app from `bridge`
+(`internal/routes/mobile.go`) — a ready, proven list.
 
-**Приёмка:** мобильный контракт описан формально; для каждого пути зафиксирована
-форма запроса и ответа; тесты, фиксирующие текущее поведение 1:1, написаны.
+**Acceptance:** the mobile contract is described formally; for every path the
+request and response shape is recorded; tests pinning the current behaviour 1:1
+are written.
 
-> Это самое жёсткое ограничение проекта. Ошибка здесь ломает мобильное
-> приложение, которое мы не переписываем.
+> This is the project's hardest constraint. A mistake here breaks the mobile
+> app, which we are not rewriting.
 
-### TASK-0203. Определить живость эндпойнтов
+### TASK-0203. Determine which endpoints are live
 
-По данным сбора из TASK-0106: к каким эндпойнтам обращаются, к каким — нет.
+From the data collected in TASK-0106: which endpoints are called and which are
+not.
 
-**Приёмка:** каждый эндпойнт помечен как живой / мёртвый / неопределённый, с
-указанием периода наблюдения.
+**Acceptance:** every endpoint is marked live / dead / undetermined, stating the
+observation period.
 
-### TASK-0204. Свести дубли
+### TASK-0204. Consolidate the duplicates
 
-Для дублирующихся доменов ([P-04](../docs/00-context/02-pain-points.md#p-04-домены-реализованы-дважды))
-определить, какие эндпойнты дублируют друг друга и какой из них — источник
-истины.
+For the duplicated domains
+([P-04](../docs/00-context/02-pain-points.md#p-04-domains-implemented-twice)),
+determine which endpoints duplicate each other and which of them is the source of
+truth.
 
-**Приёмка:** [OQ-002](../transition/12-open-questions.md#oq-002) закрыт;
-по каждой паре есть решение владельца домена.
+**Acceptance:** [OQ-002](../transition/12-open-questions.md#oq-002) is closed;
+each pair has a decision from the domain owner.
 
-### TASK-0205. Принять решение по каждому эндпойнту
+### TASK-0205. Take a decision on every endpoint
 
-**Приёмка:** ноль эндпойнтов без решения. Решение «не переносим» имеет
-обоснование и подпись владельца домена.
+**Acceptance:** zero endpoints without a decision. A "do not migrate" decision
+carries a rationale and the domain owner's signature.
 
-### TASK-0206. Описать целевой контракт
+### TASK-0206. Describe the target contract
 
-Спецификация нового API по правилам из
-[product/05-api.md](../product/05-api.md): именование,
-пагинация, ошибки, типы, права.
+The specification of the new API per the rules from
+[05-api/](../product/05-api/README.md): naming, pagination, errors, types,
+permissions.
 
-**Приёмка:** спецификация проходит линтер; для каждого переносимого эндпойнта
-есть соответствие «старый → новый».
+**Acceptance:** the specification passes the linter; for every endpoint being
+migrated there is an "old → new" mapping.
 
-### TASK-0207. Настроить генерацию из спецификации
+### TASK-0207. Set up generation from the specification
 
-Заглушка для фронтенда, клиент, тесты контракта.
+The stub for the frontend, the client, the contract tests.
 
-**Приёмка:** заглушка поднимается одной командой и отвечает по спецификации —
-это условие параллельности Фаз 2 и 3.
+**Acceptance:** the stub comes up with one command and responds per the
+specification — that is the condition for running Phases 2 and 3 in parallel.
 
-## Критерии закрытия эпика
+## Epic closure criteria
 
-- [ ] Все эндпойнты перечислены, число сходится с измеренным
-- [ ] Мобильный контракт зафиксирован и покрыт тестами
-- [ ] Живость определена по данным, а не по памяти
-- [ ] OQ-002 закрыт
-- [ ] По каждому эндпойнту принято решение
-- [ ] Целевая спецификация проходит линтер
-- [ ] Заглушка работает
+- [ ] All the endpoints are listed and the count matches the measured one
+- [ ] The mobile contract is pinned down and covered by tests
+- [ ] Liveness is determined from data, not from memory
+- [ ] OQ-002 is closed
+- [ ] A decision has been taken on every endpoint
+- [ ] The target specification passes the linter
+- [ ] The stub works

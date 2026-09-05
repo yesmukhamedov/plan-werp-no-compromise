@@ -1,104 +1,112 @@
 ---
 id: ADR-0002
-title: СУБД — PostgreSQL
-status: Принято
+title: DBMS — PostgreSQL
+status: Accepted
 date: 2026-09-03
 ---
 
-# ADR-0002. СУБД — PostgreSQL
+# ADR-0002. DBMS — PostgreSQL
 
-## Контекст
+## Context
 
-Сейчас в системе три хранилища одновременно:
+The system currently has three data stores at once:
 
-- **Oracle** — основной бэкенд `werp_java_back_v2` (523 сущности), драйвер
-  `ojdbc6-11.2.0.3` подключается из локальной папки `libs/` через `flatDir`,
-  диалект в конфигурации — `Oracle10gDialect`;
-- **MySQL** — легаси `werp_jsf` (Hibernate 3.6.7, connector 5.1.18);
-- **PostgreSQL** — `werp_crm` и `werp_call_center` (Spring Boot 2.4, Flyway).
+- **Oracle** — the main backend `werp_java_back_v2` (523 entities); the driver
+  `ojdbc6-11.2.0.3` is wired in from the local `libs/` folder via `flatDir`, and
+  the dialect in the configuration is `Oracle10gDialect`;
+- **MySQL** — the legacy `werp_jsf` (Hibernate 3.6.7, connector 5.1.18);
+- **PostgreSQL** — `werp_crm` and `werp_call_center` (Spring Boot 2.4, Flyway).
 
-К Oracle привязаны 289 вызовов `createNativeQuery` и 43 `nativeQuery = true`.
+Tied to Oracle are 289 `createNativeQuery` calls and 43 `nativeQuery = true`.
 
-## Варианты
+## Options
 
-### A. PostgreSQL для всей системы
+### A. PostgreSQL for the whole system
 
-- **За:** движение уже началось — два сервиса и обе действующие практики
-  миграций (Flyway) на PostgreSQL; нет лицензионных платежей и связанного с ними
-  ограничения на число контуров; свободно поднимается локально и в CI, что прямо
-  требуется правилом NC-08 (воспроизводимая сборка) и стратегией тестирования;
-  устраняет `flatDir`-зависимость от файла драйвера в репозитории.
-- **Против:** миграция 523 сущностей и всей схемы; 332 нативных запроса
-  переписываются; нужна экспертиза эксплуатации PostgreSQL под нагрузкой ERP;
-  особенности Oracle (иерархические запросы, специфичные функции, последовательности,
-  пакеты PL/SQL, если они есть) требуют разбора поштучно.
+- **For:** the move has already begun — two services and both live migration
+  practices (Flyway) are on PostgreSQL; there are no licence payments and none of
+  the environment-count limits that come with them; it starts up freely locally
+  and in CI, which rule NC-08 (a reproducible build) and the testing strategy
+  directly require; it removes the `flatDir` dependency on a driver file in the
+  repository.
+- **Against:** migrating 523 entities and the entire schema; 332 native queries
+  to rewrite; expertise in operating PostgreSQL under ERP load is needed;
+  Oracle-specific features (hierarchical queries, specific functions, sequences,
+  PL/SQL packages if any exist) must be dealt with one by one.
 
-### B. Остаться на Oracle, обновить драйвер и диалект
+### B. Stay on Oracle, upgrade the driver and the dialect
 
-- **За:** минимальный риск для данных; нативные запросы переносятся как есть;
-  эксплуатация знакома.
-- **Против:** лицензии; `ojdbc` из локальной папки (или закрытый репозиторий
-  артефактов) остаётся; поднять полноценный экземпляр в CI и у каждого
-  разработчика дорого — а без этого правило NC-01 (тесты на реальной СУБД)
-  выполнимо лишь частично; сохраняется расщепление с уже работающими
-  PostgreSQL-сервисами.
+- **For:** minimal risk to the data; the native queries carry over as they are;
+  operations are familiar.
+- **Against:** licences; `ojdbc` from a local folder (or a closed artefact
+  repository) stays; standing up a full instance in CI and on every developer's
+  machine is expensive — and without that, rule NC-01 (tests against the real
+  DBMS) is only partially satisfiable; the split with the already-running
+  PostgreSQL services persists.
 
-### C. Гибрид — новое на PostgreSQL, легаси-домены на Oracle
+### C. Hybrid — the new on PostgreSQL, the legacy domains on Oracle
 
-- **За:** постепенность.
-- **Против:** прямо противоречит [ADR-0001](ADR-0001-strategy-big-bang.md):
-  при big bang переходного периода нет, а значит нет и повода держать две СУБД.
-  Гибрид означал бы распределённые транзакции и дублирование справочников
-  навсегда.
+- **For:** gradualness.
+- **Against:** directly contradicts [ADR-0001](ADR-0001-strategy-big-bang.md):
+  under a big bang there is no transition period, and hence no reason to keep two
+  DBMSs. A hybrid would mean distributed transactions and duplicated reference
+  data forever.
 
-## Решение
+## Decision
 
-**Принят вариант A — PostgreSQL для всей системы.** Oracle и MySQL выводятся из
-эксплуатации вместе с легаси-контуром.
+**Option A — PostgreSQL for the whole system — is accepted.** Oracle and MySQL
+are decommissioned together with the legacy environment.
 
-## Последствия
+## Consequences
 
-### Что появляется в плане
+### What appears in the plan
 
-- Отдельный трек миграции данных → [transition/05-data-migration.md](../../transition/05-data-migration.md),
+- A separate data-migration track →
+  [transition/05-data-migration.md](../../transition/05-data-migration.md),
   [EPIC-005](../../backlog/EPIC-005-data-migration.md).
-- Инвентаризация всех 332 нативных запросов и объектов БД (представления,
-  триггеры, последовательности, процедуры) с решением по каждому: переписать,
-  перенести в код, отказаться → [EPIC-003](../../backlog/EPIC-003-schema-inventory.md).
-- Сверка данных после миграции с нулевым допуском по финансовым таблицам
+- An inventory of all 332 native queries and of the database objects (views,
+  triggers, sequences, procedures) with a decision on each: rewrite, move into
+  the code, drop → [EPIC-003](../../backlog/EPIC-003-schema-inventory.md).
+- Post-migration data reconciliation with zero tolerance on the financial tables
   → [transition/06-parity-verification.md](../../transition/06-parity-verification.md).
 
-### Что становится проще
+### What gets easier
 
-- Локальный запуск полной системы одной командой — база поднимается контейнером.
-- Тесты идут на настоящей СУБД, а не на встроенной замене; расхождение поведения
-  тестового и промышленного хранилища исключается.
-- Сборка перестаёт зависеть от файла в `libs/` — закрывается часть
-  [P-06](../00-context/02-pain-points.md#p-06-зависимости-вне-поддержки-сборка-невоспроизводима).
+- Starting the full system locally with a single command — the database comes up
+  as a container.
+- Tests run against a real DBMS rather than an embedded substitute; a behavioural
+  divergence between the test and the production store is ruled out.
+- The build stops depending on a file in `libs/` — part of
+  [P-06](../00-context/02-pain-points.md#p-06-dependencies-out-of-support-the-build-is-not-reproducible)
+  is closed.
 
-### Что требует отдельного внимания
+### What needs separate attention
 
-- **Типы для денег.** Правила округления и точность фиксируются один раз
-  ([product/03-database.md](../../product/03-database.md)); поведение
-  округления Oracle и PostgreSQL может отличаться — это проверяется тестами
-  на эталонных значениях, а не предполагается.
-- **Аудит.** Текущая система использует Envers ([C-10](../00-context/03-constraints.md#c-10-аудит-изменений-уже-существует-и-должен-сохраниться));
-  таблицы аудита мигрируют вместе с данными, механизм аудита в новой системе
-  проектируется до начала переноса.
-- **Регистр и сортировка.** Oracle и PostgreSQL по-разному ведут себя с
-  регистром идентификаторов и сортировкой кириллицы. Правила сортировки
-  (collation) выбираются явно и фиксируются в миграции, а не оставляются
-  на умолчание.
-- **Пустая строка против NULL.** Oracle не различает пустую строку и `NULL`,
-  PostgreSQL различает. Это меняет поведение сравнений и уникальных индексов —
-  каждый столбец, где различие значимо, разбирается при миграции.
-- **Пиковая нагрузка.** Профиль нагрузки снимается с текущей системы до
-  проектирования схемы, а не после → [product/10-performance.md](../../product/10-performance.md).
+- **Money types.** The rounding rules and precision are fixed once
+  ([product/03-database/](../../product/03-database/README.md)); Oracle's and
+  PostgreSQL's rounding behaviour may differ — this is verified by tests against
+  reference values, not assumed.
+- **Audit.** The current system uses Envers
+  ([C-10](../00-context/03-constraints.md#c-10-change-audit-already-exists-and-must-be-preserved));
+  the audit tables migrate together with the data, and the audit mechanism in the
+  new system is designed before the transfer begins.
+- **Case and sorting.** Oracle and PostgreSQL behave differently with identifier
+  case and with sorting Cyrillic. The collation rules are chosen explicitly and
+  fixed in a migration rather than left to a default.
+- **Empty string versus NULL.** Oracle does not distinguish an empty string from
+  `NULL`; PostgreSQL does. This changes the behaviour of comparisons and unique
+  indexes — every column where the difference matters is dealt with during the
+  migration.
+- **Peak load.** The load profile is measured on the current system before the
+  schema is designed, not after →
+  [product/10-performance.md](../../product/10-performance.md).
 
-### Открытые вопросы
+### Open questions
 
-- Версия PostgreSQL, топология (реплики, отказоустойчивость), способ
-  резервного копирования и целевые RPO/RTO — [OQ-006](../../transition/12-open-questions.md).
-- Есть ли в Oracle хранимая бизнес-логика (пакеты, триггеры, задания планировщика
-  БД), не видимая из кода приложения — [OQ-007](../../transition/12-open-questions.md).
-  Это потенциально крупная и пока не оценённая часть работы.
+- The PostgreSQL version, the topology (replicas, failover), the backup method
+  and the target RPO/RTO —
+  [OQ-006](../../transition/12-open-questions.md).
+- Whether Oracle holds stored business logic (packages, triggers, DB scheduler
+  jobs) invisible from the application code —
+  [OQ-007](../../transition/12-open-questions.md). This is potentially a large and
+  as yet unestimated part of the work.

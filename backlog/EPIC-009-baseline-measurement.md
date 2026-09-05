@@ -1,97 +1,100 @@
 ---
 id: EPIC-009
-title: Измерение базовых показателей
+title: Baseline measurement
 phase: 0
-owner: не назначен
+owner: not assigned
 status: todo
 gate: G0
 ---
 
-# EPIC-009. Измерение базовых показателей
+# EPIC-009. Baseline measurement
 
-## Зачем
+## Why
 
-[product/07-nfr.md](../product/07-nfr.md) содержит плейсхолдеры вместо
-чисел, и это сознательно: задавать целевые показатели, не зная текущих,
-бессмысленно — можно узаконить деградацию или поставить недостижимую планку.
+[product/07-nfr.md](../product/07-nfr.md) contains placeholders instead of
+numbers, and that is deliberate: setting target figures without knowing the
+current ones is pointless — one either legitimizes a degradation or sets an
+unreachable bar.
 
-Правило проекта: **новая система не имеет права быть медленнее старой ни на
-одном сценарии.** Проверить это можно только измерив старую.
+The project's rule: **the new system has no right to be slower than the old one
+in any scenario.** The only way to verify that is to measure the old one.
 
-## Результат
+## Result
 
-Заполненные таблицы НФТ: для каждого показателя — «сейчас», «не хуже», «цель».
+The NFR tables filled in: for every figure — "today", "no worse than", "target".
 
-## Задачи
+## Tasks
 
-### TASK-0901. Включить наблюдаемость в легаси
+### TASK-0901. Switch on observability in the legacy
 
-Сбор времени ответа по эндпойнтам, частоты запросов, ошибок. Минимальное
-вмешательство в легаси, приемлемое при заморозке.
+Collection of response times per endpoint, request rates, errors. The minimal
+intervention in the legacy that is acceptable under the freeze.
 
-**Приёмка:** данные собираются; период наблюдения начат.
+**Acceptance:** the data is being collected; the observation period has started.
 
-> Выполнить в первую неделю Фазы 0 вместе с TASK-0106: чем длиннее период
-> наблюдения, тем достовернее профиль. Месяц лучше недели.
+> To be done in the first week of Phase 0 together with TASK-0106: the longer the
+> observation period, the more reliable the profile. A month is better than a
+> week.
 
-### TASK-0902. Снять профиль нагрузки
+### TASK-0902. Capture the load profile
 
-Не менее одного полного месяца: суточный и недельный профиль, пики.
+At least one full month: the daily and weekly profile, the peaks.
 
-**Приёмка:** профиль построен; пиковые периоды выявлены и объяснены (закрытие
-месяца, начисление зарплаты, инвентаризация, сезонность).
+**Acceptance:** the profile is built; the peak periods are identified and
+explained (the month close, payroll accrual, stocktaking, seasonality).
 
-> Пиковые периоды в ERP кратно превышают обычную нагрузку. Проектирование по
-> средней нагрузке даёт систему, которая ложится в конце месяца.
+> Peak periods in an ERP exceed the ordinary load several times over. Designing
+> for the average load produces a system that falls over at the end of the month.
 
-### TASK-0903. Измерить время ответа
+### TASK-0903. Measure response times
 
-По эндпойнтам, процентили 50/95/99. Отдельно — самые частые и самые медленные.
+Per endpoint, the 50th/95th/99th percentiles. Separately — the most frequent and
+the slowest ones.
 
-**Приёмка:** таблица заполнена; выявлены эндпойнты, которые заведомо нужно
-переделывать.
+**Acceptance:** the table is filled in; the endpoints that clearly need reworking
+are identified.
 
-### TASK-0904. Измерить показатели БД
+### TASK-0904. Measure the database figures
 
-Самые тяжёлые запросы, время выполнения, использование индексов, размеры
-таблиц, годовой прирост, объём базы.
+The heaviest queries, their execution time, index usage, table sizes, annual
+growth, the database's size.
 
-**Приёмка:** данные получены; переданы в [EPIC-003](EPIC-003-schema-inventory.md).
+**Acceptance:** the data is obtained and handed over to
+[EPIC-003](EPIC-003-schema-inventory.md).
 
-### TASK-0905. Измерить показатели фронтенда
+### TASK-0905. Measure the frontend figures
 
-Время загрузки, время до интерактивности, размер бандла, время открытия типовых
-экранов.
+Load time, time to interactive, bundle size, the time to open typical screens.
 
-**Приёмка:** таблица заполнена.
+**Acceptance:** the table is filled in.
 
-### TASK-0906. Измерить объёмы
+### TASK-0906. Measure the volumes
 
-Число пользователей, одновременных сессий (обычно и в пик), объём файлового
-хранилища, число файлов.
+The number of users, concurrent sessions (ordinary and peak), the size of the
+file store, the number of files.
 
-**Приёмка:** данные получены; переданы в планирование ёмкости и в
-[EPIC-005](EPIC-005-data-migration.md) (объём переноса файлов).
+**Acceptance:** the data is obtained and handed over to capacity planning and to
+[EPIC-005](EPIC-005-data-migration.md) (the volume of the file transfer).
 
-### TASK-0907. Проверить гипотезы о проблемах
+### TASK-0907. Test the hypotheses about the problems
 
-Подтвердить или опровергнуть измерением: влияние `show-sql` в проде, наличие
-N+1, эндпойнты без пагинации, стоимость произвольной фильтрации
-([product/10-performance.md](../product/10-performance.md#что-известно-о-текущих-проблемах)).
+Confirm or refute by measurement: the impact of `show-sql` in production, the
+presence of N+1, endpoints without pagination, the cost of arbitrary filtering
+([product/10-performance.md](../product/10-performance.md#what-is-known-about-the-current-problems)).
 
-**Приёмка:** каждая гипотеза подтверждена или опровергнута данными.
+**Acceptance:** every hypothesis is confirmed or refuted by data.
 
-### TASK-0908. Заполнить НФТ
+### TASK-0908. Fill in the NFRs
 
-**Приёмка:** в [05-nfr.md](../product/07-nfr.md) не осталось
-плейсхолдеров; для каждого показателя есть три значения.
+**Acceptance:** no placeholders are left in
+[07-nfr.md](../product/07-nfr.md); every figure has three values.
 
-## Критерии закрытия эпика
+## Epic closure criteria
 
-- [ ] Наблюдаемость в легаси работает
-- [ ] Профиль нагрузки снят за полный месяц
-- [ ] Время ответа измерено по эндпойнтам
-- [ ] Показатели БД и фронтенда измерены
-- [ ] Объёмы измерены
-- [ ] Гипотезы о проблемах проверены
-- [ ] Таблицы НФТ заполнены
+- [ ] Observability in the legacy is running
+- [ ] The load profile has been captured over a full month
+- [ ] Response times are measured per endpoint
+- [ ] The database and frontend figures are measured
+- [ ] The volumes are measured
+- [ ] The hypotheses about the problems are tested
+- [ ] The NFR tables are filled in

@@ -1,109 +1,117 @@
 ---
 id: EPIC-004
-title: Характеризационные тесты
+title: Characterization tests
 phase: 0
-owner: не назначен
+owner: not assigned
 status: todo
 gate: G0
 depends_on: [EPIC-002, EPIC-011]
 ---
 
-# EPIC-004. Характеризационные тесты
+# EPIC-004. Characterization tests
 
-## Зачем
+## Why
 
-В текущей системе **4 тестовых файла на 354 761 строку**. Значит, не существует
-исполняемого описания того, как система себя ведёт.
+The current system has **4 test files across 354,761 lines**. That means no
+executable description of how the system behaves exists.
 
-При big bang это критично: единственный способ доказать эквивалентность новой
-системы — сравнить её со старой. Теневой прогон покрывает чтение, но **не
-покрывает расчёты и операции записи** — а именно там сосредоточен риск.
+Under a big bang that is critical: the only way to prove the new system's
+equivalence is to compare it with the old one. The shadow run covers reads but
+**does not cover calculations and write operations** — and that is exactly where
+the risk is concentrated.
 
-## Что это такое
+## What they are
 
-Характеризационные тесты не проверяют, что система работает **правильно**. Они
-фиксируют, как она работает **сейчас** — включая ошибки, если они есть.
+Characterization tests do not verify that the system works **correctly**. They
+record how it works **now** — bugs included, if there are any.
 
-Это эталон для сверки паритета
+They are the reference for the parity reconciliation
 ([transition/06-parity-verification.md](../transition/06-parity-verification.md)),
-а не набор требований. Тест, зафиксировавший неправильное поведение, — это
-успех: теперь про него знают.
+not a set of requirements. A test that pinned down incorrect behaviour is a
+success: now people know about it.
 
-## Приоритеты
+## Priorities
 
-По убыванию риска:
+By descending risk:
 
-| Приоритет | Что | Почему |
+| Priority | What | Why |
 |---|---|---|
-| 1 | Расчёт вознаграждений | 7 598 строк в одном классе; наверняка накопленные частные случаи; ошибка = деньги людей |
-| 2 | Учётные операции и проводки | 62 776 строк домена; ошибка = деньги компании |
-| 3 | Расчёты по договорам | графики платежей, задолженность, пени |
-| 4 | Складские остатки | результат операции над остатком |
-| 5 | Отчёты с расчётом | сводные показатели |
+| 1 | Compensation calculation | 7,598 lines in a single class; special cases have surely accumulated; an error = people's money |
+| 2 | Accounting operations and journal entries | a 62,776-line domain; an error = the company's money |
+| 3 | Contract calculations | payment schedules, receivables, penalties |
+| 4 | Warehouse stock balances | the result of an operation on a balance |
+| 5 | Reports with calculations | summary figures |
 
-## Задачи
+## Tasks
 
-### TASK-0401. Подготовить стенд
+### TASK-0401. Prepare the test bench
 
-Изолированный экземпляр легаси с фиксированным набором данных, воспроизводимый.
-Тесты должны запускаться повторно и давать тот же результат.
+An isolated instance of the legacy with a fixed data set, reproducible. The tests
+must be re-runnable and produce the same result.
 
-**Приёмка:** стенд поднимается одной командой; повторный прогон даёт идентичный
-результат.
+**Acceptance:** the bench comes up with one command; a repeat run produces an
+identical result.
 
-### TASK-0402. Собрать наборы входных данных
+### TASK-0402. Collect the input data sets
 
-Реальные случаи из промышленных данных, **обезличенные**, включая граничные:
-максимальные суммы, нулевые значения, редкие сочетания условий, конец периода.
+Real cases from production data, **anonymized**, edge cases included: maximum
+amounts, zero values, rare combinations of conditions, the end of a period.
 
-**Приёмка:** для каждой области приоритета собрано не менее N случаев, включая
-граничные; данные обезличены.
+**Acceptance:** for every priority area at least N cases are collected, edge
+cases included; the data is anonymized.
 
-> Ценность теста определяется тем, покрывает ли он частные случаи. Обычный
-> случай новая система воспроизведёт и так.
+> A test's value is determined by whether it covers the special cases. The
+> ordinary case the new system will reproduce anyway.
 
-### TASK-0403. Зафиксировать расчёт вознаграждений
+### TASK-0403. Pin down compensation calculation
 
-Табличные тесты: вход → эталонный результат, включая все промежуточные
-начисления и удержания.
+Table-driven tests: input → the reference result, including all the intermediate
+accruals and deductions.
 
-**Приёмка:** тесты проходят на легаси; эталоны версионированы; покрыты все
-известные виды начислений.
+**Acceptance:** the tests pass against the legacy; the reference values are
+versioned; all the known kinds of accrual are covered.
 
-### TASK-0404. Зафиксировать учётные операции
+### TASK-0404. Pin down the accounting operations
 
-Проводки, сальдо, обороты, сверки.
+Journal entries, balances, turnovers, reconciliations.
 
-**Приёмка:** тесты проходят на легаси; эталоны версионированы.
+**Acceptance:** the tests pass against the legacy; the reference values are
+versioned.
 
-### TASK-0405. Зафиксировать расчёты по договорам
+### TASK-0405. Pin down the contract calculations
 
-**Приёмка:** тесты проходят на легаси; эталоны версионированы.
+**Acceptance:** the tests pass against the legacy; the reference values are
+versioned.
 
-### TASK-0406. Зафиксировать складские операции
+### TASK-0406. Pin down the warehouse operations
 
-**Приёмка:** тесты проходят на легаси; эталоны версионированы.
+**Acceptance:** the tests pass against the legacy; the reference values are
+versioned.
 
-### TASK-0407. Собрать обнаруженные аномалии
+### TASK-0407. Collect the anomalies discovered
 
-Всё, что при написании тестов выглядит как ошибка старой системы, — в отдельный
-список с решением бизнеса: воспроизводим или исправляем.
+Everything that looks like a bug in the old system while the tests are being
+written goes into a separate list with a decision from the business: do we
+reproduce it or fix it.
 
-**Приёмка:** список аномалий с решением по каждой, письменно.
+**Acceptance:** a list of anomalies with a decision on each, in writing.
 
-> Это ценный побочный результат эпика: он делает видимыми ошибки, о которых
-> никто не знал, — до переезда, а не после.
+> This is a valuable by-product of the epic: it makes visible the bugs nobody
+> knew about — before the cutover rather than after.
 
-## Критерии закрытия эпика
+## Epic closure criteria
 
-- [ ] Стенд воспроизводим
-- [ ] Наборы данных собраны и обезличены
-- [ ] Все области приоритетов 1–4 покрыты
-- [ ] Эталоны версионированы в репозитории
-- [ ] Список аномалий составлен, решения приняты письменно
+- [ ] The test bench is reproducible
+- [ ] The data sets are collected and anonymized
+- [ ] All the areas of priorities 1–4 are covered
+- [ ] The reference values are versioned in the repository
+- [ ] The list of anomalies is compiled and the decisions are taken in writing
 
-## Как используется дальше
+## How it is used later
 
-- Обязательное условие начала доменов D5 и D6 в [Фазе 2](../transition/plan/03-phase-2-domains.md).
-- Эталон для сценарного паритета в [Фазе 4](../transition/plan/05-phase-4-parity-and-cutover.md).
-- Часть реестра сценариев ([EPIC-011](EPIC-011-scenario-registry.md)).
+- A mandatory condition for starting domains D5 and D6 in
+  [Phase 2](../transition/plan/03-phase-2-domains.md).
+- The reference for scenario parity in
+  [Phase 4](../transition/plan/05-phase-4-parity-and-cutover.md).
+- Part of the scenario registry
+  ([EPIC-011](EPIC-011-scenario-registry.md)).

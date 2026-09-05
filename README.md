@@ -1,182 +1,186 @@
 # plan-werp-no-compromise
 
-Проект-план полного переписывания WERP — внутренней ERP-системы (бэкенд,
-фронтенд, интеграции, база данных).
+A project plan for the complete rewrite of WERP — an in-house ERP system
+(backend, frontend, integrations, database).
 
-**Это не код. Это сам план, оформленный как проект:** с решениями (ADR),
-спецификациями, картами соответствий, фазами, эпиками, реестром рисков и CI,
-который проверяет целостность плана. Реализация не начинается, пока план не
-закрыт — см. [гейты](transition/plan/00-roadmap.md#гейты).
+**This is not code. This is the plan itself, run as a project:** with decisions
+(ADRs), specifications, mappings, phases, epics, a risk register and CI that
+validates the plan's integrity. Implementation does not start until the plan is
+closed — see [gates](transition/plan/00-roadmap.md#gates).
 
 ---
 
-## Две части
+## Two parts
 
-Репозиторий разделён на **продукт** и **переход** — и это главное свойство его
-структуры.
+The repository is split into **product** and **transition** — and that is the
+main property of its structure.
 
 ```
                                       ┌──────────────────────────┐
-   docs/         общее основание      │  product/   ЧТО БУДЕТ    │
-   ├ контекст    факты о легаси       │  таблицы, колонки,       │
-   ├ принципы    правила              │  индексы, классы,        │
-   └ решения     ADR                  │  эндпойнты, страницы,    │
-        │                             │  компоненты              │
+   docs/         shared foundation    │  product/  WHAT WILL BE  │
+   ├ context     facts about legacy   │  tables, columns,        │
+   ├ principles  rules                │  indexes, classes,       │
+   └ decisions   ADRs                 │  endpoints, pages,       │
+        │                             │  components              │
         │                             └────────────▲─────────────┘
-        │                                          │ ссылается
+        │                                          │ references
         │                             ┌────────────┴─────────────┐
-        └────────────────────────────►│ transition/ КАК ПЕРЕХОДИМ│
-                                      │  какая таблица как       │
-                                      │  изменится, какой класс  │
-                                      │  чем заменится, какая    │
-                                      │  страница какой          │
+        └────────────────────────────►│ transition/ HOW WE MOVE  │
+                                      │  which table changes     │
+                                      │  how, which class is     │
+                                      │  replaced by what, which │
+                                      │  page by which           │
                                       └──────────────────────────┘
 ```
 
 | | [product/](product/README.md) | [transition/](transition/README.md) |
 |---|---|---|
-| **Отвечает на вопрос** | что будет построено | что во что переходит |
-| **Содержит** | таблицы с колонками и индексами, модули и классы, эндпойнты, страницы и компоненты | карты соответствий, миграция данных, переезд, откат, фазы, риски |
-| **Упоминает легаси** | нет, никогда | постоянно — это его предмет |
-| **Судьба после проекта** | становится документацией системы | архивируется |
+| **Answers the question** | what will be built | what turns into what |
+| **Contains** | tables with columns and indexes, modules and classes, endpoints, pages and components | mappings, data migration, cutover, rollback, phases, risks |
+| **Mentions legacy** | no, never | constantly — that is its subject |
+| **Fate after the project** | becomes the system's documentation | archived |
 
-Проверка правильности размещения документа: **если убрать из него все
-упоминания легаси и он останется осмысленным — он относится к продукту.**
+Test for placing a document correctly: **if you remove every mention of legacy
+from it and it still makes sense — it belongs to the product.**
 
-Разделение сделано потому, что документ, который одновременно описывает целевую
-систему и объясняет происхождение каждой её части, не читается ни
-разработчиком (ему нужен только результат), ни планировщиком перехода (ему
-нужны соответствия).
+The split exists because a document that simultaneously describes the target
+system and explains the origin of each of its parts is unreadable both for the
+developer (who needs only the result) and for the transition planner (who needs
+the mappings).
 
-### Парные документы
+### Paired documents
 
-Четыре среза системы описаны парами — спецификация в продукте, карта в переходе:
+Four slices of the system are described in pairs — a specification in the
+product, a map in the transition:
 
-| Срез | Что будет | Откуда это |
+| Slice | What will be | Where it comes from |
 |---|---|---|
-| База данных | [product/03-database.md](product/03-database.md) | [transition/01-database-mapping.md](transition/01-database-mapping.md) |
-| Бэкенд | [product/04-backend.md](product/04-backend.md) | [transition/02-backend-mapping.md](transition/02-backend-mapping.md) |
-| API | [product/05-api.md](product/05-api.md) | [transition/03-api-mapping.md](transition/03-api-mapping.md) |
-| Фронтенд | [product/06-frontend.md](product/06-frontend.md) | [transition/04-frontend-mapping.md](transition/04-frontend-mapping.md) |
+| Database | [the database model](product/03-database/README.md) | [transition/01-database-mapping.md](transition/01-database-mapping.md) |
+| Backend | [04-backend/](product/04-backend/README.md) | [transition/02-backend-mapping.md](transition/02-backend-mapping.md) |
+| API | [05-api/](product/05-api/README.md) | [transition/03-api-mapping.md](transition/03-api-mapping.md) |
+| Frontend | [06-frontend/](product/06-frontend/README.md) | [transition/04-frontend-mapping.md](transition/04-frontend-mapping.md) |
 
-Глубже — по домену: [product/spec/](product/spec/README.md) и
-[transition/map/](transition/map/README.md), парно. Образец обязательной
-глубины — домен D1 «Справочники»:
-[спецификация](product/spec/D1-reference.md) и
-[карта](transition/map/D1-reference.md).
-
----
-
-## Зачем
-
-WERP развивался ~12 лет наслоениями. Сегодня это:
-
-- **три поколения бэкенда одновременно в проде** — JSF-монолит 2013 года,
-  Spring Boot 2.0 (релиз 2018) и два отдельных сервиса на Spring Boot 2.4;
-- **~1 млн строк** прикладного кода суммарно (Java + JS), из них **4 тестовых
-  файла** во всём главном бэкенде;
-- **две базы одновременно** — Oracle в монолите, PostgreSQL в новых сервисах;
-- функционал, реализованный обходными путями: god-классы на 3–7 тыс. строк,
-  контроллеры с 38–51 полевой инъекцией, дублирующиеся домены (CRM написан
-  дважды), фронтенд, который для части экранов до сих пор ссылается на
-  легаси-JSF.
-
-Полная фактура с числами — [docs/00-context/01-inventory.md](docs/00-context/01-inventory.md)
-и [docs/00-context/02-pain-points.md](docs/00-context/02-pain-points.md).
-
-«Без компромиссов» — не лозунг, а
-[набор проверяемых правил](docs/01-principles/01-no-compromise.md), каждое из
-которых запрещает конкретный компромисс, уже сделанный в текущей системе.
+Deeper — per domain: [product/spec/](product/spec/README.md) and
+[transition/map/](transition/map/README.md), in pairs. The reference sample of
+the required depth is domain D1 "Reference data":
+[specification](product/spec/D1-reference.md) and
+[map](transition/map/D1-reference.md).
 
 ---
 
-## Принятые решения верхнего уровня
+## Why
 
-| # | Решение | Статус | ADR |
+WERP has been growing for ~12 years in layers. Today it is:
+
+- **three backend generations in production at once** — a JSF monolith from
+  2013, Spring Boot 2.0 (released 2018) and two separate services on Spring
+  Boot 2.4;
+- **~1M lines** of application code in total (Java + JS), of which **4 test
+  files** across the entire main backend;
+- **two databases at once** — Oracle in the monolith, PostgreSQL in the new
+  services;
+- functionality implemented through workarounds: god classes of 3,000–7,000
+  lines, controllers with 38–51 field injections, duplicated domains (CRM
+  written twice), a frontend that for some screens still links back to the
+  legacy JSF.
+
+The full picture with numbers — [docs/00-context/01-inventory.md](docs/00-context/01-inventory.md)
+and [docs/00-context/02-pain-points.md](docs/00-context/02-pain-points.md).
+
+"No compromise" is not a slogan but a
+[set of verifiable rules](docs/01-principles/01-no-compromise.md), each of which
+forbids one specific compromise already made in the current system.
+
+---
+
+## Top-level decisions taken
+
+| # | Decision | Status | ADR |
 |---|---|---|---|
-| 1 | Стратегия перехода — **big bang** (параллельная разработка, один переезд) | Принято | [ADR-0001](docs/02-decisions/ADR-0001-strategy-big-bang.md) |
-| 2 | СУБД — **PostgreSQL**, уход с Oracle | Принято | [ADR-0002](docs/02-decisions/ADR-0002-database-postgresql.md) |
-| 3 | Стек бэкенда | **Отложено** — закрыть до старта Фазы 1 | [ADR-0003](docs/02-decisions/ADR-0003-backend-stack.md) |
-| 4 | Стек фронтенда | Предложено | [ADR-0004](docs/02-decisions/ADR-0004-frontend-stack.md) |
-| 5 | Contract-first API | Предложено | [ADR-0005](docs/02-decisions/ADR-0005-contract-first-api.md) |
+| 1 | Transition strategy — **big bang** (parallel development, a single cutover) | Accepted | [ADR-0001](docs/02-decisions/ADR-0001-strategy-big-bang.md) |
+| 2 | DBMS — **PostgreSQL**, moving off Oracle | Accepted | [ADR-0002](docs/02-decisions/ADR-0002-database-postgresql.md) |
+| 3 | Backend stack | **Deferred** — to be closed before Phase 1 starts | [ADR-0003](docs/02-decisions/ADR-0003-backend-stack.md) |
+| 4 | Frontend stack | Proposed | [ADR-0004](docs/02-decisions/ADR-0004-frontend-stack.md) |
+| 5 | Contract-first API | Proposed | [ADR-0005](docs/02-decisions/ADR-0005-contract-first-api.md) |
 
-Полный индекс — [docs/02-decisions/README.md](docs/02-decisions/README.md).
+The full index — [docs/02-decisions/README.md](docs/02-decisions/README.md).
 
-> **Стек бэкенда сознательно не зафиксирован.** Весь план написан
-> стек-нейтрально; места, где решение действительно что-то меняет, помечены
-> маркером `[STACK]` и перечислены в
-> [ADR-0003](docs/02-decisions/ADR-0003-backend-stack.md#что-в-плане-зависит-от-этого-решения).
-> Схема данных, контракт API и состав страниц от стека не зависят и
-> проектируются уже сейчас.
+> **The backend stack is deliberately left unfixed.** The whole plan is written
+> stack-neutrally; the places where the decision genuinely changes something are
+> tagged with the `[STACK]` marker and listed in
+> [ADR-0003](docs/02-decisions/ADR-0003-backend-stack.md#what-in-the-plan-depends-on-this-decision).
+> The data schema, the API contract and the set of pages do not depend on the
+> stack and are being designed already.
 
 ---
 
-## Структура
+## Structure
 
 ```
-docs/                    ОБЩЕЕ ОСНОВАНИЕ — опора обеих частей
-  00-context/            инвентаризация легаси, точки боли, ограничения, интеграции
-  01-principles/         15 правил «без компромиссов», DoD, стандарты
-  02-decisions/          ADR — по файлу на решение, включая отложенные
+docs/                    SHARED FOUNDATION — the basis of both parts
+  00-context/            legacy inventory, pain points, constraints, integrations
+  01-principles/         15 "no compromise" rules, DoD, standards
+  02-decisions/          ADRs — one file per decision, deferred ones included
 
-product/                 ЧТО БУДЕТ
-  01-architecture.md     слои, модули, платформа
-  02-domains.md          карта доменов и граф зависимостей
-  03-database.md         правила схемы + реестр таблиц
-  04-backend.md          структура модуля, типы классов + реестр модулей
-  05-api.md              контракт + реестр эндпойнтов
-  06-frontend.md         типы страниц, дизайн-система + реестр страниц
-  07…14                  НФТ, безопасность, тесты, наблюдаемость, контуры, CI/CD, ранбуки
-  spec/                  полные спецификации по доменам
+product/                 WHAT WILL BE
+  01-architecture.md     layers, modules, platform
+  02-domains.md          domain map and dependency graph
+  03-database/           rules/ · schemas/ · checks — 14 schemas, 204 tables
+  04-backend/            rules/ · modules/ · checks — 24 modules, ~1,300 classes
+  05-api/                rules/ · registry · checks — 14 sections, ~550 endpoints
+  06-frontend/           rules/ · design system · registry · checks — ~170 pages
+  07…14                  NFRs, security, tests, performance, observability,
+                         environments, CI/CD, runbooks — numbered requirements
+  spec/                  full specifications per domain
 
-transition/              КАК ПЕРЕХОДИМ
-  01…04                  карты соответствий: данные, бэкенд, API, фронтенд
-  05…09                  миграция данных, паритет, переезд, откат, заморозка
-  10…12                  оценки, риски, открытые вопросы
-  plan/                  дорожная карта и шесть фаз
-  map/                   полные карты соответствий по доменам
+transition/              HOW WE MOVE
+  01…04                  mappings: data, backend, API, frontend
+  05…09                  data migration, parity, cutover, rollback, freeze
+  10…12                  estimates, risks, open questions
+  plan/                  roadmap and six phases
+  map/                   full mappings per domain
 
-backlog/                 11 эпиков Фазы 0 с задачами и критериями приёмки
-templates/               шаблоны ADR / эпика / задачи
+backlog/                 11 Phase 0 epics with tasks and acceptance criteria
+templates/               ADR / epic / task templates
 tools/                   validate.sh, measure.sh
-.github/workflows/       CI: валидация плана на каждый PR
+.github/workflows/       CI: plan validation on every PR
 ```
 
-## Как читать
+## How to read this
 
-| Кто вы | Маршрут |
+| Who you are | Route |
 |---|---|
-| Впервые о проекте | [контекст](docs/00-context/01-inventory.md) → [точки боли](docs/00-context/02-pain-points.md) → [дорожная карта](transition/plan/00-roadmap.md) |
-| Принимаете решение о проекте | [оценки](transition/10-estimates.md) → [риски](transition/11-risks.md) → [ADR-0001](docs/02-decisions/ADR-0001-strategy-big-bang.md) |
-| Будете это строить | [product/](product/README.md) целиком |
-| Будете это переносить | [transition/](transition/README.md) целиком |
-| Ищете образец глубины | [product/spec/D1-reference.md](product/spec/D1-reference.md) + [transition/map/D1-reference.md](transition/map/D1-reference.md) |
+| New to the project | [context](docs/00-context/01-inventory.md) → [pain points](docs/00-context/02-pain-points.md) → [roadmap](transition/plan/00-roadmap.md) |
+| Deciding on the project | [estimates](transition/10-estimates.md) → [risks](transition/11-risks.md) → [ADR-0001](docs/02-decisions/ADR-0001-strategy-big-bang.md) |
+| Going to build it | all of [product/](product/README.md) |
+| Going to migrate it | all of [transition/](transition/README.md) |
+| Looking for a depth sample | [product/spec/D1-reference.md](product/spec/D1-reference.md) + [transition/map/D1-reference.md](transition/map/D1-reference.md) |
 
-## Как вести
+## How to maintain it
 
-План — живой документ и меняется только через PR:
-[CONTRIBUTING.md](CONTRIBUTING.md). CI (`tools/validate.sh`) на каждом PR
-проверяет уникальность идентификаторов, обязательные поля frontmatter,
-отсутствие битых внутренних ссылок, разделение product/transition и отсутствие
-чувствительных данных.
+The plan is a living document and changes only through PRs:
+[CONTRIBUTING.md](CONTRIBUTING.md). CI (`tools/validate.sh`) checks on every PR
+that identifiers are unique, that the required frontmatter fields are present,
+that there are no broken internal links, that the product/transition split holds
+and that no sensitive data is present.
 
 ```sh
 ./tools/validate.sh
 ```
 
-## Чувствительные данные
+## Sensitive data
 
-Репозиторий **публичный**. В нём не должно быть внутренних адресов и хостов,
-имён баз и учётных записей, секретов, исходного кода легаси, выгрузок
-промышленных данных и персональных данных. Вместо этого — плейсхолдеры и
-агрегированные метрики. Проверка автоматизирована; правила —
-[CONTRIBUTING.md](CONTRIBUTING.md#чувствительные-данные).
+The repository is **public**. It must not contain internal addresses and hosts,
+database or account names, secrets, legacy source code, production data dumps or
+personal data. Placeholders and aggregated metrics are used instead. The check is
+automated; the rules are in
+[CONTRIBUTING.md](CONTRIBUTING.md#sensitive-data).
 
-## Статус
+## Status
 
 | | |
 |---|---|
-| Фаза | Фаза 0 — Основание |
-| Гейт | G0 не пройден |
-| Спроектировано доменов | 1 из 13 (D1 — образец) |
-| Открытых блокирующих вопросов | см. [transition/12-open-questions.md](transition/12-open-questions.md) |
+| Phase | Phase 0 — Foundation |
+| Gate | G0 not passed |
+| Domains designed | 1 of 13 (D1 — the sample) |
+| Open blocking questions | see [transition/12-open-questions.md](transition/12-open-questions.md) |
